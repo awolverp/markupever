@@ -1,0 +1,39 @@
+[package]
+name = "cachebox"
+version = "0.1.0"
+edition = "2021"
+description = "The fast, most optimal, and correct HTML parsing library."
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/awolverp/xmarkup"
+repository = "https://github.com/awolverp/xmarkup.git"
+
+[lib]
+name = "xmarkup"
+crate-type = ["cdylib"]
+
+[profile.release]
+codegen-units = 1
+debug = false
+# incremental = false
+lto = "fat"
+panic = "abort"
+strip = "symbols"
+
+[dependencies]
+pyo3 = { version = "0.23.1", default-features = false, features=["macros", "extension-module"] }
+markup5ever = { version = "^0.14" }
+html5ever = { version = "^0.29" }
+xml5ever = { version = "^0.20" }
+tendril = { version = "^0.4" }
+selectors = { version = "^0.26" }
+cssparser = { version = "^0.34" }
+precomputed-hash = { version = "^0.1" }
+parking_lot = { version = "^0.12" }
+
+[build-dependencies]
+pyo3-build-config = { version = "0.23.1", features = ["resolve-config"] }
+
+[lints.clippy]
+dbg_macro = "warn"
+print_stdout = "warn"

@@ -1,0 +1,51 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "xmarkup"
+requires-python = ">=3.8"
+
+keywords = ["xmarkup", "html", "xml", "parser", "markup", "selector", "cssselect", "css"]
+authors = [
+  {name = "awolverp", email = "awolverp@gmail.com"}
+]
+
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python",
+    "Programming Language :: Rust",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Typing :: Typed",
+]
+
+dynamic = [
+    'description',
+    'license',
+    'readme',
+    'version'
+]
+
+[project.optional-dependencies]
+tests = [
+    "pytest",
+]
+
+[tool.maturin]
+python-source = "python"
+features = ["pyo3/extension-module"]
+module-name = "xmarkup._rustlib"
