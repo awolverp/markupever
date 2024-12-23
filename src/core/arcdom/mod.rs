@@ -12,4 +12,5 @@ pub use node::{
     Node,
     WeakNode,
     Children,
+    NodesIterator,
 };
