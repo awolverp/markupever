@@ -1,5 +1,7 @@
 use pyo3::prelude::*;
 
+pub mod core;
+
 /// A Python module implemented in Rust.
 #[pymodule]
 fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {

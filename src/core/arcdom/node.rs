@@ -1,0 +1,682 @@
+use crate::core::send::OnceLock;
+use std::sync::Arc;
+use std::sync::Weak;
+use tendril::StrTendril;
+
+/// The root of HTML document
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct DocumentData;
+
+/// The root of a minimal document object
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct FragmentData;
+
+/// the doctype is the required <!doctype html> preamble found at the top of all documents.
+/// Its sole purpose is to prevent a browser from switching into so-called "quirks mode"
+/// when rendering a document; that is, the <!doctype html> doctype ensures that the browser makes
+/// a best-effort attempt at following the relevant specifications, rather than using a different
+/// rendering mode that is incompatible with some specifications.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DoctypeData {
+    pub name: StrTendril,
+    pub public_id: StrTendril,
+    pub system_id: StrTendril,
+}
+
+/// The Comment interface represents textual notations within markup; although it is generally not
+/// visually shown, such comments are available to be read in the source view.
+///
+/// Comments are represented in HTML and XML as content between <!-- and -->. In XML,
+/// like inside SVG or MathML markup, the character sequence -- cannot be used within a comment.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommentData {
+    pub contents: StrTendril,
+}
+
+/// A text
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TextData {
+    pub contents: StrTendril,
+}
+
+/// An element
+pub struct ElementData {
+    pub name: markup5ever::QualName,
+    pub attrs: Vec<(markup5ever::QualName, StrTendril)>,
+    pub template: bool,
+    pub mathml_annotation_xml_integration_point: bool,
+
+    /// cache id attribute
+    id: OnceLock<Option<StrTendril>>,
+
+    /// cache class attribute
+    classes: OnceLock<Vec<markup5ever::LocalName>>,
+}
+
+/// The ProcessingInstruction interface represents a processing instruction; that is,
+/// a Node which embeds an instruction targeting a specific application but that can
+/// be ignored by any other applications which don't recognize the instruction.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProcessingInstructionData {
+    pub data: StrTendril,
+    pub target: StrTendril,
+}
+
+pub(super) enum NodeData {
+    Document(DocumentData),
+    Fragment(FragmentData),
+    Doctype(DoctypeData),
+    Comment(CommentData),
+    Text(TextData),
+    Element(ElementData),
+    ProcessingInstruction(ProcessingInstructionData),
+}
+
+pub(super) struct NodeInner {
+    // Parent node.
+    pub(super) parent: parking_lot::Mutex<Option<WeakNode>>,
+    // Child nodes of this node.
+    pub(super) children: parking_lot::Mutex<Vec<Node>>,
+    // Represents this node's data.
+    pub(super) data: parking_lot::Mutex<NodeData>,
+}
+
+/// A node that uses [`Arc`] to prevent clone. Also [`Arc`] is a help for connecting `Rust` to `Python`.
+#[derive(Clone)]
+pub struct Node {
+    value: Arc<NodeInner>,
+}
+
+/// [`WeakNode`] is a version of [`Node`] that holds a non-owning reference to the managed allocation.
+#[derive(Clone)]
+pub struct WeakNode {
+    value: Weak<NodeInner>,
+}
+
+pub struct Children<'a> {
+    ptr: WeakNode,
+    vec: parking_lot::MappedMutexGuard<'a, Vec<Node>>,
+}
+
+pub struct NodesIterator {
+    vec: Vec<Node>,
+}
+
+macro_rules! _impl_nodedata_from_trait {
+    ($from:ty, $name:ident) => {
+        impl From<$from> for NodeData {
+            fn from(value: $from) -> NodeData {
+                NodeData::$name(value)
+            }
+        }
+    };
+}
+
+macro_rules! _impl_nodedata_functions {
+    (
+        $(#[$docs1:meta])*
+        is $isname:ident($enum_:pat)
+
+        $(#[$docs2:meta])*
+        get $gname:ident($pattern:pat_param => $param:expr, $ret:ty)
+
+        $(#[$docs3:meta])*
+        unch $uname:ident()
+    ) => {
+        $(#[$docs1])*
+        pub fn $isname(&self) -> bool {
+            let ref_ = self.value.data.lock();
+            matches!(&*ref_, $enum_)
+        }
+
+        $(#[$docs2])*
+        pub fn $gname(&self) -> Option<parking_lot::MappedMutexGuard<'_, $ret>> {
+            let ref_ = self.value.data.lock();
+            let mapped = parking_lot::MutexGuard::try_map(ref_, |x| match x {
+                $pattern => Some($param),
+                _ => None,
+            });
+
+            match mapped {
+                Ok(x) => Some(x),
+                Err(_) => None,
+            }
+        }
+
+        $(#[$docs3])*
+        pub unsafe fn $uname(&self) -> parking_lot::MappedMutexGuard<'_, $ret> {
+            let ref_ = self.value.data.lock();
+            parking_lot::MutexGuard::map(ref_, |x| match x {
+                $pattern => $param,
+                _ => std::hint::unreachable_unchecked(),
+            })
+        }
+    };
+}
+
+impl DocumentData {
+    pub const fn new() -> Self {
+        Self
+    }
+}
+
+impl FragmentData {
+    pub const fn new() -> Self {
+        Self
+    }
+}
+
+impl DoctypeData {
+    pub fn new(name: StrTendril, public_id: StrTendril, system_id: StrTendril) -> Self {
+        Self {
+            name,
+            public_id,
+            system_id,
+        }
+    }
+}
+
+impl CommentData {
+    pub fn new(contents: StrTendril) -> Self {
+        Self { contents }
+    }
+}
+
+impl TextData {
+    pub fn new(contents: StrTendril) -> Self {
+        Self { contents }
+    }
+}
+
+impl ElementData {
+    pub fn new(
+        name: markup5ever::QualName,
+        attrs: Vec<(markup5ever::QualName, StrTendril)>,
+        template: bool,
+        mathml_annotation_xml_integration_point: bool,
+    ) -> Self {
+        Self {
+            name,
+            attrs,
+            template,
+            mathml_annotation_xml_integration_point,
+            id: OnceLock::new(),
+            classes: OnceLock::new(),
+        }
+    }
+
+    pub fn id(&self) -> Option<&str> {
+        self.id
+            .get_or_init(|| {
+                self.attrs
+                    .iter()
+                    .find(|(name, _)| &name.local == "id")
+                    .map(|(_, value)| value.clone())
+            })
+            .as_deref()
+    }
+
+    pub fn classes(&self) -> std::slice::Iter<'_, markup5ever::LocalName> {
+        let classes = self.classes.get_or_init(|| {
+            let mut classes = self
+                .attrs
+                .iter()
+                .filter(|(name, _)| name.local.as_ref() == "class")
+                .flat_map(|(_, value)| {
+                    value
+                        .split_ascii_whitespace()
+                        .map(markup5ever::LocalName::from)
+                })
+                .collect::<Vec<_>>();
+
+            classes.sort_unstable();
+            classes.dedup();
+
+            classes
+        });
+
+        classes.iter()
+    }
+
+    pub fn clear_id(&mut self) {
+        self.id.take();
+    }
+
+    pub fn clear_classes(&mut self) {
+        self.classes.take();
+    }
+}
+
+impl std::fmt::Debug for ElementData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ElementData")
+            .field("name", &self.name)
+            .field("attrs", &self.attrs)
+            .field("template", &self.template)
+            .field(
+                "mathml_annotation_xml_integration_point",
+                &self.mathml_annotation_xml_integration_point,
+            )
+            .finish()
+    }
+}
+
+_impl_nodedata_from_trait!(DocumentData, Document);
+_impl_nodedata_from_trait!(FragmentData, Fragment);
+_impl_nodedata_from_trait!(DoctypeData, Doctype);
+_impl_nodedata_from_trait!(CommentData, Comment);
+_impl_nodedata_from_trait!(TextData, Text);
+_impl_nodedata_from_trait!(ElementData, Element);
+_impl_nodedata_from_trait!(ProcessingInstructionData, ProcessingInstruction);
+
+impl Node {
+    #[inline]
+    #[allow(private_bounds)]
+    pub fn new<T: Into<NodeData>>(data: T) -> Self {
+        Self::new_with(data, None, Vec::new())
+    }
+
+    #[inline]
+    #[allow(private_bounds)]
+    pub fn new_with<T: Into<NodeData>>(
+        data: T,
+        parent: Option<WeakNode>,
+        children: Vec<Node>,
+    ) -> Self {
+        Self {
+            value: Arc::new(NodeInner {
+                parent: parking_lot::Mutex::new(parent),
+                children: parking_lot::Mutex::new(children),
+                data: parking_lot::Mutex::new(data.into()),
+            }),
+        }
+    }
+
+    _impl_nodedata_functions!(
+        /// Returns `true` if the node data is [`DocumentData`]
+        is is_document(NodeData::Document(..))
+
+        /// Locks the data mutex and returns the [`DocumentData`]
+        ///
+        /// It is necessary to drop it when you don't need it
+        get as_document(NodeData::Document(d) => d, DocumentData)
+
+        /// Locks the data mutex and returns the [`DocumentData`] but never checks that is the holded data is document or not.
+        ///
+        /// # Safety
+        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
+        unch as_document_unchecked()
+    );
+
+    _impl_nodedata_functions!(
+        /// Returns `true` if the node data is [`FragmentData`]
+        is is_fragment(NodeData::Fragment(..))
+
+        /// Locks the data mutex and returns the [`FragmentData`]
+        ///
+        /// It is necessary to drop it when you don't need it
+        get as_fragment(NodeData::Fragment(d) => d, FragmentData)
+
+        /// Locks the data mutex and returns the [`FragmentData`] but never checks that is the holded data is document or not.
+        ///
+        /// # Safety
+        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
+        unch as_fragment_unchecked()
+    );
+
+    _impl_nodedata_functions!(
+        /// Returns `true` if the node data is [`DoctypeData`]
+        is is_doctype(NodeData::Doctype(..))
+
+        /// Locks the data mutex and returns the [`DoctypeData`]
+        ///
+        /// It is necessary to drop it when you don't need it
+        get as_doctype(NodeData::Doctype(d) => d, DoctypeData)
+
+        /// Locks the data mutex and returns the [`DoctypeData`] but never checks that is the holded data is document or not.
+        ///
+        /// # Safety
+        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
+        unch as_doctype_unchecked()
+    );
+
+    _impl_nodedata_functions!(
+        /// Returns `true` if the node data is [`CommentData`]
+        is is_comment(NodeData::Comment(..))
+
+        /// Locks the data mutex and returns the [`CommentData`]
+        ///
+        /// It is necessary to drop it when you don't need it
+        get as_comment(NodeData::Comment(d) => d, CommentData)
+
+        /// Locks the data mutex and returns the [`CommentData`] but never checks that is the holded data is document or not.
+        ///
+        /// # Safety
+        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
+        unch as_comment_unchecked()
+    );
+
+    _impl_nodedata_functions!(
+        /// Returns `true` if the node data is [`TextData`]
+        is is_text(NodeData::Text(..))
+
+        /// Locks the data mutex and returns the [`TextData`]
+        ///
+        /// It is necessary to drop it when you don't need it
+        get as_text(NodeData::Text(d) => d, TextData)
+
+        /// Locks the data mutex and returns the [`TextData`] but never checks that is the holded data is document or not.
+        ///
+        /// # Safety
+        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
+        unch as_text_unchecked()
+    );
+
+    _impl_nodedata_functions!(
+        /// Returns `true` if the node data is [`ElementData`]
+        is is_element(NodeData::Element(..))
+
+        /// Locks the data mutex and returns the [`ElementData`]
+        ///
+        /// It is necessary to drop it when you don't need it
+        get as_element(NodeData::Element(d) => d, ElementData)
+
+        /// Locks the data mutex and returns the [`ElementData`] but never checks that is the holded data is document or not.
+        ///
+        /// # Safety
+        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
+        unch as_element_unchecked()
+    );
+
+    _impl_nodedata_functions!(
+        /// Returns `true` if the node data is [`ProcessingInstructionData`]
+        is is_processing_instruction(NodeData::ProcessingInstruction(..))
+
+        /// Locks the data mutex and returns the [`ProcessingInstructionData`]
+        ///
+        /// It is necessary to drop it when you don't need it
+        get as_processing_instruction(NodeData::ProcessingInstruction(d) => d, ProcessingInstructionData)
+
+        /// Locks the data mutex and returns the [`ProcessingInstructionData`] but never checks that is the holded data is document or not.
+        ///
+        /// # Safety
+        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
+        unch as_processing_instruction_unchecked()
+    );
+
+    /// Creates a new [`WeakNode`] pointer to this allocation.
+    #[inline]
+    pub fn downgrade(&self) -> WeakNode {
+        WeakNode {
+            value: std::sync::Arc::downgrade(&self.value),
+        }
+    }
+
+    /// Locks the parent and returns it
+    ///
+    /// It is necessary to drop it when you don't need it
+    pub fn parent(&self) -> parking_lot::MappedMutexGuard<'_, Option<WeakNode>> {
+        let ref_ = self.value.parent.lock();
+        parking_lot::MutexGuard::map(ref_, |x| x)
+    }
+
+    /// Locks the children and returns it
+    ///
+    /// It is necessary to drop it when you don't need it
+    pub fn children(&self) -> Children<'_> {
+        let ref_ = self.value.children.lock();
+
+        Children {
+            ptr: self.downgrade(),
+            vec: parking_lot::MutexGuard::map(ref_, |x| x),
+        }
+    }
+
+    pub fn iter(&self) -> NodesIterator {
+        NodesIterator::new(self.clone(), true)
+    }
+
+    pub fn ptr_eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.value, &other.value)
+    }
+}
+
+impl WeakNode {
+    /// Upgrade self to [`Node`]
+    #[inline]
+    pub fn upgrade(&self) -> Option<Node> {
+        self.value.upgrade().map(|x| Node { value: x })
+    }
+}
+
+impl<'a> Children<'a> {
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.vec.len()
+    }
+
+    pub fn position(&self, child: &Node) -> Option<usize> {
+        self.vec
+            .iter()
+            .position(|x| x.ptr_eq(child))
+    }
+
+    #[inline]
+    pub fn append(&mut self, child: Node) {
+        assert!(
+            child.parent().replace(self.ptr.clone()).is_none(),
+            "child cannot have existing parent"
+        );
+
+        self.vec.push(child);
+    }
+
+    #[inline]
+    pub fn insert(&mut self, index: usize, child: Node) {
+        assert!(
+            child.parent().replace(self.ptr.clone()).is_none(),
+            "child cannot have existing parent"
+        );
+
+        self.vec.insert(index, child);
+    }
+
+    #[inline]
+    pub fn iter(&self) -> std::slice::Iter<'_, Node> {
+        self.vec.iter()
+    }
+
+    #[inline]
+    pub fn remove(&mut self, index: usize) -> Node {
+        let node = self.vec.remove(index);
+
+        {
+            assert!(
+                !node.value.parent.is_locked(),
+                "The child node parent is locked; Unlock it first."
+            );
+
+            let mut p = node.value.parent.lock();
+            p.take();
+        }
+
+        node
+    }
+
+    #[inline]
+    pub fn clear(&mut self) {
+        self.vec.clear();
+    }
+}
+
+impl<'a> IntoIterator for Children<'a> {
+    type Item = Node;
+    type IntoIter = std::vec::IntoIter<Node>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.vec.clone().into_iter()
+    }
+}
+
+impl NodesIterator {
+    pub fn new(node: Node, include_node: bool) -> Self {
+        let mut s = Self { vec: Vec::new() };
+
+        if include_node {
+            s.vec.push(node);
+        } else {
+            let children = node.children();
+            s.vec.extend(children);
+        }
+
+        s
+    }
+}
+
+impl Iterator for NodesIterator {
+    type Item = Node;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let node = self.vec.pop()?;
+
+        self.vec.extend(node.children().into_iter().rev());
+
+        Some(node)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    macro_rules! create_element {
+        ($name:expr, $attrs:expr) => {
+            ElementData::new(
+                markup5ever::QualName::new(
+                    None,
+                    markup5ever::namespace_url!(""),
+                    markup5ever::LocalName::from($name),
+                ),
+                $attrs,
+                false,
+                false,
+            )
+        };
+    }
+
+    #[test]
+    pub fn test_data() {
+        assert_eq!(DocumentData::new(), DocumentData::default(),);
+
+        assert_eq!(FragmentData::new(), FragmentData::default(),);
+
+        let elem = create_element!("div", vec![]);
+        assert_eq!(&*elem.name.local, "div");
+
+        let mut elem = create_element!(
+            "div",
+            Vec::from([
+                (
+                    markup5ever::QualName::new(
+                        None,
+                        markup5ever::namespace_url!(""),
+                        markup5ever::local_name!("id"),
+                    ),
+                    "example_id".into()
+                ),
+                (
+                    markup5ever::QualName::new(
+                        None,
+                        markup5ever::namespace_url!(""),
+                        markup5ever::local_name!("class"),
+                    ),
+                    "cls1 cls2".into()
+                ),
+                (
+                    markup5ever::QualName::new(
+                        None,
+                        markup5ever::namespace_url!(""),
+                        markup5ever::local_name!("class"),
+                    ),
+                    "cls2 cls3".into()
+                ),
+                (
+                    markup5ever::QualName::new(
+                        Some(markup5ever::Prefix::from("data-test")),
+                        markup5ever::namespace_url!(""),
+                        markup5ever::local_name!(""),
+                    ),
+                    "test".into()
+                ),
+            ])
+        );
+        assert_eq!(elem.id(), Some("example_id"));
+        assert_eq!(elem.classes().len(), 3);
+
+        elem.attrs.clear();
+        elem.clear_id();
+        elem.clear_classes();
+
+        assert_eq!(elem.id(), None);
+        assert_eq!(elem.classes().len(), 0);
+    }
+
+    #[test]
+    fn test_nodedata() {
+        let data: NodeData = DocumentData.into();
+        assert!(matches!(data, NodeData::Document(..)));
+
+        let data: NodeData = FragmentData.into();
+        assert!(matches!(data, NodeData::Fragment(..)));
+    }
+
+    #[test]
+    fn test_node_children() {
+        let node = Node::new(create_element!("div", Default::default()));
+
+        let child1 = Node::new(create_element!("h1", Default::default()));
+        let child1_child = Node::new(TextData::new("Come here 1".into()));
+        child1.children().append(child1_child.clone());
+
+        node.children().append(child1.clone());
+
+        let child2 = Node::new(create_element!("h2", Default::default()));
+        let child2_child = Node::new(TextData::new("Come here 2".into()));
+        child2.children().append(child2_child.clone());
+
+        node.children().append(child2.clone());
+
+        let child3 = Node::new(create_element!("p", Default::default()));
+        let child3_child = Node::new(TextData::new("Come here 3".into()));
+        child3.children().append(child3_child);
+
+        node.children().append(child3.clone());
+
+        assert_eq!(node.children().len(), 3);
+
+        let mut v = Vec::new();
+        for n in node.iter() {
+            v.push(n);
+        }
+
+        assert_eq!(v.len(), 7);
+
+        assert_eq!(node.children().position(&child3), Some(2));
+        assert!(node.children().remove(2).ptr_eq(&child3));
+
+        assert_eq!(node.children().len(), 2);
+
+        let mut v = Vec::new();
+        for n in node.iter() {
+            v.push(n);
+        }
+
+        assert_eq!(v.len(), 5);
+
+        let have_to = vec![node, child1, child1_child, child2, child2_child];
+
+        for (v1, v2) in v.iter().zip(have_to.iter()) {
+            assert!(v1.ptr_eq(v2))
+        }
+    }
+}
