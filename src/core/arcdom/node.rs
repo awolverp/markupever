@@ -7,9 +7,21 @@ use tendril::StrTendril;
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DocumentData;
 
+impl DocumentData {
+    pub const fn new() -> Self {
+        Self
+    }
+}
+
 /// The root of a minimal document object
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct FragmentData;
+
+impl FragmentData {
+    pub const fn new() -> Self {
+        Self
+    }
+}
 
 /// the doctype is the required <!doctype html> preamble found at the top of all documents.
 /// Its sole purpose is to prevent a browser from switching into so-called "quirks mode"
@@ -23,6 +35,16 @@ pub struct DoctypeData {
     pub system_id: StrTendril,
 }
 
+impl DoctypeData {
+    pub fn new(name: StrTendril, public_id: StrTendril, system_id: StrTendril) -> Self {
+        Self {
+            name,
+            public_id,
+            system_id,
+        }
+    }
+}
+
 /// The Comment interface represents textual notations within markup; although it is generally not
 /// visually shown, such comments are available to be read in the source view.
 ///
@@ -33,10 +55,22 @@ pub struct CommentData {
     pub contents: StrTendril,
 }
 
+impl CommentData {
+    pub fn new(contents: StrTendril) -> Self {
+        Self { contents }
+    }
+}
+
 /// A text
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TextData {
     pub contents: StrTendril,
+}
+
+impl TextData {
+    pub fn new(contents: StrTendril) -> Self {
+        Self { contents }
+    }
 }
 
 /// An element
@@ -51,141 +85,6 @@ pub struct ElementData {
 
     /// cache class attribute
     classes: OnceLock<Vec<markup5ever::LocalName>>,
-}
-
-/// The ProcessingInstruction interface represents a processing instruction; that is,
-/// a Node which embeds an instruction targeting a specific application but that can
-/// be ignored by any other applications which don't recognize the instruction.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProcessingInstructionData {
-    pub data: StrTendril,
-    pub target: StrTendril,
-}
-
-pub(super) enum NodeData {
-    Document(DocumentData),
-    Fragment(FragmentData),
-    Doctype(DoctypeData),
-    Comment(CommentData),
-    Text(TextData),
-    Element(ElementData),
-    ProcessingInstruction(ProcessingInstructionData),
-}
-
-pub(super) struct NodeInner {
-    // Parent node.
-    pub(super) parent: parking_lot::Mutex<Option<WeakNode>>,
-    // Child nodes of this node.
-    pub(super) children: parking_lot::Mutex<Vec<Node>>,
-    // Represents this node's data.
-    pub(super) data: parking_lot::Mutex<NodeData>,
-}
-
-/// A node that uses [`Arc`] to prevent clone. Also [`Arc`] is a help for connecting `Rust` to `Python`.
-#[derive(Clone)]
-pub struct Node {
-    value: Arc<NodeInner>,
-}
-
-/// [`WeakNode`] is a version of [`Node`] that holds a non-owning reference to the managed allocation.
-#[derive(Clone)]
-pub struct WeakNode {
-    value: Weak<NodeInner>,
-}
-
-pub struct Children<'a> {
-    ptr: WeakNode,
-    vec: parking_lot::MappedMutexGuard<'a, Vec<Node>>,
-}
-
-pub struct NodesIterator {
-    vec: Vec<Node>,
-}
-
-macro_rules! _impl_nodedata_from_trait {
-    ($from:ty, $name:ident) => {
-        impl From<$from> for NodeData {
-            fn from(value: $from) -> NodeData {
-                NodeData::$name(value)
-            }
-        }
-    };
-}
-
-macro_rules! _impl_nodedata_functions {
-    (
-        $(#[$docs1:meta])*
-        is $isname:ident($enum_:pat)
-
-        $(#[$docs2:meta])*
-        get $gname:ident($pattern:pat_param => $param:expr, $ret:ty)
-
-        $(#[$docs3:meta])*
-        unch $uname:ident()
-    ) => {
-        $(#[$docs1])*
-        pub fn $isname(&self) -> bool {
-            let ref_ = self.value.data.lock();
-            matches!(&*ref_, $enum_)
-        }
-
-        $(#[$docs2])*
-        pub fn $gname(&self) -> Option<parking_lot::MappedMutexGuard<'_, $ret>> {
-            let ref_ = self.value.data.lock();
-            let mapped = parking_lot::MutexGuard::try_map(ref_, |x| match x {
-                $pattern => Some($param),
-                _ => None,
-            });
-
-            match mapped {
-                Ok(x) => Some(x),
-                Err(_) => None,
-            }
-        }
-
-        $(#[$docs3])*
-        pub unsafe fn $uname(&self) -> parking_lot::MappedMutexGuard<'_, $ret> {
-            let ref_ = self.value.data.lock();
-            parking_lot::MutexGuard::map(ref_, |x| match x {
-                $pattern => $param,
-                _ => std::hint::unreachable_unchecked(),
-            })
-        }
-    };
-}
-
-impl DocumentData {
-    pub const fn new() -> Self {
-        Self
-    }
-}
-
-impl FragmentData {
-    pub const fn new() -> Self {
-        Self
-    }
-}
-
-impl DoctypeData {
-    pub fn new(name: StrTendril, public_id: StrTendril, system_id: StrTendril) -> Self {
-        Self {
-            name,
-            public_id,
-            system_id,
-        }
-    }
-}
-
-impl CommentData {
-    pub fn new(contents: StrTendril) -> Self {
-        Self { contents }
-    }
-}
-
-impl TextData {
-    pub fn new(contents: StrTendril) -> Self {
-        Self { contents }
-    }
 }
 
 impl ElementData {
@@ -261,6 +160,35 @@ impl std::fmt::Debug for ElementData {
     }
 }
 
+/// The ProcessingInstruction interface represents a processing instruction; that is,
+/// a Node which embeds an instruction targeting a specific application but that can
+/// be ignored by any other applications which don't recognize the instruction.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProcessingInstructionData {
+    pub data: StrTendril,
+    pub target: StrTendril,
+}
+
+pub(super) enum NodeData {
+    Document(DocumentData),
+    Fragment(FragmentData),
+    Doctype(DoctypeData),
+    Comment(CommentData),
+    Text(TextData),
+    Element(ElementData),
+    ProcessingInstruction(ProcessingInstructionData),
+}
+
+macro_rules! _impl_nodedata_from_trait {
+    ($from:ty, $name:ident) => {
+        impl From<$from> for NodeData {
+            fn from(value: $from) -> NodeData {
+                NodeData::$name(value)
+            }
+        }
+    };
+}
+
 _impl_nodedata_from_trait!(DocumentData, Document);
 _impl_nodedata_from_trait!(FragmentData, Fragment);
 _impl_nodedata_from_trait!(DoctypeData, Doctype);
@@ -268,6 +196,63 @@ _impl_nodedata_from_trait!(CommentData, Comment);
 _impl_nodedata_from_trait!(TextData, Text);
 _impl_nodedata_from_trait!(ElementData, Element);
 _impl_nodedata_from_trait!(ProcessingInstructionData, ProcessingInstruction);
+
+pub(super) struct NodeInner {
+    // Parent node.
+    pub(super) parent: parking_lot::Mutex<Option<WeakNode>>,
+    // Child nodes of this node.
+    pub(super) children: parking_lot::Mutex<Vec<Node>>,
+    // Represents this node's data.
+    pub(super) data: parking_lot::Mutex<NodeData>,
+}
+
+/// A node that uses [`Arc`] to prevent clone. Also [`Arc`] is a help for connecting `Rust` to `Python`.
+#[derive(Clone)]
+pub struct Node {
+    value: Arc<NodeInner>,
+}
+
+macro_rules! _impl_nodedata_functions {
+    (
+        $(#[$docs1:meta])*
+        is $isname:ident($enum_:pat)
+
+        $(#[$docs2:meta])*
+        get $gname:ident($pattern:pat_param => $param:expr, $ret:ty)
+
+        $(#[$docs3:meta])*
+        unch $uname:ident()
+    ) => {
+        $(#[$docs1])*
+        pub fn $isname(&self) -> bool {
+            let ref_ = self.value.data.lock();
+            matches!(&*ref_, $enum_)
+        }
+
+        $(#[$docs2])*
+        pub fn $gname(&self) -> Option<parking_lot::MappedMutexGuard<'_, $ret>> {
+            let ref_ = self.value.data.lock();
+            let mapped = parking_lot::MutexGuard::try_map(ref_, |x| match x {
+                $pattern => Some($param),
+                _ => None,
+            });
+
+            match mapped {
+                Ok(x) => Some(x),
+                Err(_) => None,
+            }
+        }
+
+        $(#[$docs3])*
+        pub unsafe fn $uname(&self) -> parking_lot::MappedMutexGuard<'_, $ret> {
+            let ref_ = self.value.data.lock();
+            parking_lot::MutexGuard::map(ref_, |x| match x {
+                $pattern => $param,
+                _ => std::hint::unreachable_unchecked(),
+            })
+        }
+    };
+}
 
 impl Node {
     #[inline]
@@ -439,6 +424,27 @@ impl Node {
     pub fn ptr_eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.value, &other.value)
     }
+
+    /// Unlink removes this node from its parent.
+    #[inline]
+    pub fn unlink(&self) {
+        assert!(
+            self.value.parent.is_locked(),
+            "before using this method you have to unlock the parent with dropping the mutex guard"
+        );
+
+        if let Some(parent) = &*self.parent() {
+            let parent = parent.upgrade().expect("dangling weak pointer");
+            let mut c = parent.children();
+            c.remove(c.position(self).unwrap());
+        }
+    }
+}
+
+/// [`WeakNode`] is a version of [`Node`] that holds a non-owning reference to the managed allocation.
+#[derive(Clone)]
+pub struct WeakNode {
+    value: Weak<NodeInner>,
 }
 
 impl WeakNode {
@@ -449,6 +455,11 @@ impl WeakNode {
     }
 }
 
+pub struct Children<'a> {
+    ptr: WeakNode,
+    vec: parking_lot::MappedMutexGuard<'a, Vec<Node>>,
+}
+
 impl<'a> Children<'a> {
     #[inline]
     pub fn len(&self) -> usize {
@@ -456,9 +467,7 @@ impl<'a> Children<'a> {
     }
 
     pub fn position(&self, child: &Node) -> Option<usize> {
-        self.vec
-            .iter()
-            .position(|x| x.ptr_eq(child))
+        self.vec.iter().position(|x| x.ptr_eq(child))
     }
 
     #[inline]
@@ -482,8 +491,26 @@ impl<'a> Children<'a> {
     }
 
     #[inline]
+    pub fn last(&self) -> Option<&Node> {
+        self.vec.last()
+    }
+
+    #[inline]
+    pub fn first(&self) -> Option<&Node> {
+        self.vec.first()
+    }
+
+    #[inline]
     pub fn iter(&self) -> std::slice::Iter<'_, Node> {
         self.vec.iter()
+    }
+
+    #[inline]
+    pub fn drain<R: std::ops::RangeBounds<usize>>(
+        &mut self,
+        range: R,
+    ) -> std::vec::Drain<'_, Node> {
+        self.vec.drain(range)
     }
 
     #[inline]
@@ -509,6 +536,20 @@ impl<'a> Children<'a> {
     }
 }
 
+impl<'a> std::ops::Index<usize> for Children<'a> {
+    type Output = Node;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.vec[index]
+    }
+}
+
+impl<'a> std::ops::IndexMut<usize> for Children<'a> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.vec[index]
+    }
+}
+
 impl<'a> IntoIterator for Children<'a> {
     type Item = Node;
     type IntoIter = std::vec::IntoIter<Node>;
@@ -516,6 +557,10 @@ impl<'a> IntoIterator for Children<'a> {
     fn into_iter(self) -> Self::IntoIter {
         self.vec.clone().into_iter()
     }
+}
+
+pub struct NodesIterator {
+    vec: Vec<Node>,
 }
 
 impl NodesIterator {

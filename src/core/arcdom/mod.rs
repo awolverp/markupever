@@ -1,16 +1,8 @@
-
 mod node;
+mod tree;
 
 pub use node::{
-    DocumentData,
-    FragmentData,
-    ElementData,
-    DoctypeData,
-    TextData,
-    CommentData,
-    ProcessingInstructionData,
-    Node,
-    WeakNode,
-    Children,
-    NodesIterator,
+    Children, CommentData, DoctypeData, DocumentData, ElementData, FragmentData, Node,
+    NodesIterator, ProcessingInstructionData, TextData, WeakNode,
 };
+pub use tree::{ErrorWithLine, TreeBuilder};
