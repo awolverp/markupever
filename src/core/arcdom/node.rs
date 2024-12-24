@@ -1,7 +1,9 @@
+use tendril::StrTendril;
+
 use crate::core::send::OnceLock;
+use crate::core::send::{make_atomic_tendril, AtomicTendril};
 use std::sync::Arc;
 use std::sync::Weak;
-use tendril::StrTendril;
 
 /// The root of HTML document
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -30,17 +32,17 @@ impl FragmentData {
 /// rendering mode that is incompatible with some specifications.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DoctypeData {
-    pub name: StrTendril,
-    pub public_id: StrTendril,
-    pub system_id: StrTendril,
+    pub name: AtomicTendril,
+    pub public_id: AtomicTendril,
+    pub system_id: AtomicTendril,
 }
 
 impl DoctypeData {
     pub fn new(name: StrTendril, public_id: StrTendril, system_id: StrTendril) -> Self {
         Self {
-            name,
-            public_id,
-            system_id,
+            name: make_atomic_tendril(name),
+            public_id: make_atomic_tendril(public_id),
+            system_id: make_atomic_tendril(system_id),
         }
     }
 }
@@ -52,36 +54,40 @@ impl DoctypeData {
 /// like inside SVG or MathML markup, the character sequence -- cannot be used within a comment.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommentData {
-    pub contents: StrTendril,
+    pub contents: AtomicTendril,
 }
 
 impl CommentData {
     pub fn new(contents: StrTendril) -> Self {
-        Self { contents }
+        Self {
+            contents: make_atomic_tendril(contents),
+        }
     }
 }
 
 /// A text
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TextData {
-    pub contents: StrTendril,
+    pub contents: AtomicTendril,
 }
 
 impl TextData {
     pub fn new(contents: StrTendril) -> Self {
-        Self { contents }
+        Self {
+            contents: make_atomic_tendril(contents),
+        }
     }
 }
 
 /// An element
 pub struct ElementData {
     pub name: markup5ever::QualName,
-    pub attrs: Vec<(markup5ever::QualName, StrTendril)>,
+    pub attrs: Vec<(markup5ever::QualName, AtomicTendril)>,
     pub template: bool,
     pub mathml_annotation_xml_integration_point: bool,
 
     /// cache id attribute
-    id: OnceLock<Option<StrTendril>>,
+    id: OnceLock<Option<AtomicTendril>>,
 
     /// cache class attribute
     classes: OnceLock<Vec<markup5ever::LocalName>>,
@@ -90,7 +96,7 @@ pub struct ElementData {
 impl ElementData {
     pub fn new(
         name: markup5ever::QualName,
-        attrs: Vec<(markup5ever::QualName, StrTendril)>,
+        attrs: Vec<(markup5ever::QualName, AtomicTendril)>,
         template: bool,
         mathml_annotation_xml_integration_point: bool,
     ) -> Self {
@@ -165,10 +171,11 @@ impl std::fmt::Debug for ElementData {
 /// be ignored by any other applications which don't recognize the instruction.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProcessingInstructionData {
-    pub data: StrTendril,
-    pub target: StrTendril,
+    pub data: AtomicTendril,
+    pub target: AtomicTendril,
 }
 
+#[derive(Debug)]
 pub(super) enum NodeData {
     Document(DocumentData),
     Fragment(FragmentData),
@@ -206,8 +213,17 @@ pub(super) struct NodeInner {
     pub(super) data: parking_lot::Mutex<NodeData>,
 }
 
+impl std::fmt::Debug for NodeInner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Node")
+            .field("data", &*self.data.lock())
+            .field("children", &*self.children.lock())
+            .finish()
+    }
+}
+
 /// A node that uses [`Arc`] to prevent clone. Also [`Arc`] is a help for connecting `Rust` to `Python`.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Node {
     value: Arc<NodeInner>,
 }
@@ -532,13 +548,18 @@ impl WeakNode {
 
 pub struct Children<'a> {
     ptr: WeakNode,
-    vec: parking_lot::MappedMutexGuard<'a, Vec<Node>>,
+    pub(crate) vec: parking_lot::MappedMutexGuard<'a, Vec<Node>>,
 }
 
 impl<'a> Children<'a> {
     #[inline]
     pub fn len(&self) -> usize {
         self.vec.len()
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.vec.is_empty()
     }
 
     pub fn position(&self, child: &Node) -> Option<usize> {
@@ -668,6 +689,12 @@ impl Iterator for NodesIterator {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[allow(dead_code)]
+    trait IsSendAndSync: Send + Sync {}
+
+    impl IsSendAndSync for Node {}
+    impl IsSendAndSync for NodeInner {}
 
     macro_rules! create_element {
         ($name:expr, $attrs:expr) => {

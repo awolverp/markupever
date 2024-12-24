@@ -1,3 +1,5 @@
+use crate::core::send::make_atomic_tendril;
+
 use super::node::DocumentData;
 use super::node::ElementData;
 use super::node::Node;
@@ -147,18 +149,19 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
         attrs: Vec<markup5ever::Attribute>,
         flags: markup5ever::interface::ElementFlags,
     ) -> Self::Handle {
-        let node = Node::new(ElementData::new(
+        Node::new(ElementData::new(
             name,
-            attrs.into_iter().map(|x| (x.name, x.value)).collect(),
+            attrs
+                .into_iter()
+                .map(|x| (x.name, make_atomic_tendril(x.value)))
+                .collect(),
             flags.template,
             flags.mathml_annotation_xml_integration_point,
-        ));
+        ))
 
         // if flags.template {
         //     node.children().append(Node::new(NodeData::Fragment));
         // }
-
-        node
     }
 
     fn create_comment(&self, text: tendril::StrTendril) -> Self::Handle {
@@ -166,7 +169,10 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
     }
 
     fn create_pi(&self, target: tendril::StrTendril, data: tendril::StrTendril) -> Self::Handle {
-        Node::new(super::node::ProcessingInstructionData { data, target })
+        Node::new(super::node::ProcessingInstructionData {
+            data: make_atomic_tendril(data),
+            target: make_atomic_tendril(target),
+        })
     }
 
     fn append_doctype_to_document(
@@ -192,7 +198,7 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
                 let mut c = parent.children();
                 if let Some(last) = c.last() {
                     if let Some(mut last_text) = last.as_text() {
-                        last_text.contents.push_tendril(&text);
+                        last_text.contents.push_tendril(&make_atomic_tendril(text));
                         return;
                     }
                 }
@@ -234,7 +240,7 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
                 let c = parent.children();
 
                 if let Some(mut last_text) = c[index - 1].as_text() {
-                    last_text.contents.push_tendril(&text);
+                    last_text.contents.push_tendril(&make_atomic_tendril(text));
                     return;
                 }
 
@@ -269,8 +275,11 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
             .as_element()
             .expect("add_attrs_if_missing called on a non-element node");
 
-        elem.attrs
-            .extend(attrs.into_iter().map(|x| (x.name, x.value)));
+        elem.attrs.extend(
+            attrs
+                .into_iter()
+                .map(|x| (x.name, make_atomic_tendril(x.value))),
+        );
     }
 
     fn remove_from_parent(&self, target: &Self::Handle) {
