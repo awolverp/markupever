@@ -439,6 +439,81 @@ impl Node {
             c.remove(c.position(self).unwrap());
         }
     }
+
+    pub(super) fn as_nodedata(&self) -> parking_lot::MappedMutexGuard<'_, NodeData> {
+        let ref_ = self.value.data.lock();
+        parking_lot::MutexGuard::map(ref_, |x| x)
+    }
+}
+
+enum NodeEdge {
+    Open(Node),
+    Close(markup5ever::QualName),
+}
+
+impl markup5ever::serialize::Serialize for Node {
+    fn serialize<S>(
+        &self,
+        serializer: &mut S,
+        traversal_scope: markup5ever::serialize::TraversalScope,
+    ) -> std::io::Result<()>
+    where
+        S: markup5ever::serialize::Serializer,
+    {
+        let mut edges: Vec<NodeEdge> = Vec::new();
+
+        match traversal_scope {
+            markup5ever::serialize::TraversalScope::IncludeNode => {
+                edges.push(NodeEdge::Open(self.clone()))
+            }
+            markup5ever::serialize::TraversalScope::ChildrenOnly(_) => edges.extend(
+                self.children()
+                    .iter()
+                    .rev()
+                    .map(|h| NodeEdge::Open(h.clone())),
+            ),
+        }
+
+        while let Some(edge) = edges.pop() {
+            match edge {
+                NodeEdge::Close(name) => {
+                    serializer.end_elem(name)?;
+                }
+
+                NodeEdge::Open(node) => match &*node.as_nodedata() {
+                    NodeData::Element(elem) => {
+                        serializer.start_elem(
+                            elem.name.clone(),
+                            elem.attrs.iter().map(|at| (&at.0, &at.1[..])),
+                        )?;
+
+                        edges.push(NodeEdge::Close(elem.name.clone()));
+
+                        edges.extend(
+                            node.children()
+                                .into_iter()
+                                .rev()
+                                .map(|child| NodeEdge::Open(child.clone())),
+                        );
+                    }
+
+                    NodeData::Doctype(doctype) => serializer.write_doctype(&doctype.name)?,
+
+                    NodeData::Text(t) => serializer.write_text(&t.contents)?,
+
+                    NodeData::Comment(c) => serializer.write_comment(&c.contents)?,
+
+                    NodeData::ProcessingInstruction(pi) => {
+                        serializer.write_processing_instruction(&pi.target, &pi.data)?
+                    }
+
+                    _ => unreachable!(),
+                },
+            }
+        }
+
+        Ok(())
+    }
 }
 
 /// [`WeakNode`] is a version of [`Node`] that holds a non-owning reference to the managed allocation.
