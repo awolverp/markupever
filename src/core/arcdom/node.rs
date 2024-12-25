@@ -9,21 +9,9 @@ use std::sync::Weak;
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DocumentData;
 
-impl DocumentData {
-    pub const fn new() -> Self {
-        Self
-    }
-}
-
 /// The root of a minimal document object
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct FragmentData;
-
-impl FragmentData {
-    pub const fn new() -> Self {
-        Self
-    }
-}
 
 /// the doctype is the required <!doctype html> preamble found at the top of all documents.
 /// Its sole purpose is to prevent a browser from switching into so-called "quirks mode"
@@ -110,6 +98,9 @@ impl ElementData {
         }
     }
 
+    /// Finds the first 'id' attribute and returns its value.
+    /// 
+    /// Also, caches it for the next calls.
     pub fn id(&self) -> Option<&str> {
         self.id
             .get_or_init(|| {
@@ -121,6 +112,9 @@ impl ElementData {
             .as_deref()
     }
 
+    /// Finds 'class' attributes and returns its' values as a list.
+    /// 
+    /// Also, caches it for the next calls.
     pub fn classes(&self) -> std::slice::Iter<'_, markup5ever::LocalName> {
         let classes = self.classes.get_or_init(|| {
             let mut classes = self
@@ -143,10 +137,12 @@ impl ElementData {
         classes.iter()
     }
 
+    /// Clears the 'id' attribute cache
     pub fn clear_id(&mut self) {
         self.id.take();
     }
 
+    /// Clears 'class' attributes cache
     pub fn clear_classes(&mut self) {
         self.classes.take();
     }
@@ -433,14 +429,17 @@ impl Node {
         }
     }
 
+    /// Iterates all nodes and their children like a tree
     pub fn iter(&self) -> NodesIterator {
         NodesIterator::new(self.clone(), true)
     }
 
+    /// Unlike the iter method, iterates all the parents.
     pub fn parents(&self) -> ParentsIterator {
         ParentsIterator::new(self.clone(), false)
     }
 
+    /// Returns `true` if the two [`Node`]s point to the same allocation
     pub fn ptr_eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.value, &other.value)
     }
@@ -753,10 +752,6 @@ mod tests {
 
     #[test]
     pub fn test_data() {
-        assert_eq!(DocumentData::new(), DocumentData::default(),);
-
-        assert_eq!(FragmentData::new(), FragmentData::default(),);
-
         let elem = create_element!("div", vec![]);
         assert_eq!(&*elem.name.local, "div");
 
