@@ -437,6 +437,10 @@ impl Node {
         NodesIterator::new(self.clone(), true)
     }
 
+    pub fn parents(&self) -> ParentsIterator {
+        ParentsIterator::new(self.clone(), false)
+    }
+
     pub fn ptr_eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.value, &other.value)
     }
@@ -681,6 +685,42 @@ impl Iterator for NodesIterator {
         let node = self.vec.pop()?;
 
         self.vec.extend(node.children().into_iter().rev());
+
+        Some(node)
+    }
+}
+
+pub struct ParentsIterator {
+    last: Option<Node>,
+}
+
+impl ParentsIterator {
+    pub fn new(node: Node, include_node: bool) -> Self {
+        let mut s = Self { last: None };
+
+        if include_node {
+            s.last = Some(node);
+        } else {
+            s.last = node
+                .parent()
+                .clone()
+                .map(|x| x.upgrade().expect("dangling weak reference"));
+        }
+
+        s
+    }
+}
+
+impl Iterator for ParentsIterator {
+    type Item = Node;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let node = self.last.take()?;
+
+        self.last = node
+            .parent()
+            .clone()
+            .map(|x| x.upgrade().expect("dangling weak reference"));
 
         Some(node)
     }

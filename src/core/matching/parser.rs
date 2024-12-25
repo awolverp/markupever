@@ -15,9 +15,7 @@ impl selectors::Element for Node {
     }
 
     fn parent_element(&self) -> Option<Self> {
-        self.parent()
-            .clone()
-            .map(|x| x.upgrade().expect("dangling weak reference"))
+        self.parents().find(|x| x.is_element())
     }
 
     fn parent_node_is_shadow_root(&self) -> bool {
@@ -297,6 +295,8 @@ impl Iterator for Select {
 
 #[cfg(test)]
 mod tests {
+    use crate::core::arcdom::parse_html;
+
     use super::*;
 
     #[test]
@@ -316,5 +316,41 @@ mod tests {
     fn test_invalid_expr() {
         let _ = SelectExprGroup::new("<bad expr>").unwrap_err();
         let _ = SelectExprGroup::new("a:child-nth(1)").unwrap_err();
+    }
+
+    #[test]
+    fn test_select() {
+        let tree = parse_html(
+            r#"<div class="title">
+                        <nav class="navbar">
+                            <p id="title">Hello World</p><p id="text">Hello World</p>
+                        </nav>
+                        <nav class="nav2"><p>World</p></nav>
+                        </div>"#,
+            markup5ever::interface::QuirksMode::NoQuirks,
+            true,
+            false,
+        );
+
+        for res in Select::new(tree.root.iter(), "div.title").unwrap() {
+            let elem = res.as_element().unwrap();
+            assert_eq!(&*elem.name.local, "div");
+            assert_eq!(
+                elem.classes().collect::<Vec<_>>(),
+                &[&markup5ever::LocalName::from("title")]
+            );
+        }
+
+        for res in Select::new(tree.root.iter(), "nav.navbar p").unwrap() {
+            let elem = res.as_element().unwrap();
+            assert_eq!(&*elem.name.local, "p");
+            assert!(elem.id().is_some());
+        }
+
+        for res in Select::new(tree.root.iter(), "nav.nav2 p").unwrap() {
+            let elem = res.as_element().unwrap();
+            assert_eq!(&*elem.name.local, "p");
+            assert!(elem.id().is_none());
+        }
     }
 }
