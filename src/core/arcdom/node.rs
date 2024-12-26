@@ -99,7 +99,7 @@ impl ElementData {
     }
 
     /// Finds the first 'id' attribute and returns its value.
-    /// 
+    ///
     /// Also, caches it for the next calls.
     pub fn id(&self) -> Option<&str> {
         self.id
@@ -113,7 +113,7 @@ impl ElementData {
     }
 
     /// Finds 'class' attributes and returns its' values as a list.
-    /// 
+    ///
     /// Also, caches it for the next calls.
     pub fn classes(&self) -> std::slice::Iter<'_, markup5ever::LocalName> {
         let classes = self.classes.get_or_init(|| {
@@ -172,7 +172,7 @@ pub struct ProcessingInstructionData {
 }
 
 #[derive(Debug)]
-pub(super) enum NodeData {
+pub enum NodeData {
     Document(DocumentData),
     Fragment(FragmentData),
     Doctype(DoctypeData),
@@ -268,13 +268,11 @@ macro_rules! _impl_nodedata_functions {
 
 impl Node {
     #[inline]
-    #[allow(private_bounds)]
     pub fn new<T: Into<NodeData>>(data: T) -> Self {
         Self::new_with(data, None, Vec::new())
     }
 
     #[inline]
-    #[allow(private_bounds)]
     pub fn new_with<T: Into<NodeData>>(
         data: T,
         parent: Option<WeakNode>,
@@ -459,7 +457,7 @@ impl Node {
         }
     }
 
-    pub(super) fn as_nodedata(&self) -> parking_lot::MappedMutexGuard<'_, NodeData> {
+    pub fn as_nodedata(&self) -> parking_lot::MappedMutexGuard<'_, NodeData> {
         let ref_ = self.value.data.lock();
         parking_lot::MutexGuard::map(ref_, |x| x)
     }

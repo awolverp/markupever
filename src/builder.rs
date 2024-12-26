@@ -1,4 +1,6 @@
-use crate::core::arcdom::{parse_html_utf8, serialize_html, parse_xml_utf8, serialize_xml, TreeBuilder};
+use crate::core::arcdom::{
+    parse_html_utf8, parse_xml_utf8, serialize_html, serialize_xml, TreeBuilder,
+};
 
 fn quirks_mode_from_u8(value: u8) -> markup5ever::interface::QuirksMode {
     match value {
@@ -92,10 +94,7 @@ impl PyXml {
     #[new]
     #[pyo3(signature=(content, exact_errors=false, /))]
     pub fn new(content: Vec<u8>, exact_errors: bool) -> Self {
-        let dom = parse_xml_utf8(
-            content.as_slice(),
-            exact_errors,
-        );
+        let dom = parse_xml_utf8(content.as_slice(), exact_errors);
 
         Self(dom)
     }

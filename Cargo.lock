@@ -21,22 +21,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
-name = "cachebox"
-version = "0.1.0"
-dependencies = [
- "cssparser",
- "html5ever",
- "markup5ever",
- "parking_lot",
- "precomputed-hash",
- "pyo3",
- "pyo3-build-config",
- "selectors",
- "tendril",
- "xml5ever",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -664,6 +648,22 @@ name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
+
+[[package]]
+name = "xmarkup"
+version = "0.1.0"
+dependencies = [
+ "cssparser",
+ "html5ever",
+ "markup5ever",
+ "parking_lot",
+ "precomputed-hash",
+ "pyo3",
+ "pyo3-build-config",
+ "selectors",
+ "tendril",
+ "xml5ever",
+]
 
 [[package]]
 name = "xml5ever"

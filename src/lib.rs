@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 
-pub mod core;
 pub mod builder;
+pub mod core;
 
 /// A Python module implemented in Rust.
 #[pymodule]
