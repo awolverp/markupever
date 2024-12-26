@@ -21,7 +21,7 @@ fn quirks_mode_to_u8(value: markup5ever::interface::QuirksMode) -> u8 {
 /// HTML Tree / HTML Document Parser
 ///
 /// Parses a HTML document into a tree link of `Node`s
-#[pyo3::pyclass(name = "Html", module = "markupselect._markuplib", frozen)]
+#[pyo3::pyclass(name = "Html", module = "markupselect._rustlib", frozen)]
 pub struct PyHtml(TreeBuilder);
 
 #[pyo3::pymethods]
@@ -69,6 +69,7 @@ impl PyHtml {
     //     pyo3::Py::new(py, node).map(|x| x.into_any())
     // }
 
+    /// Serialize the content into bytes
     pub fn serialize(&self) -> pyo3::PyResult<Vec<u8>> {
         let mut writer = Vec::new();
 
@@ -86,7 +87,7 @@ impl PyHtml {
 /// HTML Tree / HTML Document Parser
 ///
 /// Parses a HTML document into a tree link of `Node`s
-#[pyo3::pyclass(name = "Xml", module = "markupselect._markuplib", frozen)]
+#[pyo3::pyclass(name = "Xml", module = "markupselect._rustlib", frozen)]
 pub struct PyXml(TreeBuilder);
 
 #[pyo3::pymethods]

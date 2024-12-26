@@ -1,11 +1,22 @@
 mod node;
 mod tree;
 
-pub use node::{
-    Children, CommentData, DoctypeData, DocumentData, ElementData, FragmentData, Node,
-    NodesIterator, ProcessingInstructionData, TextData, WeakNode,
-};
-pub use tree::{ErrorWithLine, TreeBuilder};
+pub use node::Children;
+pub use node::CommentData;
+pub use node::DoctypeData;
+pub use node::DocumentData;
+pub use node::ElementData;
+pub use node::FragmentData;
+pub use node::Node;
+pub use node::NodeData;
+pub use node::NodesIterator;
+pub use node::ParentsIterator;
+pub use node::ProcessingInstructionData;
+pub use node::TextData;
+pub use node::WeakNode;
+pub use tree::ClonedExpandedName;
+pub use tree::ErrorWithLine;
+pub use tree::TreeBuilder;
 
 use markup5ever::{local_name, namespace_url};
 use tendril::TendrilSink;

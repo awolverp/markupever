@@ -171,6 +171,15 @@ pub struct ProcessingInstructionData {
     pub target: AtomicTendril,
 }
 
+impl ProcessingInstructionData {
+    pub fn new(data: StrTendril, target: StrTendril) -> Self {
+        Self {
+            data: make_atomic_tendril(data),
+            target: make_atomic_tendril(target),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum NodeData {
     Document(DocumentData),

@@ -169,10 +169,7 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
     }
 
     fn create_pi(&self, target: tendril::StrTendril, data: tendril::StrTendril) -> Self::Handle {
-        Node::new(super::node::ProcessingInstructionData {
-            data: make_atomic_tendril(data),
-            target: make_atomic_tendril(target),
-        })
+        Node::new(super::node::ProcessingInstructionData::new(data, target))
     }
 
     fn append_doctype_to_document(
