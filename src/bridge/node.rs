@@ -147,22 +147,11 @@ impl PyDocumentData {
         Self(arcdom::Node::new(arcdom::DocumentData))
     }
 
-    // /// Converts self into `Node`
-    // pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-    //     let node = PyNode(self.0.clone());
-    //     pyo3::Py::new(py, node).map(|x| x.into_any())
-    // }
-
-    // pub fn __eq__(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<bool> {
-    //     let value = value.bind(py);
-
-    //     if PyDocumentData::is_type_of(value) {
-    //         let data = value.extract::<pyo3::PyRef<'_, PyDocumentData>>()?;
-    //         Ok(self.0.ptr_eq(&data.0))
-    //     } else {
-    //         Ok(false)
-    //     }
-    // }
+    /// Converts self into `Node`
+    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let node = PyNode(self.0.clone());
+        pyo3::Py::new(py, node).map(|x| x.into_any())
+    }
 }
 
 // /// A fragment node data
@@ -178,22 +167,11 @@ impl PyFragmentData {
         Self(arcdom::Node::new(arcdom::FragmentData))
     }
 
-    // /// Converts self into `Node`
-    // pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-    //     let node = PyNode(self.0.clone());
-    //     pyo3::Py::new(py, node).map(|x| x.into_any())
-    // }
-
-    // pub fn __eq__(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<bool> {
-    //     let value = value.bind(py);
-
-    //     if PyFragmentData::is_type_of(value) {
-    //         let data = value.extract::<pyo3::PyRef<'_, PyFragmentData>>()?;
-    //         Ok(self.0.ptr_eq(&data.0))
-    //     } else {
-    //         Ok(false)
-    //     }
-    // }
+    /// Converts self into `Node`
+    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let node = PyNode(self.0.clone());
+        pyo3::Py::new(py, node).map(|x| x.into_any())
+    }
 }
 
 /// A doctype node data
@@ -220,11 +198,11 @@ impl PyDoctypeData {
         Self(node)
     }
 
-    // /// Converts self into `Node`
-    // pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-    //     let node = PyNode(self.0.clone());
-    //     pyo3::Py::new(py, node).map(|x| x.into_any())
-    // }
+    /// Converts self into `Node`
+    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let node = PyNode(self.0.clone());
+        pyo3::Py::new(py, node).map(|x| x.into_any())
+    }
 
     #[getter]
     pub fn name(&self) -> String {
@@ -279,17 +257,6 @@ impl PyDoctypeData {
             .expect("PyDoctypeData holds a node other than doctype")
             .system_id = value.into();
     }
-
-    // pub fn __eq__(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<bool> {
-    //     let value = value.bind(py);
-
-    //     if PyDoctypeData::is_type_of(value) {
-    //         let data = value.extract::<pyo3::PyRef<'_, PyDoctypeData>>()?;
-    //         Ok(self.0.ptr_eq(&data.0))
-    //     } else {
-    //         Ok(false)
-    //     }
-    // }
 }
 
 /// A comment node data
@@ -312,11 +279,11 @@ impl PyCommentData {
         Self(node)
     }
 
-    // /// Converts self into `Node`
-    // pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-    //     let node = PyNode(self.0.clone());
-    //     pyo3::Py::new(py, node).map(|x| x.into_any())
-    // }
+    /// Converts self into `Node`
+    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let node = PyNode(self.0.clone());
+        pyo3::Py::new(py, node).map(|x| x.into_any())
+    }
 
     #[getter]
     pub fn contents(&self) -> String {
@@ -335,17 +302,6 @@ impl PyCommentData {
             .expect("PyCommentData holds a node other than comment")
             .contents = value.into();
     }
-
-    // pub fn __eq__(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<bool> {
-    //     let value = value.bind(py);
-
-    //     if PyCommentData::is_type_of(value) {
-    //         let data = value.extract::<pyo3::PyRef<'_, PyCommentData>>()?;
-    //         Ok(self.0.ptr_eq(&data.0))
-    //     } else {
-    //         Ok(false)
-    //     }
-    // }
 }
 
 /// A text node data
@@ -362,11 +318,11 @@ impl PyTextData {
         Self(node)
     }
 
-    // /// Converts self into `Node`
-    // pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-    //     let node = PyNode(self.0.clone());
-    //     pyo3::Py::new(py, node).map(|x| x.into_any())
-    // }
+    /// Converts self into `Node`
+    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let node = PyNode(self.0.clone());
+        pyo3::Py::new(py, node).map(|x| x.into_any())
+    }
 
     #[getter]
     pub fn contents(&self) -> String {
@@ -393,14 +349,14 @@ impl PyTextData {
 /// a Node which embeds an instruction targeting a specific application but that can
 /// be ignored by any other applications which don't recognize the instruction.
 #[pyo3::pyclass(
-    name = "ProcessingInstructionNodeData",
+    name = "ProcessingInstructionData",
     module = "markupselect._rustlib",
     frozen
 )]
-pub struct PyProcessingInstructionNodeData(pub arcdom::Node);
+pub struct PyProcessingInstructionData(pub arcdom::Node);
 
 #[pyo3::pymethods]
-impl PyProcessingInstructionNodeData {
+impl PyProcessingInstructionData {
     #[new]
     #[pyo3(signature=(data, target, /))]
     pub fn new(data: String, target: String) -> Self {
@@ -412,19 +368,17 @@ impl PyProcessingInstructionNodeData {
         Self(node)
     }
 
-    // /// Converts self into `Node`
-    // pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-    //     let node = PyNode(self.0.clone());
-    //     pyo3::Py::new(py, node).map(|x| x.into_any())
-    // }
+    /// Converts self into `Node`
+    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let node = PyNode(self.0.clone());
+        pyo3::Py::new(py, node).map(|x| x.into_any())
+    }
 
     #[getter]
     pub fn data(&self) -> String {
         self.0
             .as_processing_instruction()
-            .expect(
-                "PyProcessingInstructionNodeData holds a node other than processing instruction",
-            )
+            .expect("PyProcessingInstructionData holds a node other than processing instruction")
             .data
             .clone()
             .into()
@@ -434,9 +388,7 @@ impl PyProcessingInstructionNodeData {
     pub fn set_data(&self, value: String) {
         self.0
             .as_processing_instruction()
-            .expect(
-                "PyProcessingInstructionNodeData holds a node other than processing instruction",
-            )
+            .expect("PyProcessingInstructionData holds a node other than processing instruction")
             .data = value.into();
     }
 
@@ -444,9 +396,7 @@ impl PyProcessingInstructionNodeData {
     pub fn target(&self) -> String {
         self.0
             .as_processing_instruction()
-            .expect(
-                "PyProcessingInstructionNodeData holds a node other than processing instruction",
-            )
+            .expect("PyProcessingInstructionData holds a node other than processing instruction")
             .target
             .clone()
             .into()
@@ -456,746 +406,270 @@ impl PyProcessingInstructionNodeData {
     pub fn set_target(&self, value: String) {
         self.0
             .as_processing_instruction()
-            .expect(
-                "PyProcessingInstructionNodeData holds a node other than processing instruction",
-            )
+            .expect("PyProcessingInstructionData holds a node other than processing instruction")
             .target = value.into();
     }
 }
 
-// /// The element node data's attributes
-// #[pyo3::pyclass(name = "ElementNodeDataAttributes", module = "markupselect._rustlib")]
-// pub struct PyElementNodeDataAttributes {
-//     pub node: Node,
-//     index: usize,
-//     len: usize,
-// }
-
-// #[pyo3::pymethods]
-// impl PyElementNodeDataAttributes {
-//     #[new]
-//     #[allow(unused_variables)]
-//     pub fn new(element: pyo3::PyObject) -> pyo3::PyResult<Self> {
-//         Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
-//             "Use ElementNodeData.attrs property; don't use this constructor directly.",
-//         ))
-//     }
-
-//     pub fn __len__(&self) -> usize {
-//         if let NodeData::Element { attrs, .. } = &*self.node.data() {
-//             attrs.len()
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeDataAttributes holds a node other than element: {:?}",
-//                 &*self.node.data()
-//             );
-//         }
-//     }
-
-//     pub fn __getitem__(
-//         &self,
-//         py: pyo3::Python<'_>,
-//         index: usize,
-//     ) -> pyo3::PyResult<pyo3::PyObject> {
-//         if let NodeData::Element { attrs, .. } = &*self.node.data() {
-//             let n = match attrs.get(index) {
-//                 Some(x) => x,
-//                 None => {
-//                     return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
-//                         "out of range",
-//                     ))
-//                 }
-//             };
-
-//             let tuple = pyo3::types::PyTuple::new(
-//                 py,
-//                 [
-//                     pyo3::Py::new(py, PyQualName(parking_lot::Mutex::new(n.0.clone())))?.into_any(),
-//                     pyo3::types::PyString::new(py, &n.1).into(),
-//                 ],
-//             )?;
-
-//             Ok(tuple.into())
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeDataAttributes holds a node other than element: {:?}",
-//                 &*self.node.data()
-//             );
-//         }
-//     }
-
-//     pub fn __setitem__(
-//         &self,
-//         py: pyo3::Python<'_>,
-//         index: usize,
-//         value: Vec<pyo3::PyObject>,
-//     ) -> pyo3::PyResult<()> {
-//         if value.len() != 2 {
-//             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
-//                 "the value must be a tuple (or list) with size 2",
-//             ));
-//         }
-
-//         if let NodeData::Element {
-//             attrs,
-//             _classes,
-//             _id,
-//             ..
-//         } = &mut *self.node.data()
-//         {
-//             if index >= attrs.len() {
-//                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
-//                     "out of range",
-//                 ));
-//             }
-
-//             let qual = unsafe { qualname_from_pyobject(py, &value[0])? };
-
-//             if unsafe { pyo3::ffi::PyUnicode_Check(value[1].as_ptr()) == 0 } {
-//                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-//                     "the value argument #2 must be str",
-//                 ));
-//             }
-
-//             let val = unsafe { value[1].extract::<String>(py).unwrap_unchecked() };
-
-//             if &*qual.local == "class" {
-//                 _classes.take();
-//             } else if &*qual.local == "id" {
-//                 _id.take();
-//             }
-
-//             attrs[index] = (qual, val.into());
-//             Ok(())
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeDataAttributes holds a node other than element: {:?}",
-//                 &*self.node.data()
-//             );
-//         }
-//     }
-
-//     pub fn __delitem__(&self, index: usize) -> pyo3::PyResult<()> {
-//         if let NodeData::Element {
-//             attrs,
-//             _classes,
-//             _id,
-//             ..
-//         } = &mut *self.node.data()
-//         {
-//             if index >= attrs.len() {
-//                 Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
-//                     "out of range",
-//                 ))
-//             } else {
-//                 _classes.take();
-//                 _id.take();
-//                 attrs.remove(index);
-//                 Ok(())
-//             }
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeDataAttributes holds a node other than element: {:?}",
-//                 &*self.node.data()
-//             );
-//         }
-//     }
-
-//     pub fn sort(&self) {
-//         if let NodeData::Element { attrs, .. } = &mut *self.node.data() {
-//             attrs.sort_unstable();
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeDataAttributes holds a node other than element: {:?}",
-//                 &*self.node.data()
-//             );
-//         }
-//     }
-
-//     pub fn clear(&self) {
-//         if let NodeData::Element {
-//             attrs,
-//             _classes,
-//             _id,
-//             ..
-//         } = &mut *self.node.data()
-//         {
-//             _classes.take();
-//             _id.take();
-//             attrs.clear();
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeDataAttributes holds a node other than element: {:?}",
-//                 &*self.node.data()
-//             );
-//         }
-//     }
-
-//     pub fn append(&self, py: pyo3::Python<'_>, value: Vec<pyo3::PyObject>) -> pyo3::PyResult<()> {
-//         if value.len() != 2 {
-//             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
-//                 "the value must be a tuple (or list) with size 2",
-//             ));
-//         }
-
-//         if let NodeData::Element {
-//             attrs,
-//             _classes,
-//             _id,
-//             ..
-//         } = &mut *self.node.data()
-//         {
-//             let qual = unsafe { qualname_from_pyobject(py, &value[0])? };
-
-//             if unsafe { pyo3::ffi::PyUnicode_Check(value[1].as_ptr()) == 0 } {
-//                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-//                     "the value argument #2 must be str",
-//                 ));
-//             }
-
-//             let val = unsafe { value[1].extract::<String>(py).unwrap_unchecked() };
-
-//             if &*qual.local == "class" {
-//                 _classes.take();
-//             } else if &*qual.local == "id" {
-//                 _id.take();
-//             }
-
-//             attrs.push((qual, val.into()));
-//             Ok(())
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeDataAttributes holds a node other than element: {:?}",
-//                 &*self.node.data()
-//             );
-//         }
-//     }
-
-//     pub fn __iter__(mut slf: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::PyRefMut<'_, Self>> {
-//         if slf.len != 0 {
-//             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-//                 // TODO: fix this text
-//                 "you can iterate PyElementNodeDataAttributes instance once in a time",
-//             ));
-//         }
-
-//         slf.index = 0;
-//         slf.len = slf.__len__();
-//         Ok(slf)
-//     }
-
-//     pub fn __next__(
-//         mut slf: pyo3::PyRefMut<'_, Self>,
-//         py: pyo3::Python<'_>,
-//     ) -> pyo3::PyResult<pyo3::PyObject> {
-//         let real_len = slf.__len__();
-
-//         if slf.len != real_len {
-//             slf.len = 0;
-//             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-//                 "node attrs size changed during iteration",
-//             ));
-//         }
-
-//         if slf.index >= real_len {
-//             slf.len = 0;
-//             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()));
-//         }
-
-//         let tuple = if let NodeData::Element { attrs, .. } = &*slf.node.data() {
-//             let n = &attrs[slf.index];
-
-//             pyo3::types::PyTuple::new(
-//                 py,
-//                 [
-//                     pyo3::Py::new(py, PyQualName(parking_lot::Mutex::new(n.0.clone())))?.into_any(),
-//                     pyo3::types::PyString::new(py, &n.1).into(),
-//                 ],
-//             )?
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeDataAttributes holds a node other than element: {:?}",
-//                 &*slf.node.data()
-//             );
-//         };
-
-//         slf.index += 1;
-//         Ok(tuple.into())
-//     }
-
-//     pub fn __eq__(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<bool> {
-//         let value = value.bind(py);
-
-//         if PyElementNodeDataAttributes::is_type_of(value) {
-//             let data = value.extract::<pyo3::PyRef<'_, PyElementNodeDataAttributes>>()?;
-//             Ok(self.node.ptr_eq(&data.node))
-//         } else {
-//             Ok(false)
-//         }
-//     }
-
-//     pub fn __repr__(&self) -> String {
-//         self.to_string()
-//     }
-// }
-
-// impl std::fmt::Display for PyElementNodeDataAttributes {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         if let NodeData::Element { attrs, .. } = &*self.node.data() {
-//             write!(f, "ElementNodeDataAttributes([")?;
-
-//             let mut iter_ = attrs.iter();
-
-//             if let Some((key, val)) = iter_.next() {
-//                 write!(f, "({:?}, {:?})", &*key.local, val.as_ref())?
-//             }
-
-//             for (key, val) in iter_ {
-//                 write!(f, ", ({:?}, {:?})", &*key.local, val.as_ref())?;
-//             }
-
-//             write!(f, "])")
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeDataAttributes holds a node other than element: {:?}",
-//                 &*self.node.data()
-//             );
-//         }
-//     }
-// }
-
-// /// An element node data
-// #[pyo3::pyclass(name = "ElementNodeData", module = "markupselect._rustlib", frozen)]
-// pub struct PyElementNodeData(pub Node);
-
-// #[pyo3::pymethods]
-// impl PyElementNodeData {
-//     #[new]
-//     #[pyo3(signature=(name, attrs, template=false, mathml_annotation_xml_integration_point=false, /))]
-//     pub fn new(
-//         py: pyo3::Python<'_>,
-//         name: pyo3::PyObject,
-//         attrs: Vec<(pyo3::PyObject, String)>,
-//         template: bool,
-//         mathml_annotation_xml_integration_point: bool,
-//     ) -> pyo3::PyResult<Self> {
-//         let name = unsafe { qualname_from_pyobject(py, &name)? };
-
-//         let mut attributes: Vec<(QualName, crate::markuplib::AtomicTendril)> = Vec::new();
-//         attributes
-//             .try_reserve(attrs.len())
-//             .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyMemoryError, _>(e.to_string()))?;
-
-//         for (key, val) in attrs.into_iter() {
-//             let key = unsafe { qualname_from_pyobject(py, &key)? };
-//             attributes.push((key, val.into()));
-//         }
-
-//         let node = Node::new(NodeData::Element {
-//             name,
-//             attrs: attributes,
-//             template,
-//             mathml_annotation_xml_integration_point,
-//             _id: std::sync::OnceLock::new(),
-//             _classes: std::sync::OnceLock::new(),
-//         });
-
-//         Ok(Self(node))
-//     }
-
-//     /// Converts self into `Node`
-//     pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-//         let node = PyNode(self.0.clone());
-//         pyo3::Py::new(py, node).map(|x| x.into_any())
-//     }
-
-//     #[getter]
-//     pub fn name(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-//         if let NodeData::Element { name, .. } = &*self.0.data() {
-//             let qual = PyQualName(parking_lot::Mutex::new(name.clone()));
-//             pyo3::Py::new(py, qual).map(|x| x.into_any())
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeData holds a node other than element: {:?}",
-//                 &*self.0.data()
-//             );
-//         }
-//     }
-
-//     #[setter]
-//     pub fn set_name(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<()> {
-//         let value = unsafe { qualname_from_pyobject(py, &value)? };
-
-//         if let NodeData::Element { name, .. } = &mut *self.0.data() {
-//             *name = value;
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeData holds a node other than element: {:?}",
-//                 &*self.0.data()
-//             );
-//         }
-
-//         Ok(())
-//     }
-
-//     #[getter]
-//     pub fn attrs(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-//         let attrs = PyElementNodeDataAttributes {
-//             node: self.0.clone(),
-//             index: 0,
-//             len: 0,
-//         };
-
-//         pyo3::Py::new(py, attrs).map(|x| x.into_any())
-//     }
-
-//     #[getter]
-//     pub fn id(&self) -> Option<String> {
-//         self.0.data().id().map(String::from)
-//     }
-
-//     #[getter]
-//     pub fn classes(&self) -> Vec<String> {
-//         let mut classes = Vec::new();
-
-//         for cls in self.0.data().classes() {
-//             classes.push(String::from(cls.as_ref()));
-//         }
-
-//         classes
-//     }
-
-//     #[getter]
-//     pub fn template(&self) -> bool {
-//         if let NodeData::Element { template, .. } = &*self.0.data() {
-//             *template
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeData holds a node other than element: {:?}",
-//                 &*self.0.data()
-//             );
-//         }
-//     }
-
-//     #[setter]
-//     pub fn set_template(&self, value: bool) -> pyo3::PyResult<()> {
-//         if let NodeData::Element { template, .. } = &mut *self.0.data() {
-//             *template = value;
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeData holds a node other than element: {:?}",
-//                 &*self.0.data()
-//             );
-//         }
-
-//         Ok(())
-//     }
-
-//     #[getter]
-//     pub fn mathml_annotation_xml_integration_point(&self) -> bool {
-//         if let NodeData::Element {
-//             mathml_annotation_xml_integration_point,
-//             ..
-//         } = &*self.0.data()
-//         {
-//             *mathml_annotation_xml_integration_point
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeData holds a node other than element: {:?}",
-//                 &*self.0.data()
-//             );
-//         }
-//     }
-
-//     #[setter]
-//     pub fn set_mathml_annotation_xml_integration_point(&self, value: bool) -> pyo3::PyResult<()> {
-//         if let NodeData::Element {
-//             mathml_annotation_xml_integration_point,
-//             ..
-//         } = &mut *self.0.data()
-//         {
-//             *mathml_annotation_xml_integration_point = value;
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeData holds a node other than element: {:?}",
-//                 &*self.0.data()
-//             );
-//         }
-
-//         Ok(())
-//     }
-
-//     pub fn __eq__(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<bool> {
-//         let value = value.bind(py);
-
-//         if PyElementNodeData::is_type_of(value) {
-//             let data = value.extract::<pyo3::PyRef<'_, PyElementNodeData>>()?;
-//             Ok(self.0.ptr_eq(&data.0))
-//         } else {
-//             Ok(false)
-//         }
-//     }
-
-//     pub fn __repr__(&self) -> String {
-//         self.to_string()
-//     }
-// }
-
-// impl std::fmt::Display for PyElementNodeData {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         if let NodeData::Element { name, attrs, .. } = &*self.0.data() {
-//             write!(
-//                 f,
-//                 "ElementNodeData(name=QualName(local={:?}, namespace={:?}, prefix={:?}), attrs=ElementNodeDataAttributes([",
-//                 name.local.as_ref(),
-//                 name.ns.as_ref(),
-//                 name.prefix.as_deref(),
-//             )?;
-
-//             let mut iter_ = attrs.iter();
-
-//             if let Some((key, val)) = iter_.next() {
-//                 write!(f, "({:?}, {:?})", &*key.local, val.as_ref())?
-//             }
-
-//             for (key, val) in iter_ {
-//                 write!(f, ", ({:?}, {:?})", &*key.local, val.as_ref())?;
-//             }
-
-//             write!(f, "]))")
-//         } else {
-//             unreachable!(
-//                 "PyElementNodeData holds a node other than element: {:?}",
-//                 &*self.0.data()
-//             );
-//         }
-//     }
-// }
-
-// /// Iterate all nodes
-// #[pyo3::pyclass(name = "NodesIterator", module = "markupselect._rustlib")]
-// pub struct PyNodesIterator(pub NodesIterator);
-
-// #[pyo3::pymethods]
-// impl PyNodesIterator {
-//     #[new]
-//     #[allow(unused_variables)]
-//     pub fn new(node: pyo3::PyObject) -> pyo3::PyResult<Self> {
-//         Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
-//             "Use Node.iterall() method; don't use this constructor directly.",
-//         ))
-//     }
-
-//     pub fn __iter__(slf: pyo3::PyRef<'_, Self>) -> pyo3::PyRef<'_, Self> {
-//         slf
-//     }
-
-//     pub fn __next__(
-//         mut slf: pyo3::PyRefMut<'_, Self>,
-//         py: pyo3::Python<'_>,
-//     ) -> pyo3::PyResult<pyo3::PyObject> {
-//         match slf.0.next() {
-//             Some(n) => {
-//                 let n = PyNode(n);
-//                 Ok(pyo3::Py::new(py, n)?.into_any())
-//             }
-//             None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
-//         }
-//     }
-// }
-
-// /// A node
-// #[pyo3::pyclass(name = "Node", module = "markupselect._rustlib", frozen)]
-// pub struct PyNode(pub Node);
-
-// #[pyo3::pymethods]
-// impl PyNode {
-//     #[new]
-//     #[pyo3(signature=(data, /))]
-//     pub fn new(py: pyo3::Python<'_>, data: pyo3::PyObject) -> pyo3::PyResult<Self> {
-//         let data = data.bind(py);
-
-//         if PyNode::is_type_of(data) {
-//             let data = data.extract::<pyo3::PyRef<'_, PyNode>>().unwrap();
-
-//             Ok(Self(data.0.clone()))
-//         } else if PyDocumentNodeData::is_type_of(data) {
-//             let data = data
-//                 .extract::<pyo3::PyRef<'_, PyDocumentNodeData>>()
-//                 .unwrap();
-
-//             Ok(Self(data.0.clone()))
-//         } else if PyFragmentNodeData::is_type_of(data) {
-//             let data = data
-//                 .extract::<pyo3::PyRef<'_, PyFragmentNodeData>>()
-//                 .unwrap();
-
-//             Ok(Self(data.0.clone()))
-//         } else if PyDoctypeNodeData::is_type_of(data) {
-//             let data = data
-//                 .extract::<pyo3::PyRef<'_, PyDoctypeNodeData>>()
-//                 .unwrap();
-
-//             Ok(Self(data.0.clone()))
-//         } else if PyCommentNodeData::is_type_of(data) {
-//             let data = data
-//                 .extract::<pyo3::PyRef<'_, PyCommentNodeData>>()
-//                 .unwrap();
-
-//             Ok(Self(data.0.clone()))
-//         } else if PyTextData::is_type_of(data) {
-//             let data = data.extract::<pyo3::PyRef<'_, PyTextData>>().unwrap();
-
-//             Ok(Self(data.0.clone()))
-//         } else if PyElementNodeData::is_type_of(data) {
-//             let data = data
-//                 .extract::<pyo3::PyRef<'_, PyElementNodeData>>()
-//                 .unwrap();
-
-//             Ok(Self(data.0.clone()))
-//         } else if PyProcessingInstructionNodeData::is_type_of(data) {
-//             let data = data
-//                 .extract::<pyo3::PyRef<'_, PyProcessingInstructionNodeData>>()
-//                 .unwrap();
-
-//             Ok(Self(data.0.clone()))
-//         } else {
-//             Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-//                 "argument is not acceptable. must be an instance of: Node, PyDocumentNodeData, PyFragmentNodeData, PyDoctypeNodeData, PyCommentNodeData, PytextNodeData, PyElementNodeData, or PyProcessingInstructionNodeData",
-//             ))
-//         }
-//     }
-
-//     /// Returns the node data as `Py*NodeData` classes
-//     pub fn data(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-//         let data = self.0.data();
-
-//         let result = match &*data {
-//             NodeData::Document => {
-//                 let r = pyo3::Py::new(py, PyDocumentNodeData(self.0.clone()))?;
-//                 r.into_any()
-//             }
-//             NodeData::Fragment => {
-//                 let r = pyo3::Py::new(py, PyFragmentNodeData(self.0.clone()))?;
-//                 r.into_any()
-//             }
-//             NodeData::Doctype { .. } => {
-//                 let r = pyo3::Py::new(py, PyDoctypeNodeData(self.0.clone()))?;
-//                 r.into_any()
-//             }
-//             NodeData::Text { .. } => {
-//                 let r = pyo3::Py::new(py, PyTextNodeData(self.0.clone()))?;
-//                 r.into_any()
-//             }
-//             NodeData::Comment { .. } => {
-//                 let r = pyo3::Py::new(py, PyCommentNodeData(self.0.clone()))?;
-//                 r.into_any()
-//             }
-//             NodeData::Element { .. } => {
-//                 let r = pyo3::Py::new(py, PyElementNodeData(self.0.clone()))?;
-//                 r.into_any()
-//             }
-//             NodeData::ProcessingInstruction { .. } => {
-//                 let r = pyo3::Py::new(py, PyProcessingInstructionNodeData(self.0.clone()))?;
-//                 r.into_any()
-//             }
-//         };
-
-//         Ok(result)
-//     }
-
-//     /// Returns `True` if the node is a document
-//     pub fn is_document(&self) -> bool {
-//         self.0.data().is_document()
-//     }
-
-//     /// Returns `True` if the node is a fragment
-//     pub fn is_fragment(&self) -> bool {
-//         self.0.data().is_fragment()
-//     }
-
-//     /// Returns `True` if the node is a doctype
-//     pub fn is_doctype(&self) -> bool {
-//         self.0.data().is_doctype()
-//     }
-
-//     /// Returns `True` if the node is a comment
-//     pub fn is_comment(&self) -> bool {
-//         self.0.data().is_comment()
-//     }
-
-//     /// Returns `True` if the node is a text
-//     pub fn is_text(&self) -> bool {
-//         self.0.data().is_text()
-//     }
-
-//     /// Returns `True` if the node is an element
-//     pub fn is_element(&self) -> bool {
-//         self.0.data().is_element()
-//     }
-
-//     /// Returns `True` if the node is a processing instruction
-//     pub fn is_processing_instruction(&self) -> bool {
-//         self.0.data().is_processing_instruction()
-//     }
-
-//     /// Returns the parent node
-//     pub fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
-//         match &*self.0.parent() {
-//             Some(parent) => {
-//                 let node = PyNode(
-//                     parent
-//                         .upgrade()
-//                         .expect("dangling weak pointer - node.parent()"),
-//                 );
-//                 Some(pyo3::Py::new(py, node).unwrap().into_any())
-//             }
-//             None => None,
-//         }
-//     }
-
-//     pub fn serialize_xml(&self) -> pyo3::PyResult<Vec<u8>> {
-//         let s = crate::markuplib::builder::NodeSerializer::new(&self.0);
-//         let mut writer = Vec::new();
-
-//         crate::markuplib::serialize_xml(&mut writer, &s)
-//             .map_err(|x| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(x.to_string()))?;
-
-//         Ok(writer)
-//     }
-
-//     pub fn serialize_html(&self) -> pyo3::PyResult<Vec<u8>> {
-//         let s = crate::markuplib::builder::NodeSerializer::new(&self.0);
-//         let mut writer = Vec::new();
-
-//         crate::markuplib::serialize_html(&mut writer, &s)
-//             .map_err(|x| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(x.to_string()))?;
-
-//         Ok(writer)
-//     }
-
-//     #[pyo3(signature=(include_self=true, /))]
-//     pub fn iterall(
-//         &self,
-//         py: pyo3::Python<'_>,
-//         include_self: bool,
-//     ) -> pyo3::PyResult<pyo3::PyObject> {
-//         let iter = NodesIterator::new(&self.0, include_self);
-//         Ok(pyo3::Py::new(py, PyNodesIterator(iter))?.into_any())
-//     }
-
-//     pub fn __eq__(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<bool> {
-//         let value = value.bind(py);
-
-//         if PyNode::is_type_of(value) {
-//             let data = value.extract::<pyo3::PyRef<'_, PyNode>>()?;
-//             Ok(self.0.ptr_eq(&data.0))
-//         } else {
-//             Ok(false)
-//         }
-//     }
-
-//     pub fn __repr__(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<String> {
-//         Ok(format!("Node({})", self.data(py)?.to_string()))
-//     }
-// }
+/// An element node data
+#[pyo3::pyclass(name = "ElementData", module = "markupselect._rustlib", frozen)]
+pub struct PyElementData(pub arcdom::Node);
+
+#[pyo3::pymethods]
+impl PyElementData {
+    #[new]
+    #[pyo3(signature=(name, attrs, template=false, mathml_annotation_xml_integration_point=false, /))]
+    pub fn new(
+        py: pyo3::Python<'_>,
+        name: pyo3::PyObject,
+        attrs: Vec<(pyo3::PyObject, String)>,
+        template: bool,
+        mathml_annotation_xml_integration_point: bool,
+    ) -> pyo3::PyResult<Self> {
+        let name = unsafe { qualname_from_pyobject(py, &name)? };
+
+        let mut attributes: Vec<(markup5ever::QualName, crate::core::send::AtomicTendril)> =
+            Vec::new();
+        attributes
+            .try_reserve(attrs.len())
+            .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyMemoryError, _>(e.to_string()))?;
+
+        for (key, val) in attrs.into_iter() {
+            let key = unsafe { qualname_from_pyobject(py, &key)? };
+            attributes.push((key, val.into()));
+        }
+
+        let node = arcdom::Node::new(arcdom::ElementData::new(
+            name,
+            attributes,
+            template,
+            mathml_annotation_xml_integration_point,
+        ));
+
+        Ok(Self(node))
+    }
+
+    /// Converts self into `Node`
+    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let node = PyNode(self.0.clone());
+        pyo3::Py::new(py, node).map(|x| x.into_any())
+    }
+
+    #[getter]
+    pub fn name(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let qual = PyQualName(parking_lot::Mutex::new(
+            self.0
+                .as_element()
+                .expect("PyElementData holds a node other than element")
+                .name
+                .clone(),
+        ));
+        pyo3::Py::new(py, qual).map(|x| x.into_any())
+    }
+
+    #[setter]
+    pub fn set_name(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<()> {
+        let value = unsafe { qualname_from_pyobject(py, &value)? };
+
+        self.0
+            .as_element()
+            .expect("PyElementData holds a node other than element")
+            .name = value.into();
+
+        Ok(())
+    }
+
+    // #[getter]
+    // pub fn attrs(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+    //     let attrs = PyElementDataAttributes {
+    //         node: self.0.clone(),
+    //         index: 0,
+    //         len: 0,
+    //     };
+
+    //     pyo3::Py::new(py, attrs).map(|x| x.into_any())
+    // }
+
+    #[getter]
+    pub fn id(&self) -> Option<String> {
+        self.0
+            .as_element()
+            .expect("PyElementData holds a node other than element")
+            .id()
+            .map(String::from)
+    }
+
+    #[getter]
+    pub fn classes(&self) -> Vec<String> {
+        let mut classes = Vec::new();
+
+        for cls in self
+            .0
+            .as_element()
+            .expect("PyElementData holds a node other than element")
+            .classes()
+        {
+            classes.push(String::from(cls.as_ref()));
+        }
+
+        classes
+    }
+
+    #[getter]
+    pub fn template(&self) -> bool {
+        self.0
+            .as_element()
+            .expect("PyElementData holds a node other than element")
+            .template
+    }
+
+    #[setter]
+    pub fn set_template(&self, value: bool) {
+        self.0
+            .as_element()
+            .expect("PyElementData holds a node other than element")
+            .template = value;
+    }
+
+    #[getter]
+    pub fn mathml_annotation_xml_integration_point(&self) -> bool {
+        self.0
+            .as_element()
+            .expect("PyElementData holds a node other than element")
+            .mathml_annotation_xml_integration_point
+    }
+
+    #[setter]
+    pub fn set_mathml_annotation_xml_integration_point(&self, value: bool) {
+        self.0
+            .as_element()
+            .expect("PyElementData holds a node other than element")
+            .mathml_annotation_xml_integration_point = value;
+    }
+}
+
+/// A node
+#[pyo3::pyclass(name = "Node", module = "markupselect._rustlib", frozen)]
+pub struct PyNode(pub arcdom::Node);
+
+#[pyo3::pymethods]
+impl PyNode {
+    #[new]
+    #[pyo3(signature=(data, /))]
+    pub fn new(py: pyo3::Python<'_>, data: pyo3::PyObject) -> pyo3::PyResult<Self> {
+        let data = data.bind(py);
+
+        if PyNode::is_type_of(data) {
+            let data = data.extract::<pyo3::PyRef<'_, PyNode>>().unwrap();
+
+            Ok(Self(data.0.clone()))
+        } else if PyDocumentData::is_type_of(data) {
+            let data = data.extract::<pyo3::PyRef<'_, PyDocumentData>>().unwrap();
+
+            Ok(Self(data.0.clone()))
+        } else if PyFragmentData::is_type_of(data) {
+            let data = data.extract::<pyo3::PyRef<'_, PyFragmentData>>().unwrap();
+
+            Ok(Self(data.0.clone()))
+        } else if PyDoctypeData::is_type_of(data) {
+            let data = data.extract::<pyo3::PyRef<'_, PyDoctypeData>>().unwrap();
+
+            Ok(Self(data.0.clone()))
+        } else if PyCommentData::is_type_of(data) {
+            let data = data.extract::<pyo3::PyRef<'_, PyCommentData>>().unwrap();
+
+            Ok(Self(data.0.clone()))
+        } else if PyTextData::is_type_of(data) {
+            let data = data.extract::<pyo3::PyRef<'_, PyTextData>>().unwrap();
+
+            Ok(Self(data.0.clone()))
+        } else if PyElementData::is_type_of(data) {
+            let data = data.extract::<pyo3::PyRef<'_, PyElementData>>().unwrap();
+
+            Ok(Self(data.0.clone()))
+        } else if PyProcessingInstructionData::is_type_of(data) {
+            let data = data
+                .extract::<pyo3::PyRef<'_, PyProcessingInstructionData>>()
+                .unwrap();
+
+            Ok(Self(data.0.clone()))
+        } else {
+            Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                "argument is not acceptable. must be an instance of: Node, PyDocumentData, PyFragmentData, PyDoctypeData, PyCommentData, PytextData, PyElementData, or PyProcessingInstructionData",
+            ))
+        }
+    }
+
+    /// Returns the node data as `Py*Data` classes
+    pub fn data(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let data = self.0.as_nodedata();
+
+        let result = match &*data {
+            arcdom::NodeData::Document(..) => {
+                let r = pyo3::Py::new(py, PyDocumentData(self.0.clone()))?;
+                r.into_any()
+            }
+            arcdom::NodeData::Fragment(..) => {
+                let r = pyo3::Py::new(py, PyFragmentData(self.0.clone()))?;
+                r.into_any()
+            }
+            arcdom::NodeData::Doctype(..) => {
+                let r = pyo3::Py::new(py, PyDoctypeData(self.0.clone()))?;
+                r.into_any()
+            }
+            arcdom::NodeData::Text(..) => {
+                let r = pyo3::Py::new(py, PyTextData(self.0.clone()))?;
+                r.into_any()
+            }
+            arcdom::NodeData::Comment(..) => {
+                let r = pyo3::Py::new(py, PyCommentData(self.0.clone()))?;
+                r.into_any()
+            }
+            arcdom::NodeData::Element(..) => {
+                let r = pyo3::Py::new(py, PyElementData(self.0.clone()))?;
+                r.into_any()
+            }
+            arcdom::NodeData::ProcessingInstruction(..) => {
+                let r = pyo3::Py::new(py, PyProcessingInstructionData(self.0.clone()))?;
+                r.into_any()
+            }
+        };
+
+        Ok(result)
+    }
+
+    /// Returns `True` if the node is a document
+    pub fn is_document(&self) -> bool {
+        self.0.is_document()
+    }
+
+    /// Returns `True` if the node is a fragment
+    pub fn is_fragment(&self) -> bool {
+        self.0.is_fragment()
+    }
+
+    /// Returns `True` if the node is a doctype
+    pub fn is_doctype(&self) -> bool {
+        self.0.is_doctype()
+    }
+
+    /// Returns `True` if the node is a comment
+    pub fn is_comment(&self) -> bool {
+        self.0.is_comment()
+    }
+
+    /// Returns `True` if the node is a text
+    pub fn is_text(&self) -> bool {
+        self.0.is_text()
+    }
+
+    /// Returns `True` if the node is an element
+    pub fn is_element(&self) -> bool {
+        self.0.is_element()
+    }
+
+    /// Returns `True` if the node is a processing instruction
+    pub fn is_processing_instruction(&self) -> bool {
+        self.0.is_processing_instruction()
+    }
+}
