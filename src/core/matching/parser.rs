@@ -332,7 +332,7 @@ mod tests {
             false,
         );
 
-        for res in Select::new(tree.root.iter(), "div.title").unwrap() {
+        for res in Select::new(tree.root.tree(), "div.title").unwrap() {
             let elem = res.as_element().unwrap();
             assert_eq!(&*elem.name.local, "div");
             assert_eq!(
@@ -341,13 +341,13 @@ mod tests {
             );
         }
 
-        for res in Select::new(tree.root.iter(), "nav.navbar p").unwrap() {
+        for res in Select::new(tree.root.tree(), "nav.navbar p").unwrap() {
             let elem = res.as_element().unwrap();
             assert_eq!(&*elem.name.local, "p");
             assert!(elem.id().is_some());
         }
 
-        for res in Select::new(tree.root.iter(), "nav.nav2 p").unwrap() {
+        for res in Select::new(tree.root.tree(), "nav.nav2 p").unwrap() {
             let elem = res.as_element().unwrap();
             assert_eq!(&*elem.name.local, "p");
             assert!(elem.id().is_none());

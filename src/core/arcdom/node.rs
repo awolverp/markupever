@@ -437,7 +437,7 @@ impl Node {
     }
 
     /// Iterates all nodes and their children like a tree
-    pub fn iter(&self) -> NodesIterator {
+    pub fn tree(&self) -> NodesIterator {
         NodesIterator::new(self.clone(), true)
     }
 
@@ -844,7 +844,7 @@ mod tests {
         assert_eq!(node.children().len(), 3);
 
         let mut v = Vec::new();
-        for n in node.iter() {
+        for n in node.tree() {
             v.push(n);
         }
 
@@ -856,7 +856,7 @@ mod tests {
         assert_eq!(node.children().len(), 2);
 
         let mut v = Vec::new();
-        for n in node.iter() {
+        for n in node.tree() {
             v.push(n);
         }
 
