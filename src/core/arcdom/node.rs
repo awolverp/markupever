@@ -451,10 +451,10 @@ impl Node {
         Arc::ptr_eq(&self.value, &other.value)
     }
 
-    /// Unlink removes this node from its parent.
+    /// Removes this node from its parent.
     #[inline]
     pub fn unlink(&self) {
-        assert!(
+        debug_assert!(
             self.value.parent.is_locked(),
             "before using this method you have to unlock the parent with dropping the mutex guard"
         );
@@ -578,7 +578,7 @@ impl<'a> Children<'a> {
 
     #[inline]
     pub fn append(&mut self, child: Node) {
-        assert!(
+        debug_assert!(
             child.parent().replace(self.ptr.clone()).is_none(),
             "child cannot have existing parent"
         );
@@ -588,7 +588,7 @@ impl<'a> Children<'a> {
 
     #[inline]
     pub fn insert(&mut self, index: usize, child: Node) {
-        assert!(
+        debug_assert!(
             child.parent().replace(self.ptr.clone()).is_none(),
             "child cannot have existing parent"
         );
@@ -624,7 +624,7 @@ impl<'a> Children<'a> {
         let node = self.vec.remove(index);
 
         {
-            assert!(
+            debug_assert!(
                 !node.value.parent.is_locked(),
                 "The child node parent is locked; Unlock it first."
             );
@@ -813,10 +813,10 @@ mod tests {
     #[test]
     fn test_nodedata() {
         let data: NodeData = DocumentData.into();
-        assert!(matches!(data, NodeData::Document(..)));
+        debug_assert!(matches!(data, NodeData::Document(..)));
 
         let data: NodeData = FragmentData.into();
-        assert!(matches!(data, NodeData::Fragment(..)));
+        debug_assert!(matches!(data, NodeData::Fragment(..)));
     }
 
     #[test]
@@ -851,7 +851,7 @@ mod tests {
         assert_eq!(v.len(), 7);
 
         assert_eq!(node.children().position(&child3), Some(2));
-        assert!(node.children().remove(2).ptr_eq(&child3));
+        debug_assert!(node.children().remove(2).ptr_eq(&child3));
 
         assert_eq!(node.children().len(), 2);
 
@@ -865,7 +865,7 @@ mod tests {
         let have_to = vec![node, child1, child1_child, child2, child2_child];
 
         for (v1, v2) in v.iter().zip(have_to.iter()) {
-            assert!(v1.ptr_eq(v2))
+            debug_assert!(v1.ptr_eq(v2))
         }
     }
 }

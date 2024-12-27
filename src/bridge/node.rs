@@ -412,6 +412,232 @@ impl PyProcessingInstructionData {
 }
 
 /// An element node data
+#[pyo3::pyclass(name = "ElementAttributes", module = "markupselect._rustlib")]
+pub struct PyElementAttributes {
+    pub node: arcdom::Node,
+    pub index: usize,
+    pub len: usize,
+}
+
+#[pyo3::pymethods]
+impl PyElementAttributes {
+    #[new]
+    #[allow(unused_variables)]
+    pub fn new(element: pyo3::PyObject) -> pyo3::PyResult<Self> {
+        Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            "Use ElementNodeData.attrs property; don't use this constructor directly.",
+        ))
+    }
+
+    pub fn __len__(&self) -> usize {
+        self.node
+            .as_element()
+            .expect("PyElementAttributes holds a node other than element")
+            .attrs
+            .len()
+    }
+
+    pub fn __getitem__(
+        &self,
+        py: pyo3::Python<'_>,
+        index: usize,
+    ) -> pyo3::PyResult<pyo3::PyObject> {
+        let elem = self
+            .node
+            .as_element()
+            .expect("PyElementAttributes holds a node other than element");
+
+        let n = match elem.attrs.get(index) {
+            Some(x) => x,
+            None => {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                    "out of range",
+                ))
+            }
+        };
+
+        let tuple = pyo3::types::PyTuple::new(
+            py,
+            [
+                pyo3::Py::new(py, PyQualName(parking_lot::Mutex::new(n.0.clone())))?.into_any(),
+                pyo3::types::PyString::new(py, &n.1).into(),
+            ],
+        )?;
+
+        Ok(tuple.into())
+    }
+
+    pub fn __setitem__(
+        &self,
+        py: pyo3::Python<'_>,
+        index: usize,
+        value: Vec<pyo3::PyObject>,
+    ) -> pyo3::PyResult<()> {
+        if value.len() != 2 {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                "the value must be a tuple (or list) with size 2",
+            ));
+        }
+
+        let mut elem = self
+            .node
+            .as_element()
+            .expect("PyElementAttributes holds a node other than element");
+
+        if index >= elem.attrs.len() {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                "out of range",
+            ));
+        }
+
+        let qual = unsafe { qualname_from_pyobject(py, &value[0])? };
+
+        if unsafe { pyo3::ffi::PyUnicode_Check(value[1].as_ptr()) == 0 } {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                "the value argument #2 must be str",
+            ));
+        }
+
+        let val = unsafe { value[1].extract::<String>(py).unwrap_unchecked() };
+
+        if &*qual.local == "class" {
+            elem.clear_classes();
+        } else if &*qual.local == "id" {
+            elem.clear_id();
+        }
+
+        elem.attrs[index] = (qual, val.into());
+        Ok(())
+    }
+
+    pub fn __delitem__(&self, index: usize) -> pyo3::PyResult<()> {
+        let mut elem = self
+            .node
+            .as_element()
+            .expect("PyElementAttributes holds a node other than element");
+
+        if index >= elem.attrs.len() {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                "out of range",
+            ));
+        }
+
+        let (qual, _) = elem.attrs.remove(index);
+
+        if &*qual.local == "class" {
+            elem.clear_classes();
+        } else if &*qual.local == "id" {
+            elem.clear_id();
+        }
+
+        Ok(())
+    }
+
+    pub fn sort(&self) {
+        let mut elem = self
+            .node
+            .as_element()
+            .expect("PyElementAttributes holds a node other than element");
+
+        elem.attrs.sort_unstable();
+    }
+
+    pub fn clear(&self) {
+        let mut elem = self
+            .node
+            .as_element()
+            .expect("PyElementAttributes holds a node other than element");
+
+        elem.attrs.clear();
+        elem.clear_classes();
+        elem.clear_id();
+    }
+
+    pub fn append(&self, py: pyo3::Python<'_>, value: Vec<pyo3::PyObject>) -> pyo3::PyResult<()> {
+        if value.len() != 2 {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                "the value must be a tuple (or list) with size 2",
+            ));
+        }
+
+        let mut elem = self
+            .node
+            .as_element()
+            .expect("PyElementAttributes holds a node other than element");
+
+        let qual = unsafe { qualname_from_pyobject(py, &value[0])? };
+
+        if unsafe { pyo3::ffi::PyUnicode_Check(value[1].as_ptr()) == 0 } {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                "the value argument #2 must be str",
+            ));
+        }
+
+        let val = unsafe { value[1].extract::<String>(py).unwrap_unchecked() };
+
+        if &*qual.local == "class" {
+            elem.clear_classes();
+        } else if &*qual.local == "id" {
+            elem.clear_id();
+        }
+
+        elem.attrs.push((qual, val.into()));
+        Ok(())
+    }
+
+    pub fn __iter__(mut slf: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::PyRefMut<'_, Self>> {
+        if slf.len != 0 {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                // TODO: fix this text
+                "you can iterate PyElementAttributes instance once in a time",
+            ));
+        }
+
+        slf.index = 0;
+        slf.len = slf.__len__();
+        Ok(slf)
+    }
+
+    pub fn __next__(
+        mut slf: pyo3::PyRefMut<'_, Self>,
+        py: pyo3::Python<'_>,
+    ) -> pyo3::PyResult<pyo3::PyObject> {
+        let real_len = slf.__len__();
+
+        if slf.len != real_len {
+            slf.len = 0;
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "node attrs size changed during iteration",
+            ));
+        }
+        if slf.index >= real_len {
+            slf.len = 0;
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()));
+        }
+
+        let tuple = {
+            let elem = slf
+                .node
+                .as_element()
+                .expect("PyElementAttributes holds a node other than element");
+
+            let n = &elem.attrs[slf.index];
+
+            pyo3::types::PyTuple::new(
+                py,
+                [
+                    pyo3::Py::new(py, PyQualName(parking_lot::Mutex::new(n.0.clone())))?.into_any(),
+                    pyo3::types::PyString::new(py, &n.1).into(),
+                ],
+            )?
+        };
+
+        slf.index += 1;
+        Ok(tuple.into())
+    }
+}
+
+/// An element node data
 #[pyo3::pyclass(name = "ElementData", module = "markupselect._rustlib", frozen)]
 pub struct PyElementData(pub arcdom::Node);
 
@@ -430,6 +656,7 @@ impl PyElementData {
 
         let mut attributes: Vec<(markup5ever::QualName, crate::core::send::AtomicTendril)> =
             Vec::new();
+
         attributes
             .try_reserve(attrs.len())
             .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyMemoryError, _>(e.to_string()))?;
@@ -479,16 +706,16 @@ impl PyElementData {
         Ok(())
     }
 
-    // #[getter]
-    // pub fn attrs(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-    //     let attrs = PyElementDataAttributes {
-    //         node: self.0.clone(),
-    //         index: 0,
-    //         len: 0,
-    //     };
+    #[getter]
+    pub fn attrs(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let attrs = PyElementAttributes {
+            node: self.0.clone(),
+            index: 0,
+            len: 0,
+        };
 
-    //     pyo3::Py::new(py, attrs).map(|x| x.into_any())
-    // }
+        pyo3::Py::new(py, attrs).map(|x| x.into_any())
+    }
 
     #[getter]
     pub fn id(&self) -> Option<String> {
@@ -671,5 +898,31 @@ impl PyNode {
     /// Returns `True` if the node is a processing instruction
     pub fn is_processing_instruction(&self) -> bool {
         self.0.is_processing_instruction()
+    }
+
+    /// Returns the parent if exist
+    pub fn parent(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<Option<pyo3::PyObject>> {
+        let parent = self.0.parent();
+
+        if parent.is_none() {
+            return Ok(None);
+        }
+
+        let parent = unsafe {
+            parent
+                .clone()
+                .unwrap_unchecked()
+                .upgrade()
+                .expect("dangling weak pointer")
+        };
+
+        Ok(Some(
+            pyo3::Py::new(py, PyNode(parent)).map(|x| x.into_any())?,
+        ))
+    }
+
+    /// Removes this node from its parent
+    pub fn unlink(&self) {
+        self.0.unlink();
     }
 }
