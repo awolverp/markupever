@@ -19,7 +19,9 @@ fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<bridge::PyFragmentData>()?;
     m.add_class::<bridge::PyProcessingInstructionData>()?;
     m.add_class::<bridge::PyQualName>()?;
-    m.add_class::<bridge::PyTextData>()?;
+    m.add_class::<bridge::PyQualName>()?;
+    m.add_class::<bridge::PyElementAttributes>()?;
+    m.add_class::<bridge::PyElementData>()?;
 
     Ok(())
 }

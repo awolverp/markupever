@@ -12,3 +12,5 @@ pub use node::PyProcessingInstructionData;
 pub use node::PyQualName;
 pub use node::PyTextData;
 pub use node::PyNode;
+pub use node::PyElementData;
+pub use node::PyElementAttributes;
