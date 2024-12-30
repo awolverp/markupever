@@ -2,19 +2,23 @@ use crate::core::arcdom::{
     parse_html_utf8, parse_xml_utf8, serialize_html, serialize_xml, TreeBuilder,
 };
 
+pub const QUIRKS_MODE_FULL: u8 = 0;
+pub const QUIRKS_MODE_LIMITED: u8 = 1;
+pub const QUIRKS_MODE_OFF: u8 = 2;
+
 fn quirks_mode_from_u8(value: u8) -> markup5ever::interface::QuirksMode {
     match value {
-        0 => markup5ever::interface::QuirksMode::Quirks,
-        1 => markup5ever::interface::QuirksMode::LimitedQuirks,
+        QUIRKS_MODE_FULL => markup5ever::interface::QuirksMode::Quirks,
+        QUIRKS_MODE_LIMITED => markup5ever::interface::QuirksMode::LimitedQuirks,
         _ => markup5ever::interface::QuirksMode::NoQuirks,
     }
 }
 
 fn quirks_mode_to_u8(value: markup5ever::interface::QuirksMode) -> u8 {
     match value {
-        markup5ever::interface::QuirksMode::Quirks => 0,
-        markup5ever::interface::QuirksMode::LimitedQuirks => 1,
-        markup5ever::interface::QuirksMode::NoQuirks => 2,
+        markup5ever::interface::QuirksMode::Quirks => QUIRKS_MODE_FULL,
+        markup5ever::interface::QuirksMode::LimitedQuirks => QUIRKS_MODE_LIMITED,
+        markup5ever::interface::QuirksMode::NoQuirks => QUIRKS_MODE_OFF,
     }
 }
 
@@ -62,12 +66,14 @@ impl PyHtml {
         quirks_mode_to_u8(self.0.quirks_mode().get())
     }
 
-    // /// Returns the root node
-    // #[getter]
-    // pub fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-    //     let node = PyNode(self.0.root.clone());
-    //     pyo3::Py::new(py, node).map(|x| x.into_any())
-    // }
+    /// Returns the root node
+    /// 
+    /// Most of the time is document node
+    #[getter]
+    pub fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let node = super::node::PyNode(self.0.root.clone());
+        pyo3::Py::new(py, node).map(|x| x.into_any())
+    }
 
     /// Serialize the content into bytes
     pub fn serialize(&self) -> pyo3::PyResult<Vec<u8>> {
@@ -111,11 +117,11 @@ impl PyXml {
             .collect()
     }
 
-    /// Returns the line count of the parsed document
-    #[getter]
-    pub fn lineno(&self) -> u64 {
-        unsafe { *self.0.lineno().get() }
-    }
+    // /// Returns the line count of the parsed document
+    // #[getter]
+    // pub fn lineno(&self) -> u64 {
+    //     unsafe { *self.0.lineno().get() }
+    // }
 
     /// Returns the quirks mode
     #[getter]
@@ -123,12 +129,14 @@ impl PyXml {
         quirks_mode_to_u8(self.0.quirks_mode().get())
     }
 
-    // /// Returns the root node
-    // #[getter]
-    // pub fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-    //     let node = PyNode(self.0.root.clone());
-    //     pyo3::Py::new(py, node).map(|x| x.into_any())
-    // }
+    /// Returns the root node
+    /// 
+    /// Most of the time is document node
+    #[getter]
+    pub fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let node = super::node::PyNode(self.0.root.clone());
+        pyo3::Py::new(py, node).map(|x| x.into_any())
+    }
 
     pub fn serialize(&self) -> pyo3::PyResult<Vec<u8>> {
         let mut writer = Vec::new();

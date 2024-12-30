@@ -9,7 +9,7 @@ pub use node::ElementData;
 pub use node::FragmentData;
 pub use node::Node;
 pub use node::NodeData;
-pub use node::NodesIterator;
+pub use node::NodesTree;
 pub use node::ParentsIterator;
 pub use node::ProcessingInstructionData;
 pub use node::TextData;

@@ -210,11 +210,11 @@ _impl_nodedata_from_trait!(ElementData, Element);
 _impl_nodedata_from_trait!(ProcessingInstructionData, ProcessingInstruction);
 
 pub(super) struct NodeInner {
-    // Parent node.
+    /// Parent node.
     pub(super) parent: parking_lot::Mutex<Option<WeakNode>>,
-    // Child nodes of this node.
+    /// Child nodes of this node.
     pub(super) children: parking_lot::Mutex<Vec<Node>>,
-    // Represents this node's data.
+    /// Represents this node's data.
     pub(super) data: parking_lot::Mutex<NodeData>,
 }
 
@@ -437,8 +437,8 @@ impl Node {
     }
 
     /// Iterates all nodes and their children like a tree
-    pub fn tree(&self) -> NodesIterator {
-        NodesIterator::new(self.clone(), true)
+    pub fn tree(&self) -> NodesTree {
+        NodesTree::new(self.clone(), true)
     }
 
     /// Unlike the iter method, iterates all the parents.
@@ -665,11 +665,11 @@ impl<'a> IntoIterator for Children<'a> {
     }
 }
 
-pub struct NodesIterator {
+pub struct NodesTree {
     vec: Vec<Node>,
 }
 
-impl NodesIterator {
+impl NodesTree {
     pub fn new(node: Node, include_node: bool) -> Self {
         let mut s = Self { vec: Vec::new() };
 
@@ -684,7 +684,7 @@ impl NodesIterator {
     }
 }
 
-impl Iterator for NodesIterator {
+impl Iterator for NodesTree {
     type Item = Node;
 
     fn next(&mut self) -> Option<Self::Item> {

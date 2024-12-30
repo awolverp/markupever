@@ -26,6 +26,49 @@ unsafe fn qualname_from_pyobject(
     }
 }
 
+#[inline]
+fn get_node_from_pyobject(val: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<arcdom::Node> {
+    if PyNode::is_type_of(val) {
+        let data = val.extract::<pyo3::PyRef<'_, PyNode>>().unwrap();
+
+        Ok(data.0.clone())
+    } else if PyDocumentData::is_type_of(val) {
+        let data = val.extract::<pyo3::PyRef<'_, PyDocumentData>>().unwrap();
+
+        Ok(data.0.clone())
+    } else if PyFragmentData::is_type_of(val) {
+        let data = val.extract::<pyo3::PyRef<'_, PyFragmentData>>().unwrap();
+
+        Ok(data.0.clone())
+    } else if PyDoctypeData::is_type_of(val) {
+        let data = val.extract::<pyo3::PyRef<'_, PyDoctypeData>>().unwrap();
+
+        Ok(data.0.clone())
+    } else if PyCommentData::is_type_of(val) {
+        let data = val.extract::<pyo3::PyRef<'_, PyCommentData>>().unwrap();
+
+        Ok(data.0.clone())
+    } else if PyTextData::is_type_of(val) {
+        let data = val.extract::<pyo3::PyRef<'_, PyTextData>>().unwrap();
+
+        Ok(data.0.clone())
+    } else if PyElementData::is_type_of(val) {
+        let data = val.extract::<pyo3::PyRef<'_, PyElementData>>().unwrap();
+
+        Ok(data.0.clone())
+    } else if PyProcessingInstructionData::is_type_of(val) {
+        let data = val
+            .extract::<pyo3::PyRef<'_, PyProcessingInstructionData>>()
+            .unwrap();
+
+        Ok(data.0.clone())
+    } else {
+        Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+            "argument is not acceptable. must be an instance of: Node, PyDocumentData, PyFragmentData, PyDoctypeData, PyCommentData, PytextData, PyElementData, or PyProcessingInstructionData",
+        ))
+    }
+}
+
 /// A fully qualified name (with a namespace), used to depict names of tags and attributes.
 ///
 /// Namespaces can be used to differentiate between similar XML fragments. For example:
@@ -78,10 +121,11 @@ pub struct PyQualName(parking_lot::Mutex<markup5ever::QualName>);
 #[pyo3::pymethods]
 impl PyQualName {
     #[new]
-    #[pyo3(signature=(local, namespace, prefix=None, /))]
+    #[pyo3(signature=(local, namespace=String::new(), prefix=None, /))]
     pub fn new(local: String, namespace: String, prefix: Option<String>) -> pyo3::PyResult<Self> {
         let namespace = match &*namespace {
             "html" => ns!(html),
+            "xhtml" => ns!(html),
             "xml" => ns!(xml),
             "xmlns" => ns!(xmlns),
             "xlink" => ns!(xlink),
@@ -588,8 +632,7 @@ impl PyElementAttributes {
     pub fn __iter__(mut slf: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::PyRefMut<'_, Self>> {
         if slf.len != 0 {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                // TODO: fix this text
-                "you can iterate PyElementAttributes instance once in a time",
+                "you can only call PyElementAttributes' __iter__() once.",
             ));
         }
 
@@ -602,25 +645,25 @@ impl PyElementAttributes {
         mut slf: pyo3::PyRefMut<'_, Self>,
         py: pyo3::Python<'_>,
     ) -> pyo3::PyResult<pyo3::PyObject> {
-        let real_len = slf.__len__();
+        let elem = slf
+            .node
+            .as_element()
+            .expect("PyElementAttributes holds a node other than element");
 
-        if slf.len != real_len {
+        if slf.len != elem.attrs.len() {
+            std::mem::forget(elem);
             slf.len = 0;
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "node attrs size changed during iteration",
             ));
         }
-        if slf.index >= real_len {
+        if slf.index >= elem.attrs.len() {
+            std::mem::forget(elem);
             slf.len = 0;
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()));
         }
 
         let tuple = {
-            let elem = slf
-                .node
-                .as_element()
-                .expect("PyElementAttributes holds a node other than element");
-
             let n = &elem.attrs[slf.index];
 
             pyo3::types::PyTuple::new(
@@ -632,6 +675,7 @@ impl PyElementAttributes {
             )?
         };
 
+        std::mem::forget(elem);
         slf.index += 1;
         Ok(tuple.into())
     }
@@ -775,6 +819,129 @@ impl PyElementData {
     }
 }
 
+/// An element node data
+#[pyo3::pyclass(name = "Children", module = "markupselect._rustlib")]
+pub struct PyChildren {
+    pub node: arcdom::Node,
+    pub index: usize,
+    pub len: usize,
+}
+
+#[pyo3::pymethods]
+impl PyChildren {
+    #[new]
+    #[allow(unused_variables)]
+    pub fn new(element: pyo3::PyObject) -> pyo3::PyResult<Self> {
+        Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            "Use Node.children property; don't use this constructor directly.",
+        ))
+    }
+
+    pub fn __len__(&self) -> usize {
+        self.node.children().len()
+    }
+
+    pub fn __getitem__(
+        &self,
+        py: pyo3::Python<'_>,
+        index: usize,
+    ) -> pyo3::PyResult<pyo3::PyObject> {
+        let node = match self.node.children().vec.get(index) {
+            Some(x) => PyNode(x.clone()),
+            None => {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                    "out of range",
+                ))
+            }
+        };
+
+        Ok(pyo3::Py::new(py, node)?.into_any())
+    }
+
+    pub fn __setitem__(
+        &self,
+        py: pyo3::Python<'_>,
+        index: usize,
+        value: pyo3::PyObject,
+    ) -> pyo3::PyResult<()> {
+        let mut children = self.node.children();
+
+        if index >= children.len() {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                "out of range",
+            ));
+        }
+
+        children.vec[index] = get_node_from_pyobject(value.bind(py))?;
+        Ok(())
+    }
+
+    pub fn __delitem__(&self, index: usize) -> pyo3::PyResult<()> {
+        let mut children = self.node.children();
+
+        if index >= children.len() {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                "out of range",
+            ));
+        }
+
+        children.remove(index);
+        Ok(())
+    }
+
+    pub fn clear(&self) {
+        let mut children = self.node.children();
+        children.clear();
+    }
+
+    pub fn append(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<()> {
+        let mut children = self.node.children();
+        let node = get_node_from_pyobject(value.bind(py))?;
+
+        children.vec.push(node);
+        Ok(())
+    }
+
+    pub fn __iter__(mut slf: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::PyRefMut<'_, Self>> {
+        if slf.len != 0 {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "you can only call Children's __iter__() once.",
+            ));
+        }
+
+        slf.index = 0;
+        slf.len = slf.__len__();
+        Ok(slf)
+    }
+
+    pub fn __next__(
+        mut slf: pyo3::PyRefMut<'_, Self>,
+        py: pyo3::Python<'_>,
+    ) -> pyo3::PyResult<pyo3::PyObject> {
+        let children = slf.node.children();
+
+        if slf.len != children.len() {
+            std::mem::forget(children);
+            slf.len = 0;
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "node chidlren size changed during iteration",
+            ));
+        }
+        if slf.index >= children.len() {
+            std::mem::forget(children);
+            slf.len = 0;
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()));
+        }
+
+        let node = PyNode(children[slf.index].clone());
+
+        std::mem::forget(children);
+
+        slf.index += 1;
+        Ok(pyo3::Py::new(py, node)?.into_any())
+    }
+}
+
 /// A node
 #[pyo3::pyclass(name = "Node", module = "markupselect._rustlib", frozen)]
 pub struct PyNode(pub arcdom::Node);
@@ -786,45 +953,7 @@ impl PyNode {
     pub fn new(py: pyo3::Python<'_>, data: pyo3::PyObject) -> pyo3::PyResult<Self> {
         let data = data.bind(py);
 
-        if PyNode::is_type_of(data) {
-            let data = data.extract::<pyo3::PyRef<'_, PyNode>>().unwrap();
-
-            Ok(Self(data.0.clone()))
-        } else if PyDocumentData::is_type_of(data) {
-            let data = data.extract::<pyo3::PyRef<'_, PyDocumentData>>().unwrap();
-
-            Ok(Self(data.0.clone()))
-        } else if PyFragmentData::is_type_of(data) {
-            let data = data.extract::<pyo3::PyRef<'_, PyFragmentData>>().unwrap();
-
-            Ok(Self(data.0.clone()))
-        } else if PyDoctypeData::is_type_of(data) {
-            let data = data.extract::<pyo3::PyRef<'_, PyDoctypeData>>().unwrap();
-
-            Ok(Self(data.0.clone()))
-        } else if PyCommentData::is_type_of(data) {
-            let data = data.extract::<pyo3::PyRef<'_, PyCommentData>>().unwrap();
-
-            Ok(Self(data.0.clone()))
-        } else if PyTextData::is_type_of(data) {
-            let data = data.extract::<pyo3::PyRef<'_, PyTextData>>().unwrap();
-
-            Ok(Self(data.0.clone()))
-        } else if PyElementData::is_type_of(data) {
-            let data = data.extract::<pyo3::PyRef<'_, PyElementData>>().unwrap();
-
-            Ok(Self(data.0.clone()))
-        } else if PyProcessingInstructionData::is_type_of(data) {
-            let data = data
-                .extract::<pyo3::PyRef<'_, PyProcessingInstructionData>>()
-                .unwrap();
-
-            Ok(Self(data.0.clone()))
-        } else {
-            Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                "argument is not acceptable. must be an instance of: Node, PyDocumentData, PyFragmentData, PyDoctypeData, PyCommentData, PytextData, PyElementData, or PyProcessingInstructionData",
-            ))
-        }
+        Ok(Self(get_node_from_pyobject(data)?))
     }
 
     /// Returns the node data as `Py*Data` classes
@@ -919,6 +1048,16 @@ impl PyNode {
         Ok(Some(
             pyo3::Py::new(py, PyNode(parent)).map(|x| x.into_any())?,
         ))
+    }
+
+    pub fn children(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let children = PyChildren {
+            node: self.0.clone(),
+            index: 0,
+            len: 0,
+        };
+
+        Ok(pyo3::Py::new(py, children)?.into_any())
     }
 
     /// Removes this node from its parent

@@ -4,7 +4,7 @@ use super::ToCssLocalName;
 use super::ToCssString;
 use super::_impl::SelectorImpl;
 use crate::core::arcdom::Node;
-use crate::core::arcdom::NodesIterator;
+use crate::core::arcdom::NodesTree;
 use markup5ever::{namespace_url, ns};
 
 impl selectors::Element for Node {
@@ -256,14 +256,14 @@ impl SelectExprGroup {
 }
 
 pub struct Select {
-    inner: NodesIterator,
+    inner: NodesTree,
     expr: SelectExprGroup,
     caches: selectors::context::SelectorCaches,
 }
 
 impl Select {
     pub fn new(
-        iterator: NodesIterator,
+        iterator: NodesTree,
         expr: &str,
     ) -> Result<Select, cssparser::ParseError<'_, super::errors::CssParserKindError<'_>>> {
         let expr = SelectExprGroup::new(expr)?;

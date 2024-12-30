@@ -14,7 +14,7 @@ test-rs:
 
 .PHONY: test-py
 test-py: build-dev
-	pytest
+	pytest -s -v
 	-rm -rf .pytest_cache
 	-ruff check .
 	ruff clean
