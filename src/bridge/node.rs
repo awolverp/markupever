@@ -1,4 +1,4 @@
-// #![allow(clippy::new_without_default)]
+#![allow(clippy::new_without_default)]
 
 use crate::core::arcdom;
 use markup5ever::{namespace_url, ns};
@@ -745,7 +745,7 @@ impl PyElementData {
         self.0
             .as_element()
             .expect("PyElementData holds a node other than element")
-            .name = value.into();
+            .name = value;
 
         Ok(())
     }

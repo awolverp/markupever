@@ -67,7 +67,7 @@ impl PyHtml {
     }
 
     /// Returns the root node
-    /// 
+    ///
     /// Most of the time is document node
     #[getter]
     pub fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
@@ -130,7 +130,7 @@ impl PyXml {
     }
 
     /// Returns the root node
-    /// 
+    ///
     /// Most of the time is document node
     #[getter]
     pub fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
