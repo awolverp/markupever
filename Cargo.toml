@@ -2,7 +2,7 @@
 name = "xmarkup"
 version = "0.1.0"
 edition = "2021"
-description = "The fast, most optimal, and correct HTML parsing library."
+description = "The fast, most optimal, and correct HTML & XML parsing library."
 readme = "README.md"
 license = "MIT"
 homepage = "https://github.com/awolverp/xmarkup"
