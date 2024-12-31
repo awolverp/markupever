@@ -179,7 +179,7 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
         system_id: tendril::StrTendril,
     ) {
         let d = Node::new(super::node::DoctypeData::new(name, public_id, system_id));
-        self.root.children().append(d);
+        self.root.children().append(d).unwrap();
     }
 
     fn append(
@@ -189,7 +189,7 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
     ) {
         match child {
             markup5ever::interface::NodeOrText::AppendNode(handle) => {
-                parent.children().append(handle);
+                parent.children().append(handle).unwrap();
             }
             markup5ever::interface::NodeOrText::AppendText(text) => {
                 let mut c = parent.children();
@@ -200,7 +200,8 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
                     }
                 }
 
-                c.append(Node::new(super::node::TextData::new(text)));
+                c.append(Node::new(super::node::TextData::new(text)))
+                    .unwrap();
             }
         }
     }
@@ -251,7 +252,7 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
             }
         };
 
-        p_children.insert(index, new_node);
+        p_children.insert(index, new_node).unwrap();
     }
 
     fn append_based_on_parent_node(
@@ -287,7 +288,7 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
         let mut c = new_parent.children();
         for child in node.children().drain(..) {
             unsafe { child.unlink_parent() };
-            c.append(child);
+            c.append(child).unwrap();
         }
     }
 

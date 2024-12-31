@@ -454,7 +454,7 @@ impl Node {
     /// Works like self.unlink but does not remove self from parent's children
     pub(super) unsafe fn unlink_parent(&self) {
         debug_assert!(
-            self.value.parent.is_locked(),
+            !self.value.parent.is_locked(),
             "before using this method you have to unlock the parent with dropping the mutex guard"
         );
 
@@ -465,14 +465,14 @@ impl Node {
     #[inline]
     pub fn unlink(&self) {
         debug_assert!(
-            self.value.parent.is_locked(),
+            !self.value.parent.is_locked(),
             "before using this method you have to unlock the parent with dropping the mutex guard"
         );
 
         if let Some(parent) = self.parent().take() {
             let parent = parent.upgrade().expect("dangling weak pointer");
             let mut c = parent.children();
-            c.remove(c.position(self).unwrap());
+            unsafe { c.remove_index(c.position(self).unwrap()) };
         }
     }
 
@@ -568,7 +568,7 @@ impl WeakNode {
 
 pub struct Children<'a> {
     node: &'a Node,
-    pub(crate) vec: parking_lot::MappedMutexGuard<'a, Vec<Node>>,
+    vec: parking_lot::MappedMutexGuard<'a, Vec<Node>>,
 }
 
 impl<'a> Children<'a> {
@@ -587,23 +587,41 @@ impl<'a> Children<'a> {
     }
 
     #[inline]
-    pub fn append(&mut self, child: Node) {
-        debug_assert!(
-            child.parent().replace(self.node.downgrade()).is_none(),
-            "child cannot have existing parent"
-        );
+    pub fn append(&mut self, child: Node) -> Result<(), Node> {
+        if self.node.ptr_eq(&child) {
+            // Avoid cycle
+            return Err(child);
+        }
+
+        #[cfg(not(debug_assertions))]
+        child.parent().replace(self.node.downgrade());
+
+        #[cfg(debug_assertions)]
+        let old = child.parent().replace(self.node.downgrade());
+
+        debug_assert!(old.is_none(), "child cannot have existing parent");
 
         self.vec.push(child);
+        Ok(())
     }
 
     #[inline]
-    pub fn insert(&mut self, index: usize, child: Node) {
-        debug_assert!(
-            child.parent().replace(self.node.downgrade()).is_none(),
-            "child cannot have existing parent"
-        );
+    pub fn insert(&mut self, index: usize, child: Node) -> Result<(), Node> {
+        if self.node.ptr_eq(&child) {
+            // Avoid cycle
+            return Err(child);
+        }
+
+        #[cfg(not(debug_assertions))]
+        child.parent().replace(self.node.downgrade());
+
+        #[cfg(debug_assertions)]
+        let old = child.parent().replace(self.node.downgrade());
+
+        debug_assert!(old.is_none(), "child cannot have existing parent");
 
         self.vec.insert(index, child);
+        Ok(())
     }
 
     #[inline]
@@ -630,6 +648,11 @@ impl<'a> Children<'a> {
         self.vec.drain(range)
     }
 
+    pub(super) unsafe fn remove_index(&mut self, index: usize) -> Node {
+        let node = self.vec.remove(index);
+        node
+    }
+
     #[inline]
     pub fn remove(&mut self, index: usize) -> Node {
         let node = self.vec.remove(index);
@@ -651,6 +674,11 @@ impl<'a> Children<'a> {
     pub fn clear(&mut self) {
         self.vec.clear();
     }
+
+    #[inline]
+    pub fn get(&self, index: usize) -> Option<&Node> {
+        self.vec.get(index)
+    }
 }
 
 impl<'a> std::ops::Index<usize> for Children<'a> {
@@ -663,6 +691,48 @@ impl<'a> std::ops::Index<usize> for Children<'a> {
 
 impl<'a> std::ops::IndexMut<usize> for Children<'a> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.vec[index]
+    }
+}
+
+impl<'a> std::ops::Index<std::ops::Range<usize>> for Children<'a> {
+    type Output = [Node];
+
+    fn index(&self, index: std::ops::Range<usize>) -> &Self::Output {
+        &self.vec[index]
+    }
+}
+
+impl<'a> std::ops::IndexMut<std::ops::Range<usize>> for Children<'a> {
+    fn index_mut(&mut self, index: std::ops::Range<usize>) -> &mut Self::Output {
+        &mut self.vec[index]
+    }
+}
+
+impl<'a> std::ops::Index<std::ops::RangeTo<usize>> for Children<'a> {
+    type Output = [Node];
+
+    fn index(&self, index: std::ops::RangeTo<usize>) -> &Self::Output {
+        &self.vec[index]
+    }
+}
+
+impl<'a> std::ops::IndexMut<std::ops::RangeTo<usize>> for Children<'a> {
+    fn index_mut(&mut self, index: std::ops::RangeTo<usize>) -> &mut Self::Output {
+        &mut self.vec[index]
+    }
+}
+
+impl<'a> std::ops::Index<std::ops::RangeFrom<usize>> for Children<'a> {
+    type Output = [Node];
+
+    fn index(&self, index: std::ops::RangeFrom<usize>) -> &Self::Output {
+        &self.vec[index]
+    }
+}
+
+impl<'a> std::ops::IndexMut<std::ops::RangeFrom<usize>> for Children<'a> {
+    fn index_mut(&mut self, index: std::ops::RangeFrom<usize>) -> &mut Self::Output {
         &mut self.vec[index]
     }
 }
@@ -836,21 +906,21 @@ mod tests {
 
         let child1 = Node::new(create_element!("h1", Default::default()));
         let child1_child = Node::new(TextData::new("Come here 1".into()));
-        child1.children().append(child1_child.clone());
+        child1.children().append(child1_child.clone()).unwrap();
 
-        node.children().append(child1.clone());
+        node.children().append(child1.clone()).unwrap();
 
         let child2 = Node::new(create_element!("h2", Default::default()));
         let child2_child = Node::new(TextData::new("Come here 2".into()));
-        child2.children().append(child2_child.clone());
+        child2.children().append(child2_child.clone()).unwrap();
 
-        node.children().append(child2.clone());
+        node.children().append(child2.clone()).unwrap();
 
         let child3 = Node::new(create_element!("p", Default::default()));
         let child3_child = Node::new(TextData::new("Come here 3".into()));
-        child3.children().append(child3_child);
+        child3.children().append(child3_child).unwrap();
 
-        node.children().append(child3.clone());
+        node.children().append(child3.clone()).unwrap();
 
         assert_eq!(node.children().len(), 3);
 
@@ -862,7 +932,7 @@ mod tests {
         assert_eq!(v.len(), 7);
 
         assert_eq!(node.children().position(&child3), Some(2));
-        debug_assert!(node.children().remove(2).ptr_eq(&child3));
+        assert!(node.children().remove(2).ptr_eq(&child3));
 
         assert_eq!(node.children().len(), 2);
 
@@ -876,7 +946,13 @@ mod tests {
         let have_to = vec![node, child1, child1_child, child2, child2_child];
 
         for (v1, v2) in v.iter().zip(have_to.iter()) {
-            debug_assert!(v1.ptr_eq(v2))
+            assert!(v1.ptr_eq(v2))
         }
+    }
+
+    #[test]
+    fn test_cycle() {
+        let node = Node::new(DocumentData);
+        node.children().append(node.clone()).unwrap_err();
     }
 }

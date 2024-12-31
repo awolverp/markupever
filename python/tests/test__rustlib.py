@@ -8,20 +8,10 @@ _HTML = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TailwindCss</title>
-
-    <link rel="stylesheet" href="output.css">
 </head>
 
 <body class="h-screen bg-zinc-900 text-white font-sans">
-
     <span class="opacity-50 md:opacity-100 duration-1000 z-[1] semi-circle bg-orange-500 rotate-90 fixed top-[60%] left-[-3rem]"></span>
-    <span class="opacity-50 md:opacity-100 duration-1000 z-[1] quarter-circle bg-white -rotate-90 fixed top-[calc(60%-3rem)] left-[5rem]"></span>
-    <span class="opacity-50 md:opacity-100 duration-1000 z-[1] semi-circle bg-yellow-500 fixed top-[calc(60%+3rem)] left-[5rem]"></span>
-
-    <span class="opacity-50 md:opacity-100 duration-1000 z-[1] circle-alike bg-white fixed top-[calc(30%-3rem)] right-[-3rem]"></span>
-    <span class="opacity-50 md:opacity-100 duration-1000 z-[1] semi-circle bg-orange-500 fixed top-[calc(30%-3rem)] right-[8rem]"></span>
-    <span class="opacity-50 md:opacity-100 duration-1000 z-[1] semi-circle bg-yellow-500 rotate-180 fixed top-[calc(30%+3rem)] right-[2rem]"></span>
 
     <header
         class="flex flex-row justify-between bg-zinc-op fixed w-full px-8 py-4 top-0 right-[50%] left-[50%] translate-x-[-50%] items-center md:w-3/4 md:rounded-2xl md:top-3 duration-500">
@@ -47,20 +37,10 @@ _HTML = """<!DOCTYPE html>
             <p class="text-5xl md:text-7xl font-sans font-bold">08</p>
             <p class="text-base md:text-lg font-sans font-light">Hours</p>
         </div>
-        <div class="bg-zinc-700 text-center rounded-sm z-50 p-4 md:p-8">
-            <p class="text-5xl md:text-7xl font-sans font-bold">07</p>
-            <p class="text-base md:text-lg font-sans font-light">Mins</p>
-        </div>
-        <div class="bg-zinc-700 text-center rounded-sm z-50 p-4 md:p-8">
-            <p class="text-5xl md:text-7xl font-sans font-bold">58</p>
-            <p class="text-base md:text-lg font-sans font-light">Secs</p>
-        </div>
     </div>
 
 </body>
-
-</html>
-"""
+</html>"""
 
 _XML = """<bookstore>  
 <book category="COOKING">  
@@ -138,13 +118,18 @@ def test_qualname():
     assert qualname.prefix is None
 
 
-def _construct_data(cls: type, *args, **kwargs) -> object:
+def _construct_data(cls: type, is_name: str, *args, **kwargs) -> object:
     obj = cls(*args, **kwargs)
 
     assert isinstance(obj, cls)
 
     assert isinstance(obj.as_node(), _rustlib.Node)
-    assert isinstance(_rustlib.Node(obj), _rustlib.Node)
+
+    node = _rustlib.Node(obj)
+    assert isinstance(node, _rustlib.Node)
+    assert isinstance(node.data(), cls)
+
+    assert getattr(node, is_name)() is True
 
     return obj
 
@@ -161,10 +146,10 @@ def _writable_properties(obj, attrnames, correct_cases: list[tuple], wrong_cases
 
 
 def test_datas():
-    _ = _construct_data(_rustlib.DocumentData)
-    _ = _construct_data(_rustlib.FragmentData)
+    _ = _construct_data(_rustlib.DocumentData, "is_document")
+    _ = _construct_data(_rustlib.FragmentData, "is_fragment")
 
-    doctype = _construct_data(_rustlib.DoctypeData, "name", "public_id", "system_id")
+    doctype = _construct_data(_rustlib.DoctypeData, "is_doctype", "name", "public_id", "system_id")
     assert doctype.name == "name"
     assert doctype.public_id == "public_id"
     assert doctype.system_id == "system_id"
@@ -175,7 +160,7 @@ def test_datas():
         (1, 2.4, []),
     )
 
-    comment = _construct_data(_rustlib.CommentData, "this is a comment")
+    comment = _construct_data(_rustlib.CommentData, "is_comment", "this is a comment")
     assert comment.contents == "this is a comment"
     _writable_properties(
         comment,
@@ -187,7 +172,7 @@ def test_datas():
         (1, 2.4, []),
     )
 
-    text = _construct_data(_rustlib.TextData, "this is a text")
+    text = _construct_data(_rustlib.TextData, "is_text", "this is a text")
     assert text.contents == "this is a text"
     _writable_properties(
         text,
@@ -196,7 +181,9 @@ def test_datas():
         (1, 2.4, []),
     )
 
-    pi = _construct_data(_rustlib.ProcessingInstructionData, "data", "target")
+    pi = _construct_data(
+        _rustlib.ProcessingInstructionData, "is_processing_instruction", "data", "target"
+    )
     assert pi.data == "data"
     assert pi.target == "target"
     _writable_properties(
@@ -206,7 +193,9 @@ def test_datas():
         (1, 2.4, []),
     )
 
-    element = _construct_data(_rustlib.ElementData, _rustlib.QualName("div"), [], False, True)
+    element = _construct_data(
+        _rustlib.ElementData, "is_element", _rustlib.QualName("div"), [], False, True
+    )
     assert element.name == _rustlib.QualName("div")
     assert len(element.attrs) == 0
     assert element.template is False
@@ -299,3 +288,66 @@ def test_element_attrs():
 
     element.attrs.clear()
     assert len(element.attrs) == 0
+
+
+def test_node_children():
+    root = _rustlib.Node(_rustlib.DocumentData())
+
+    assert len(root.children()) == 0
+
+    root.children().append(_rustlib.CommentData("content"))
+
+    assert len(root.children()) == 1
+
+    with pytest.raises(RuntimeError):
+        root.children().append(root)
+
+    assert isinstance(root.children()[0].data(), _rustlib.CommentData)
+
+    with pytest.raises(IndexError):
+        root.children()[1]
+
+    root.children()[0] = _rustlib.TextData("content")
+    assert isinstance(root.children()[0].data(), _rustlib.TextData)
+
+    root.children().append(_rustlib.Node(_rustlib.ElementData("div", [])))
+
+    del root.children()[0]
+    assert len(root.children()) == 1
+
+    newroot = _rustlib.Node(_rustlib.DocumentData())
+    newroot.children().append(root)
+
+    with pytest.raises(ValueError):
+        newroot.children().append(root)
+
+    assert newroot.children()[0].children()[0].is_element()
+
+    for n in newroot.children():
+        for p in n.children():
+            pass
+
+    children = newroot.children()
+    children2 = newroot.children()
+
+    children.clear()
+    assert len(children2) == 0
+
+
+def test_parent():
+    root = _rustlib.DocumentData().as_node()
+    element = _rustlib.ElementData("html", []).as_node()
+
+    root.children().append(element)
+    
+    assert len(root.children()) == 1
+    assert element.parent() is not None
+
+    element.unlink()
+    assert len(root.children()) == 0
+    assert element.parent() is None
+
+    root.children().append(element)
+    del root.children()[0]
+    assert len(root.children()) == 0
+    assert element.parent() is None

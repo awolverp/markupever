@@ -849,7 +849,7 @@ impl PyChildren {
         py: pyo3::Python<'_>,
         index: usize,
     ) -> pyo3::PyResult<pyo3::PyObject> {
-        let node = match self.node.children().vec.get(index) {
+        let node = match self.node.children().get(index) {
             Some(x) => PyNode(x.clone()),
             None => {
                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
@@ -875,7 +875,7 @@ impl PyChildren {
             ));
         }
 
-        children.vec[index] = get_node_from_pyobject(value.bind(py))?;
+        children[index] = get_node_from_pyobject(value.bind(py))?;
         Ok(())
     }
 
@@ -898,10 +898,17 @@ impl PyChildren {
     }
 
     pub fn append(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<()> {
-        let mut children = self.node.children();
         let node = get_node_from_pyobject(value.bind(py))?;
 
-        children.vec.push(node);
+        if node.parent().is_some() {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>("you cannot append a node that has parent itself; you can use Node.unlink() before this method."));
+        }
+
+        let mut children = self.node.children();
+        children.append(node).map_err(|_| {
+            pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("cycle detected")
+        })?;
+
         Ok(())
     }
 

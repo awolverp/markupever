@@ -65,10 +65,7 @@ impl selectors::Element for Node {
             return None;
         }
 
-        p_children.vec[..index]
-            .iter()
-            .find(|x| x.is_element())
-            .cloned()
+        p_children[..index].iter().find(|x| x.is_element()).cloned()
     }
 
     fn next_sibling_element(&self) -> Option<Self> {
@@ -94,7 +91,7 @@ impl selectors::Element for Node {
             return None;
         }
 
-        p_children.vec[index + 1..]
+        p_children[index + 1..]
             .iter()
             .find(|x| x.is_element())
             .cloned()
