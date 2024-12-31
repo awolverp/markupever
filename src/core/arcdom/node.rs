@@ -431,7 +431,7 @@ impl Node {
         let ref_ = self.value.children.lock();
 
         Children {
-            ptr: self.downgrade(),
+            node: self,
             vec: parking_lot::MutexGuard::map(ref_, |x| x),
         }
     }
@@ -451,6 +451,16 @@ impl Node {
         Arc::ptr_eq(&self.value, &other.value)
     }
 
+    /// Works like self.unlink but does not remove self from parent's children
+    pub(super) unsafe fn unlink_parent(&self) {
+        debug_assert!(
+            self.value.parent.is_locked(),
+            "before using this method you have to unlock the parent with dropping the mutex guard"
+        );
+
+        self.parent().take();
+    }
+
     /// Removes this node from its parent.
     #[inline]
     pub fn unlink(&self) {
@@ -459,7 +469,7 @@ impl Node {
             "before using this method you have to unlock the parent with dropping the mutex guard"
         );
 
-        if let Some(parent) = &*self.parent() {
+        if let Some(parent) = self.parent().take() {
             let parent = parent.upgrade().expect("dangling weak pointer");
             let mut c = parent.children();
             c.remove(c.position(self).unwrap());
@@ -557,7 +567,7 @@ impl WeakNode {
 }
 
 pub struct Children<'a> {
-    ptr: WeakNode,
+    node: &'a Node,
     pub(crate) vec: parking_lot::MappedMutexGuard<'a, Vec<Node>>,
 }
 
@@ -579,7 +589,7 @@ impl<'a> Children<'a> {
     #[inline]
     pub fn append(&mut self, child: Node) {
         debug_assert!(
-            child.parent().replace(self.ptr.clone()).is_none(),
+            child.parent().replace(self.node.downgrade()).is_none(),
             "child cannot have existing parent"
         );
 
@@ -589,7 +599,7 @@ impl<'a> Children<'a> {
     #[inline]
     pub fn insert(&mut self, index: usize, child: Node) {
         debug_assert!(
-            child.parent().replace(self.ptr.clone()).is_none(),
+            child.parent().replace(self.node.downgrade()).is_none(),
             "child cannot have existing parent"
         );
 
@@ -611,6 +621,7 @@ impl<'a> Children<'a> {
         self.vec.iter()
     }
 
+    /// NOTE: don't forgot to unlink children
     #[inline]
     pub fn drain<R: std::ops::RangeBounds<usize>>(
         &mut self,

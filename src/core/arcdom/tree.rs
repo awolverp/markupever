@@ -286,6 +286,7 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
     fn reparent_children(&self, node: &Self::Handle, new_parent: &Self::Handle) {
         let mut c = new_parent.children();
         for child in node.children().drain(..) {
+            unsafe { child.unlink_parent() };
             c.append(child);
         }
     }

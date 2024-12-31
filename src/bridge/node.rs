@@ -456,11 +456,11 @@ impl PyProcessingInstructionData {
 }
 
 /// An element node data
-#[pyo3::pyclass(name = "ElementAttributes", module = "markupselect._rustlib")]
+#[pyo3::pyclass(name = "ElementAttributes", module = "markupselect._rustlib", frozen)]
 pub struct PyElementAttributes {
     pub node: arcdom::Node,
-    pub index: usize,
-    pub len: usize,
+    pub index: std::sync::atomic::AtomicUsize,
+    pub len: std::sync::atomic::AtomicUsize,
 }
 
 #[pyo3::pymethods]
@@ -583,7 +583,7 @@ impl PyElementAttributes {
             .as_element()
             .expect("PyElementAttributes holds a node other than element");
 
-        elem.attrs.sort_unstable();
+        elem.attrs.sort_unstable_by(|a, b| a.0.cmp(&b.0));
     }
 
     pub fn clear(&self) {
@@ -629,55 +629,58 @@ impl PyElementAttributes {
         Ok(())
     }
 
-    pub fn __iter__(mut slf: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::PyRefMut<'_, Self>> {
-        if slf.len != 0 {
+    pub fn __iter__(slf: pyo3::PyRef<'_, Self>) -> pyo3::PyResult<pyo3::PyRef<'_, Self>> {
+        if slf.len.load(std::sync::atomic::Ordering::Relaxed) != 0 {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "you can only call PyElementAttributes' __iter__() once.",
+                "you can only call PyElementAttributes' __iter__() once in a time.",
             ));
         }
 
-        slf.index = 0;
-        slf.len = slf.__len__();
+        slf.index.store(0, std::sync::atomic::Ordering::Relaxed);
+        slf.len
+            .store(slf.__len__(), std::sync::atomic::Ordering::Relaxed);
         Ok(slf)
     }
 
     pub fn __next__(
-        mut slf: pyo3::PyRefMut<'_, Self>,
+        slf: pyo3::PyRef<'_, Self>,
         py: pyo3::Python<'_>,
-    ) -> pyo3::PyResult<pyo3::PyObject> {
+    ) -> pyo3::PyResult<*mut pyo3::ffi::PyObject> {
         let elem = slf
             .node
             .as_element()
             .expect("PyElementAttributes holds a node other than element");
 
-        if slf.len != elem.attrs.len() {
-            std::mem::forget(elem);
-            slf.len = 0;
+        if slf.len.load(std::sync::atomic::Ordering::Relaxed) != elem.attrs.len() {
+            std::mem::drop(elem);
+            slf.len.store(0, std::sync::atomic::Ordering::Relaxed);
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "node attrs size changed during iteration",
             ));
         }
-        if slf.index >= elem.attrs.len() {
-            std::mem::forget(elem);
-            slf.len = 0;
+
+        if slf.index.load(std::sync::atomic::Ordering::Relaxed) >= elem.attrs.len() {
+            std::mem::drop(elem);
+            slf.len.store(0, std::sync::atomic::Ordering::Relaxed);
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()));
         }
 
-        let tuple = {
-            let n = &elem.attrs[slf.index];
+        let n = &elem.attrs[slf.index.load(std::sync::atomic::Ordering::Relaxed)];
+        let tuple = pyo3::types::PyTuple::new(
+            py,
+            [
+                pyo3::Py::new(py, PyQualName(parking_lot::Mutex::new(n.0.clone())))?.into_any(),
+                pyo3::types::PyString::new(py, &n.1).into(),
+            ],
+        )?;
 
-            pyo3::types::PyTuple::new(
-                py,
-                [
-                    pyo3::Py::new(py, PyQualName(parking_lot::Mutex::new(n.0.clone())))?.into_any(),
-                    pyo3::types::PyString::new(py, &n.1).into(),
-                ],
-            )?
-        };
+        std::mem::drop(elem);
+        slf.index.store(
+            slf.index.load(std::sync::atomic::Ordering::Relaxed) + 1,
+            std::sync::atomic::Ordering::Relaxed,
+        );
 
-        std::mem::forget(elem);
-        slf.index += 1;
-        Ok(tuple.into())
+        Ok(tuple.into_ptr())
     }
 }
 
@@ -754,8 +757,8 @@ impl PyElementData {
     pub fn attrs(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
         let attrs = PyElementAttributes {
             node: self.0.clone(),
-            index: 0,
-            len: 0,
+            index: std::sync::atomic::AtomicUsize::new(0),
+            len: std::sync::atomic::AtomicUsize::new(0),
         };
 
         pyo3::Py::new(py, attrs).map(|x| x.into_any())
@@ -820,11 +823,11 @@ impl PyElementData {
 }
 
 /// An element node data
-#[pyo3::pyclass(name = "Children", module = "markupselect._rustlib")]
+#[pyo3::pyclass(name = "Children", module = "markupselect._rustlib", frozen)]
 pub struct PyChildren {
     pub node: arcdom::Node,
-    pub index: usize,
-    pub len: usize,
+    pub index: std::sync::atomic::AtomicUsize,
+    pub len: std::sync::atomic::AtomicUsize,
 }
 
 #[pyo3::pymethods]
@@ -902,42 +905,46 @@ impl PyChildren {
         Ok(())
     }
 
-    pub fn __iter__(mut slf: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::PyRefMut<'_, Self>> {
-        if slf.len != 0 {
+    pub fn __iter__(slf: pyo3::PyRef<'_, Self>) -> pyo3::PyResult<pyo3::PyRef<'_, Self>> {
+        if slf.len.load(std::sync::atomic::Ordering::Relaxed) != 0 {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "you can only call Children's __iter__() once.",
+                "you can only call Children's __iter__() once in a time.",
             ));
         }
 
-        slf.index = 0;
-        slf.len = slf.__len__();
+        slf.index.store(0, std::sync::atomic::Ordering::Relaxed);
+        slf.len
+            .store(slf.__len__(), std::sync::atomic::Ordering::Relaxed);
         Ok(slf)
     }
 
     pub fn __next__(
-        mut slf: pyo3::PyRefMut<'_, Self>,
+        slf: pyo3::PyRef<'_, Self>,
         py: pyo3::Python<'_>,
     ) -> pyo3::PyResult<pyo3::PyObject> {
         let children = slf.node.children();
 
-        if slf.len != children.len() {
-            std::mem::forget(children);
-            slf.len = 0;
+        if slf.len.load(std::sync::atomic::Ordering::Relaxed) != children.len() {
+            std::mem::drop(children);
+            slf.len.store(0, std::sync::atomic::Ordering::Relaxed);
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "node chidlren size changed during iteration",
             ));
         }
-        if slf.index >= children.len() {
-            std::mem::forget(children);
-            slf.len = 0;
+        if slf.index.load(std::sync::atomic::Ordering::Relaxed) >= children.len() {
+            std::mem::drop(children);
+            slf.len.store(0, std::sync::atomic::Ordering::Relaxed);
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()));
         }
 
-        let node = PyNode(children[slf.index].clone());
+        let node = PyNode(children[slf.index.load(std::sync::atomic::Ordering::Relaxed)].clone());
 
-        std::mem::forget(children);
+        std::mem::drop(children);
 
-        slf.index += 1;
+        slf.index.store(
+            slf.index.load(std::sync::atomic::Ordering::Relaxed) + 1,
+            std::sync::atomic::Ordering::Relaxed,
+        );
         Ok(pyo3::Py::new(py, node)?.into_any())
     }
 }
@@ -1053,8 +1060,8 @@ impl PyNode {
     pub fn children(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
         let children = PyChildren {
             node: self.0.clone(),
-            index: 0,
-            len: 0,
+            index: std::sync::atomic::AtomicUsize::new(0),
+            len: std::sync::atomic::AtomicUsize::new(0),
         };
 
         Ok(pyo3::Py::new(py, children)?.into_any())
