@@ -1,4 +1,14 @@
 
+.PHONY: help
+help:
+	@echo "Commands:"
+	@echo -e "\tbuild-dev       build source"
+	@echo -e "\tbuild-prod      build source (release mode)"
+	@echo -e "\ttest-rs         clippy and test rust code"
+	@echo -e "\ttest-py         build and test python code"
+	@echo -e "\tformat          format rust and python code"
+	@echo -e "\tclean           clean all the unneeded files"
+
 .PHONY: build-dev
 build-dev:
 	maturin develop

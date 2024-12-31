@@ -218,9 +218,12 @@ def test_datas():
             ("span", _rustlib.QualName("span")),
             ("custom-name", _rustlib.QualName("custom-name")),
             (_rustlib.QualName("span", "html", None), _rustlib.QualName("span", "html", None)),
-            (_rustlib.QualName("span", "html", "prefix"), _rustlib.QualName("span", "html", "prefix")),
+            (
+                _rustlib.QualName("span", "html", "prefix"),
+                _rustlib.QualName("span", "html", "prefix"),
+            ),
         ],
-        (1, [])
+        (1, []),
     )
     _writable_properties(
         element,
@@ -229,16 +232,70 @@ def test_datas():
             (False, False),
             (True, True),
         ],
-        (1, [])
+        (1, []),
     )
 
     with pytest.raises(AttributeError):
         element.attrs = []
 
-    element = _rustlib.ElementData("span", [ ("data-type", "3"), ("custom-attr", "val"), (_rustlib.QualName("qual", "xml"), "") ])
+    element = _rustlib.ElementData(
+        "span", [("id", "3"), ("custom-attr", "val"), (_rustlib.QualName("qual", "xml"), "")]
+    )
     assert element.name == _rustlib.QualName("span")
     assert len(element.attrs) == 3
 
-    assert element.attrs[0] == (_rustlib.QualName("data-type"), "3")
+    assert element.attrs[0] == (_rustlib.QualName("id"), "3")
     assert element.attrs[1] == (_rustlib.QualName("custom-attr"), "val")
     assert element.attrs[2] == (_rustlib.QualName("qual", "xml"), "")
+
+    assert element.id == "3"
+    assert element.classes == []
+
+
+def test_element_attrs():
+    element = _rustlib.ElementData(
+        "span",
+        [
+            ("id", "par"),
+            ("custom-attr", "val"),
+            (_rustlib.QualName("class"), "table flex flex-col"),
+        ],
+    )
+    assert len(element.attrs) == 3
+    assert element.id == "par"
+    assert element.classes.sort() == ["table", "flex", "flex-col"].sort()
+    assert element.attrs[0] == (_rustlib.QualName("id"), "par")
+    assert element.attrs[1] == (_rustlib.QualName("custom-attr"), "val")
+    assert element.attrs[2] == (_rustlib.QualName("class"), "table flex flex-col")
+
+    del element.attrs[0]  # del id
+    assert element.id is None
+    del element.attrs[1]  # del class
+    assert element.classes == []
+
+    element.attrs[0] = (_rustlib.QualName("data-type"), "3")
+    assert element.attrs[0] == (_rustlib.QualName("data-type"), "3")
+
+    element.attrs.append((_rustlib.QualName("id"), "newid"))
+    element.attrs.append((_rustlib.QualName("class"), "mt-0 px-10"))
+    assert len(element.attrs) == 3
+
+    for qual, val in element.attrs:
+        pass
+
+    for qual, val in element.attrs:
+        pass
+
+    attrs = element.attrs
+    iter(attrs)
+
+    with pytest.raises(RuntimeError):
+        iter(attrs)
+
+    attrs.sort()
+    assert element.attrs[0][0] == _rustlib.QualName("class")
+    assert element.attrs[1][0] == _rustlib.QualName("data-type")
+    assert element.attrs[2][0] == _rustlib.QualName("id")
+
+    element.attrs.clear()
+    assert len(element.attrs) == 0
