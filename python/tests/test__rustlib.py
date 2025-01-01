@@ -73,7 +73,17 @@ def test_html():
     assert isinstance(html.root, _rustlib.Node)
     assert isinstance(html.root.data(), _rustlib.DocumentData)
 
-    html.serialize()
+    assert html.serialize() == html.root.serialize_html()
+
+    # test parents() & tree()
+    last_node = None
+    for n in html.root.tree():
+        assert isinstance(n, _rustlib.Node)
+        last_node = n
+    
+    for p in last_node.parents():
+        assert isinstance(p, _rustlib.Node)
+        print(p.data())
 
 
 def test_xml():
@@ -84,7 +94,7 @@ def test_xml():
     assert isinstance(xml.root, _rustlib.Node)
     assert isinstance(xml.root.data(), _rustlib.DocumentData)
 
-    xml.serialize()
+    assert xml.serialize() == xml.root.serialize_xml()
 
 
 def test_qualname():
@@ -324,7 +334,7 @@ def test_node_children():
     assert newroot.children()[0].children()[0].is_element()
 
     for n in newroot.children():
-        for p in n.children():
+        for _ in n.children():
             pass
 
     children = newroot.children()

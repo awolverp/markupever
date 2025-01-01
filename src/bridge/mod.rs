@@ -15,6 +15,8 @@ pub use node::PyElementAttributes;
 pub use node::PyElementData;
 pub use node::PyFragmentData;
 pub use node::PyNode;
+pub use node::PyParentsIterator;
 pub use node::PyProcessingInstructionData;
 pub use node::PyQualName;
 pub use node::PyTextData;
+pub use node::PyTreeIterator;

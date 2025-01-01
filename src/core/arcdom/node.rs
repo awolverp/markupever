@@ -443,7 +443,7 @@ impl Node {
 
     /// Unlike the iter method, iterates all the parents.
     pub fn parents(&self) -> ParentsIterator {
-        ParentsIterator::new(self.clone(), false)
+        ParentsIterator::new(self, false)
     }
 
     /// Returns `true` if the two [`Node`]s point to the same allocation
@@ -649,8 +649,7 @@ impl<'a> Children<'a> {
     }
 
     pub(super) unsafe fn remove_index(&mut self, index: usize) -> Node {
-        let node = self.vec.remove(index);
-        node
+        self.vec.remove(index)
     }
 
     #[inline]
@@ -782,11 +781,11 @@ pub struct ParentsIterator {
 }
 
 impl ParentsIterator {
-    pub fn new(node: Node, include_node: bool) -> Self {
+    pub fn new(node: &Node, include_node: bool) -> Self {
         let mut s = Self { last: None };
 
         if include_node {
-            s.last = Some(node);
+            s.last = Some(node.clone());
         } else {
             s.last = node
                 .parent()
@@ -804,10 +803,10 @@ impl Iterator for ParentsIterator {
     fn next(&mut self) -> Option<Self::Item> {
         let node = self.last.take()?;
 
-        self.last = node
-            .parent()
-            .clone()
-            .map(|x| x.upgrade().expect("dangling weak reference"));
+        self.last = match node.parent().clone().map(|x| x.upgrade()) {
+            None => None,
+            Some(x) => x
+        };
 
         Some(node)
     }

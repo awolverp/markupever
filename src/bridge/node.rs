@@ -466,8 +466,7 @@ pub struct PyElementAttributes {
 #[pyo3::pymethods]
 impl PyElementAttributes {
     #[new]
-    #[allow(unused_variables)]
-    pub fn new(element: pyo3::PyObject) -> pyo3::PyResult<Self> {
+    pub fn new() -> pyo3::PyResult<Self> {
         Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
             "Use ElementNodeData.attrs property; don't use this constructor directly.",
         ))
@@ -833,10 +832,9 @@ pub struct PyChildren {
 #[pyo3::pymethods]
 impl PyChildren {
     #[new]
-    #[allow(unused_variables)]
-    pub fn new(element: pyo3::PyObject) -> pyo3::PyResult<Self> {
+    pub fn new() -> pyo3::PyResult<Self> {
         Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            "Use Node.children property; don't use this constructor directly.",
+            "Use Node.children() method; don't use this constructor directly.",
         ))
     }
 
@@ -956,6 +954,72 @@ impl PyChildren {
     }
 }
 
+/// An element node data
+#[pyo3::pyclass(name = "TreeIterator", module = "markupselect._rustlib")]
+pub struct PyTreeIterator {
+    pub tree: arcdom::NodesTree,
+}
+
+#[pyo3::pymethods]
+impl PyTreeIterator {
+    #[new]
+    pub fn new() -> pyo3::PyResult<Self> {
+        Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            "Use Node.tree() method; don't use this constructor directly.",
+        ))
+    }
+
+    pub fn __iter__(slf: pyo3::PyRef<'_, Self>) -> pyo3::PyRef<'_, Self> {
+        slf
+    }
+
+    pub fn __next__(
+        mut slf: pyo3::PyRefMut<'_, Self>,
+        py: pyo3::Python<'_>,
+    ) -> pyo3::PyResult<pyo3::PyObject> {
+        match slf.tree.next() {
+            None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
+            Some(node) => {
+                let node = PyNode(node);
+                Ok(pyo3::Py::new(py, node)?.into_any())
+            }
+        }
+    }
+}
+
+/// An element node data
+#[pyo3::pyclass(name = "ParentsIterator", module = "markupselect._rustlib")]
+pub struct PyParentsIterator {
+    pub parents: arcdom::ParentsIterator,
+}
+
+#[pyo3::pymethods]
+impl PyParentsIterator {
+    #[new]
+    pub fn new() -> pyo3::PyResult<Self> {
+        Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            "Use Node.parents() method; don't use this constructor directly.",
+        ))
+    }
+
+    pub fn __iter__(slf: pyo3::PyRef<'_, Self>) -> pyo3::PyRef<'_, Self> {
+        slf
+    }
+
+    pub fn __next__(
+        mut slf: pyo3::PyRefMut<'_, Self>,
+        py: pyo3::Python<'_>,
+    ) -> pyo3::PyResult<pyo3::PyObject> {
+        match slf.parents.next() {
+            None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
+            Some(node) => {
+                let node = PyNode(node);
+                Ok(pyo3::Py::new(py, node)?.into_any())
+            }
+        }
+    }
+}
+
 /// A node
 #[pyo3::pyclass(name = "Node", module = "markupselect._rustlib", frozen)]
 pub struct PyNode(pub arcdom::Node);
@@ -1072,6 +1136,40 @@ impl PyNode {
         };
 
         Ok(pyo3::Py::new(py, children)?.into_any())
+    }
+
+    pub fn tree(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let tree_iter = PyTreeIterator {
+            tree: self.0.tree(),
+        };
+
+        Ok(pyo3::Py::new(py, tree_iter)?.into_any())
+    }
+
+    pub fn parents(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let parents_iter = PyParentsIterator {
+            parents: self.0.parents(),
+        };
+
+        Ok(pyo3::Py::new(py, parents_iter)?.into_any())
+    }
+
+    pub fn serialize_html(&self) -> pyo3::PyResult<Vec<u8>> {
+        let mut writer = Vec::new();
+
+        arcdom::serialize_html(&mut writer, &self.0)
+            .map_err(|x| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(x.to_string()))?;
+
+        Ok(writer)
+    }
+
+    pub fn serialize_xml(&self) -> pyo3::PyResult<Vec<u8>> {
+        let mut writer = Vec::new();
+
+        arcdom::serialize_xml(&mut writer, &self.0)
+            .map_err(|x| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(x.to_string()))?;
+
+        Ok(writer)
     }
 
     /// Removes this node from its parent
