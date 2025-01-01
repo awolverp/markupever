@@ -148,6 +148,24 @@ impl ElementData {
     }
 }
 
+impl PartialEq for ElementData {
+    fn eq(&self, other: &Self) -> bool {
+        if self.name != other.name
+            || self.template != other.template
+            || self.mathml_annotation_xml_integration_point
+                != other.mathml_annotation_xml_integration_point
+        {
+            return false;
+        }
+
+        self.attrs
+            .iter()
+            .all(|x| other.attrs.binary_search(x).is_ok())
+    }
+}
+
+impl Eq for ElementData {}
+
 impl std::fmt::Debug for ElementData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ElementData")
@@ -180,7 +198,7 @@ impl ProcessingInstructionData {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum NodeData {
     Document(DocumentData),
     Fragment(FragmentData),
@@ -438,7 +456,7 @@ impl Node {
 
     /// Iterates all nodes and their children like a tree
     pub fn tree(&self) -> NodesTree {
-        NodesTree::new(self.clone(), true)
+        NodesTree::new(self.clone(), false)
     }
 
     /// Unlike the iter method, iterates all the parents.
@@ -551,6 +569,22 @@ impl markup5ever::serialize::Serialize for Node {
         Ok(())
     }
 }
+
+impl PartialEq for Node {
+    fn eq(&self, other: &Self) -> bool {
+        if Arc::ptr_eq(&self.value, &other.value) {
+            return true;
+        }
+
+        let data1 = self.value.data.lock();
+        let data2: parking_lot::lock_api::MutexGuard<'_, parking_lot::RawMutex, NodeData> =
+            other.value.data.lock();
+
+        data1.eq(&data2)
+    }
+}
+
+impl Eq for Node {}
 
 /// [`WeakNode`] is a version of [`Node`] that holds a non-owning reference to the managed allocation.
 #[derive(Clone)]
@@ -756,8 +790,8 @@ impl NodesTree {
         if include_node {
             s.vec.push(node);
         } else {
-            let children = node.children();
-            s.vec.extend(children);
+            let children = node.children().into_iter();
+            s.vec.extend(children.rev());
         }
 
         s
@@ -803,10 +837,11 @@ impl Iterator for ParentsIterator {
     fn next(&mut self) -> Option<Self::Item> {
         let node = self.last.take()?;
 
-        self.last = match node.parent().clone().map(|x| x.upgrade()) {
-            None => None,
-            Some(x) => x
-        };
+        self.last = node
+            .parent()
+            .clone()
+            .map(|x| x.upgrade())
+            .unwrap_or_default();
 
         Some(node)
     }
@@ -928,7 +963,7 @@ mod tests {
             v.push(n);
         }
 
-        assert_eq!(v.len(), 7);
+        assert_eq!(v.len(), 6);
 
         assert_eq!(node.children().position(&child3), Some(2));
         assert!(node.children().remove(2).ptr_eq(&child3));
@@ -940,12 +975,12 @@ mod tests {
             v.push(n);
         }
 
-        assert_eq!(v.len(), 5);
-
-        let have_to = vec![node, child1, child1_child, child2, child2_child];
+        assert_eq!(v.len(), 4);
+        
+        let have_to = vec![child1, child1_child, child2, child2_child];
 
         for (v1, v2) in v.iter().zip(have_to.iter()) {
-            assert!(v1.ptr_eq(v2))
+            assert!(v1.ptr_eq(v2), "{:?} != {:?}", v1, v2);
         }
     }
 

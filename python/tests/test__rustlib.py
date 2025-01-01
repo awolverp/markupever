@@ -17,7 +17,8 @@ _HTML = """<!DOCTYPE html>
         class="flex flex-row justify-between bg-zinc-op fixed w-full px-8 py-4 top-0 right-[50%] left-[50%] translate-x-[-50%] items-center md:w-3/4 md:rounded-2xl md:top-3 duration-500">
 
         <div>
-            <img src="favicon.ico" alt="ICO" class="w-7 h-7 inline">
+            <img id="1" src="favicon.ico" alt="ICO" class="w-7 h-7 inline">
+            <img id="2" src="favicon.ico" alt="ICO" class="w-7 h-7 inline">
             <p class="inline font-extrabold text-lg md:text-xl">Shine Frequency</p>
         </div>
 
@@ -83,7 +84,6 @@ def test_html():
     
     for p in last_node.parents():
         assert isinstance(p, _rustlib.Node)
-        print(p.data())
 
 
 def test_xml():
@@ -127,6 +127,9 @@ def test_qualname():
     assert qualname.namespace == "custom-ns"
     assert qualname.prefix is None
 
+    assert _rustlib.QualName("test") == _rustlib.QualName("test")
+    assert _rustlib.QualName("test") != _rustlib.QualName("test", "html")
+
 
 def _construct_data(cls: type, is_name: str, *args, **kwargs) -> object:
     obj = cls(*args, **kwargs)
@@ -138,6 +141,8 @@ def _construct_data(cls: type, is_name: str, *args, **kwargs) -> object:
     node = _rustlib.Node(obj)
     assert isinstance(node, _rustlib.Node)
     assert isinstance(node.data(), cls)
+
+    assert node == obj
 
     assert getattr(node, is_name)() is True
 
@@ -352,6 +357,7 @@ def test_parent():
     
     assert len(root.children()) == 1
     assert element.parent() is not None
+    assert element.parent() == root
 
     element.unlink()
     assert len(root.children()) == 0
@@ -361,3 +367,30 @@ def test_parent():
     del root.children()[0]
     assert len(root.children()) == 0
     assert element.parent() is None
+
+
+def _to_text(node):
+    text = ""
+
+    tree = node.tree()
+
+    for n in tree:
+        if n.is_text():
+            text += n.data().contents.strip()
+    
+    return text
+
+
+def test_select():
+    html = _rustlib.Html(_HTML.encode("utf-8"), _rustlib.QUIRKS_MODE_OFF)
+
+    for node in html.root.select("p"):
+        data = node.data()
+        assert isinstance(data, _rustlib.ElementData)
+        assert data.name.local == "p"
+
+    for node in html.root.select("header div > img:first-child"):
+        data = node.data()
+        assert isinstance(data, _rustlib.ElementData)
+        assert data.name.local == "img"
+        assert data.id == "1"

@@ -20,3 +20,4 @@ pub use node::PyProcessingInstructionData;
 pub use node::PyQualName;
 pub use node::PyTextData;
 pub use node::PyTreeIterator;
+pub use node::PySelect;

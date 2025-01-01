@@ -1,6 +1,6 @@
 [package]
 name = "xmarkup"
-version = "0.1.0"
+version = "0.1.0-beta.1"
 edition = "2021"
 description = "The fast, most optimal, and correct HTML & XML parsing library."
 readme = "README.md"

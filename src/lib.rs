@@ -28,6 +28,7 @@ fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<bridge::PyChildren>()?;
     m.add_class::<bridge::PyTreeIterator>()?;
     m.add_class::<bridge::PyParentsIterator>()?;
+    m.add_class::<bridge::PySelect>()?;
 
     Ok(())
 }

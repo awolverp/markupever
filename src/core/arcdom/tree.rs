@@ -149,7 +149,7 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
         attrs: Vec<markup5ever::Attribute>,
         flags: markup5ever::interface::ElementFlags,
     ) -> Self::Handle {
-        Node::new(ElementData::new(
+        let mut elem = ElementData::new(
             name,
             attrs
                 .into_iter()
@@ -157,11 +157,10 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
                 .collect(),
             flags.template,
             flags.mathml_annotation_xml_integration_point,
-        ))
+        );
 
-        // if flags.template {
-        //     node.children().append(Node::new(NodeData::Fragment));
-        // }
+        elem.attrs.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+        Node::new(elem)
     }
 
     fn create_comment(&self, text: tendril::StrTendril) -> Self::Handle {

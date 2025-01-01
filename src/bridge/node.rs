@@ -1,6 +1,7 @@
 #![allow(clippy::new_without_default)]
 
 use crate::core::arcdom;
+use crate::core::matching;
 use markup5ever::{namespace_url, ns};
 use pyo3::types::PyAnyMethods;
 use pyo3::PyTypeInfo;
@@ -66,6 +67,54 @@ fn get_node_from_pyobject(val: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<
         Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
             "argument is not acceptable. must be an instance of: Node, PyDocumentData, PyFragmentData, PyDoctypeData, PyCommentData, PytextData, PyElementData, or PyProcessingInstructionData",
         ))
+    }
+}
+
+#[inline]
+fn make_repr(data: &arcdom::NodeData) -> String {
+    match data {
+        arcdom::NodeData::Document(..) => String::from("DocumentData"),
+        arcdom::NodeData::Fragment(..) => String::from("FragmentData"),
+        arcdom::NodeData::Doctype(doc) => {
+            format!(
+                "DoctypeData(name={:?}, public_id={:?}, system_id={:?})",
+                &*doc.name, &*doc.public_id, &*doc.system_id
+            )
+        }
+        arcdom::NodeData::Text(text) => format!("TextData(contents={:?})", &*text.contents),
+        arcdom::NodeData::Comment(comment) => {
+            format!("CommentData(contents={:?})", &*comment.contents)
+        }
+        arcdom::NodeData::Element(element) => {
+            let mut writer = format!(
+                "ElementData(name=QualName(local={:?}, namespace={:?}, prefix={:?}), attrs=[",
+                &*element.name.local,
+                &*element.name.ns,
+                element.name.prefix.as_deref()
+            );
+
+            let mut iter_ = element.attrs.iter();
+
+            if let Some((key, val)) = iter_.next() {
+                writer += &format!("({:?}, {:?})", &*key.local, val.as_ref());
+            }
+
+            for (key, val) in iter_ {
+                writer += &format!(", ({:?}, {:?})", &*key.local, val.as_ref());
+            }
+
+            writer
+                + &format!(
+                    "], template={}, mathml_annotation_xml_integration_point={})",
+                    element.template, element.mathml_annotation_xml_integration_point
+                )
+        }
+        arcdom::NodeData::ProcessingInstruction(pi) => {
+            format!(
+                "ProcessingInstructionData(data={:?}, target={:?})",
+                &*pi.data, &*pi.target
+            )
+        }
     }
 }
 
@@ -176,6 +225,16 @@ impl PyQualName {
             Ok(false)
         }
     }
+
+    pub fn __repr__(&self) -> String {
+        let lock = self.0.lock();
+        format!(
+            "QualName(local={:?}, namespace={:?}, prefix={:?})",
+            &*lock.local,
+            &*lock.ns,
+            lock.prefix.as_deref()
+        )
+    }
 }
 
 /// A document node data
@@ -196,6 +255,16 @@ impl PyDocumentData {
         let node = PyNode(self.0.clone());
         pyo3::Py::new(py, node).map(|x| x.into_any())
     }
+
+    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+        let other = get_node_from_pyobject(other.bind(py))?;
+        Ok(self.0.eq(&other))
+    }
+
+    pub fn __repr__(&self) -> String {
+        let data = self.0.as_nodedata();
+        make_repr(&data)
+    }
 }
 
 // /// A fragment node data
@@ -215,6 +284,16 @@ impl PyFragmentData {
     pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
         let node = PyNode(self.0.clone());
         pyo3::Py::new(py, node).map(|x| x.into_any())
+    }
+
+    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+        let other = get_node_from_pyobject(other.bind(py))?;
+        Ok(self.0.eq(&other))
+    }
+
+    pub fn __repr__(&self) -> String {
+        let data = self.0.as_nodedata();
+        make_repr(&data)
     }
 }
 
@@ -301,6 +380,16 @@ impl PyDoctypeData {
             .expect("PyDoctypeData holds a node other than doctype")
             .system_id = value.into();
     }
+
+    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+        let other = get_node_from_pyobject(other.bind(py))?;
+        Ok(self.0.eq(&other))
+    }
+
+    pub fn __repr__(&self) -> String {
+        let data = self.0.as_nodedata();
+        make_repr(&data)
+    }
 }
 
 /// A comment node data
@@ -346,6 +435,16 @@ impl PyCommentData {
             .expect("PyCommentData holds a node other than comment")
             .contents = value.into();
     }
+
+    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+        let other = get_node_from_pyobject(other.bind(py))?;
+        Ok(self.0.eq(&other))
+    }
+
+    pub fn __repr__(&self) -> String {
+        let data = self.0.as_nodedata();
+        make_repr(&data)
+    }
 }
 
 /// A text node data
@@ -384,6 +483,16 @@ impl PyTextData {
             .as_text()
             .expect("PyTextData holds a node other than text")
             .contents = value.into();
+    }
+
+    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+        let other = get_node_from_pyobject(other.bind(py))?;
+        Ok(self.0.eq(&other))
+    }
+
+    pub fn __repr__(&self) -> String {
+        let data = self.0.as_nodedata();
+        make_repr(&data)
     }
 }
 
@@ -452,6 +561,16 @@ impl PyProcessingInstructionData {
             .as_processing_instruction()
             .expect("PyProcessingInstructionData holds a node other than processing instruction")
             .target = value.into();
+    }
+
+    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+        let other = get_node_from_pyobject(other.bind(py))?;
+        Ok(self.0.eq(&other))
+    }
+
+    pub fn __repr__(&self) -> String {
+        let data = self.0.as_nodedata();
+        make_repr(&data)
     }
 }
 
@@ -819,6 +938,16 @@ impl PyElementData {
             .expect("PyElementData holds a node other than element")
             .mathml_annotation_xml_integration_point = value;
     }
+
+    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+        let other = get_node_from_pyobject(other.bind(py))?;
+        Ok(self.0.eq(&other))
+    }
+
+    pub fn __repr__(&self) -> String {
+        let data = self.0.as_nodedata();
+        make_repr(&data)
+    }
 }
 
 /// An element node data
@@ -1021,6 +1150,37 @@ impl PyParentsIterator {
 }
 
 /// A node
+#[pyo3::pyclass(name = "Select", module = "markupselect._rustlib")]
+pub struct PySelect(pub matching::Select);
+
+#[pyo3::pymethods]
+impl PySelect {
+    #[new]
+    pub fn new() -> pyo3::PyResult<Self> {
+        Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            "Use Node.select() method; don't use this constructor directly.",
+        ))
+    }
+
+    pub fn __iter__(slf: pyo3::PyRef<'_, Self>) -> pyo3::PyRef<'_, Self> {
+        slf
+    }
+
+    pub fn __next__(
+        mut slf: pyo3::PyRefMut<'_, Self>,
+        py: pyo3::Python<'_>,
+    ) -> pyo3::PyResult<pyo3::PyObject> {
+        match slf.0.next() {
+            None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
+            Some(node) => {
+                let node = PyNode(node);
+                Ok(pyo3::Py::new(py, node)?.into_any())
+            }
+        }
+    }
+}
+
+/// A node
 #[pyo3::pyclass(name = "Node", module = "markupselect._rustlib", frozen)]
 pub struct PyNode(pub arcdom::Node);
 
@@ -1175,5 +1335,23 @@ impl PyNode {
     /// Removes this node from its parent
     pub fn unlink(&self) {
         self.0.unlink();
+    }
+
+    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+        let other = get_node_from_pyobject(other.bind(py))?;
+        Ok(self.0.eq(&other))
+    }
+
+    pub fn __repr__(&self) -> String {
+        let data = self.0.as_nodedata();
+        format!("Node({})", make_repr(&data))
+    }
+
+    pub fn select(&self, py: pyo3::Python<'_>, expr: String) -> pyo3::PyResult<pyo3::PyObject> {
+        let expr = matching::Select::new(self.0.tree(), &expr).map_err(|err| {
+            pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(err.to_string())
+        })?;
+
+        Ok(pyo3::Py::new(py, PySelect(expr))?.into_any())
     }
 }

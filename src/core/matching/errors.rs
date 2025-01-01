@@ -6,3 +6,13 @@ impl<'a> From<selectors::parser::SelectorParseErrorKind<'a>> for CssParserKindEr
         Self(value)
     }
 }
+
+impl std::fmt::Display for CssParserKindError<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{:?}",
+            self.0
+        )
+    }
+}
