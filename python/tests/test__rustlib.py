@@ -66,35 +66,38 @@ _XML = """<bookstore>
 
 
 def test_html():
-    html = _rustlib.Html(_HTML.encode("utf-8"), _rustlib.QUIRKS_MODE_OFF)
+    html = _rustlib.Html(_HTML.encode("utf-8"), _rustlib.HtmlOptions())
 
     assert not html.errors
-    assert html.lineno == _HTML.count("\n") + 1
     assert html.quirks_mode == _rustlib.QUIRKS_MODE_OFF
     assert isinstance(html.root, _rustlib.Node)
     assert isinstance(html.root.data(), _rustlib.DocumentData)
 
-    assert html.serialize() == html.root.serialize_html()
+    html.root.serialize_html()
 
     # test parents() & tree()
     last_node = None
     for n in html.root.tree():
         assert isinstance(n, _rustlib.Node)
         last_node = n
-    
+
+    first_node = None
     for p in last_node.parents():
         assert isinstance(p, _rustlib.Node)
+        first_node = p
+    
+    assert first_node == html.root
 
 
 def test_xml():
-    xml = _rustlib.Xml(_XML.encode("utf-8"))
+    xml = _rustlib.Xml(_XML.encode("utf-8"), _rustlib.XmlOptions())
 
     assert not xml.errors
     assert xml.quirks_mode == _rustlib.QUIRKS_MODE_OFF
     assert isinstance(xml.root, _rustlib.Node)
     assert isinstance(xml.root.data(), _rustlib.DocumentData)
 
-    assert xml.serialize() == xml.root.serialize_xml()
+    xml.root.serialize_xml()
 
 
 def test_qualname():
@@ -136,8 +139,6 @@ def _construct_data(cls: type, is_name: str, *args, **kwargs) -> object:
 
     assert isinstance(obj, cls)
 
-    assert isinstance(obj.as_node(), _rustlib.Node)
-
     node = _rustlib.Node(obj)
     assert isinstance(node, _rustlib.Node)
     assert isinstance(node.data(), cls)
@@ -162,7 +163,6 @@ def _writable_properties(obj, attrnames, correct_cases: list[tuple], wrong_cases
 
 def test_datas():
     _ = _construct_data(_rustlib.DocumentData, "is_document")
-    _ = _construct_data(_rustlib.FragmentData, "is_fragment")
 
     doctype = _construct_data(_rustlib.DoctypeData, "is_doctype", "name", "public_id", "system_id")
     assert doctype.name == "name"
@@ -239,8 +239,7 @@ def test_datas():
         (1, []),
     )
 
-    with pytest.raises(AttributeError):
-        element.attrs = []
+    element.attrs = []
 
     element = _rustlib.ElementData(
         "span", [("id", "3"), ("custom-attr", "val"), (_rustlib.QualName("qual", "xml"), "")]
@@ -314,7 +313,7 @@ def test_node_children():
 
     assert len(root.children()) == 1
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         root.children().append(root)
 
     assert isinstance(root.children()[0].data(), _rustlib.CommentData)
@@ -350,16 +349,18 @@ def test_node_children():
 
 
 def test_parent():
-    root = _rustlib.DocumentData().as_node()
-    element = _rustlib.ElementData("html", []).as_node()
+    root = _rustlib.Node(_rustlib.DocumentData())
+    element = _rustlib.Node(_rustlib.ElementData("html", []))
 
     root.children().append(element)
-    
+
     assert len(root.children()) == 1
     assert element.parent() is not None
     assert element.parent() == root
 
-    element.unlink()
+    index = root.children().index(element)
+    del root.children()[index]
+    
     assert len(root.children()) == 0
     assert element.parent() is None
 
@@ -369,20 +370,20 @@ def test_parent():
     assert element.parent() is None
 
 
-def _to_text(node):
-    text = ""
+# def _to_text(node):
+#     text = ""
 
-    tree = node.tree()
+#     tree = node.tree()
 
-    for n in tree:
-        if n.is_text():
-            text += n.data().contents.strip()
-    
-    return text
+#     for n in tree:
+#         if n.is_text():
+#             text += n.data().contents.strip()
+
+#     return text
 
 
 def test_select():
-    html = _rustlib.Html(_HTML.encode("utf-8"), _rustlib.QUIRKS_MODE_OFF)
+    html = _rustlib.Html(_HTML.encode("utf-8"), _rustlib.HtmlOptions())
 
     for node in html.root.select("p"):
         data = node.data()

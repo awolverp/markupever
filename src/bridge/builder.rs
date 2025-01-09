@@ -1,6 +1,5 @@
-use crate::core::arcdom::{
-    parse_html_utf8, parse_xml_utf8, serialize_html, serialize_xml, TreeBuilder,
-};
+use crate::core::arcdom;
+use pyo3::types::PyAnyMethods;
 
 pub const QUIRKS_MODE_FULL: u8 = 0;
 pub const QUIRKS_MODE_LIMITED: u8 = 1;
@@ -22,132 +21,301 @@ fn quirks_mode_to_u8(value: markup5ever::interface::QuirksMode) -> u8 {
     }
 }
 
+#[pyo3::pyclass(name = "HtmlOptions", module = "markupselect._rustlib", frozen)]
+pub struct PyHtmlOptions {
+    /// Report all parse errors described in the spec, at some
+    /// performance penalty?  Default: false
+    exact_errors: bool,
+
+    /// Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning
+    /// of the stream?  Default: true
+    discard_bom: bool,
+
+    /// Keep a record of how long we spent in each state?  Printed
+    /// when `end()` is called.  Default: false
+    profile: bool,
+
+    /// Is this an `iframe srcdoc` document?
+    iframe_srcdoc: bool,
+
+    /// Should we drop the DOCTYPE (if any) from the tree?
+    drop_doctype: bool,
+
+    /// Is this a complete document? (means includes html, head, and body tag)
+    /// Default: false
+    full_document: bool,
+
+    /// Initial TreeBuilder quirks mode. Default: NoQuirks
+    quirks_mode: markup5ever::interface::QuirksMode,
+}
+
+#[pyo3::pymethods]
+impl PyHtmlOptions {
+    #[new]
+    #[pyo3(signature=(*, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, full_document=true, quirks_mode=QUIRKS_MODE_OFF))]
+    fn new(
+        exact_errors: bool,
+        discard_bom: bool,
+        profile: bool,
+        iframe_srcdoc: bool,
+        drop_doctype: bool,
+        full_document: bool,
+        quirks_mode: u8,
+    ) -> Self {
+        Self {
+            exact_errors,
+            discard_bom,
+            profile,
+            iframe_srcdoc,
+            drop_doctype,
+            full_document,
+            quirks_mode: quirks_mode_from_u8(quirks_mode),
+        }
+    }
+
+    #[getter]
+    fn exact_errors(&self) -> bool {
+        self.exact_errors
+    }
+
+    #[getter]
+    fn discard_bom(&self) -> bool {
+        self.discard_bom
+    }
+
+    #[getter]
+    fn profile(&self) -> bool {
+        self.profile
+    }
+
+    #[getter]
+    fn iframe_srcdoc(&self) -> bool {
+        self.iframe_srcdoc
+    }
+
+    #[getter]
+    fn drop_doctype(&self) -> bool {
+        self.drop_doctype
+    }
+
+    #[getter]
+    fn full_document(&self) -> bool {
+        self.full_document
+    }
+
+    #[getter]
+    fn quirks_mode(&self) -> u8 {
+        quirks_mode_to_u8(self.quirks_mode)
+    }
+}
+
+#[pyo3::pyclass(name = "XmlOptions", module = "markupselect._rustlib", frozen)]
+pub struct PyXmlOptions {
+    /// Report all parse errors described in the spec, at some
+    /// performance penalty?  Default: false
+    exact_errors: bool,
+
+    /// Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning
+    /// of the stream?  Default: true
+    discard_bom: bool,
+
+    /// Keep a record of how long we spent in each state?  Printed
+    /// when `end()` is called.  Default: false
+    profile: bool,
+}
+
+#[pyo3::pymethods]
+impl PyXmlOptions {
+    #[new]
+    #[pyo3(signature=(*, exact_errors=false, discard_bom=true, profile=false))]
+    pub(super) fn new(exact_errors: bool, discard_bom: bool, profile: bool) -> Self {
+        Self {
+            exact_errors,
+            discard_bom,
+            profile,
+        }
+    }
+
+    #[getter]
+    fn exact_errors(&self) -> bool {
+        self.exact_errors
+    }
+
+    #[getter]
+    fn discard_bom(&self) -> bool {
+        self.discard_bom
+    }
+
+    #[getter]
+    fn profile(&self) -> bool {
+        self.profile
+    }
+}
+
 /// HTML Tree / HTML Document Parser
 ///
 /// Parses a HTML document into a tree link of `Node`s
 #[pyo3::pyclass(name = "Html", module = "markupselect._rustlib", frozen)]
-pub struct PyHtml(TreeBuilder);
+pub struct PyHtml(arcdom::ArcDom);
 
 #[pyo3::pymethods]
 impl PyHtml {
     #[new]
-    #[pyo3(signature=(content, quirks_mode, exact_errors=false, is_fragment=false, /))]
-    pub fn new(content: Vec<u8>, quirks_mode: u8, exact_errors: bool, is_fragment: bool) -> Self {
-        let dom = parse_html_utf8(
-            content.as_slice(),
-            quirks_mode_from_u8(quirks_mode),
-            exact_errors,
-            is_fragment,
-        );
+    pub(super) fn new(
+        py: pyo3::Python<'_>,
+        content: pyo3::PyObject,
+        options: pyo3::PyObject,
+    ) -> pyo3::PyResult<Self> {
+        use tendril::TendrilSink;
 
-        Self(dom)
+        let options = options
+            .bind(py)
+            .extract::<pyo3::PyRef<'_, PyHtmlOptions>>()
+            .map_err(|_| {
+                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    "expected HtmlOptions for options argument",
+                )
+            })?;
+
+        let content = unsafe {
+            if pyo3::ffi::PyBytes_Check(content.as_ptr()) == 1 {
+                content.bind(py).extract::<Vec<u8>>().unwrap()
+            } else if pyo3::ffi::PyUnicode_Check(content.as_ptr()) == 1 {
+                let s = content.bind(py).extract::<String>().unwrap();
+                s.into_bytes()
+            } else {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    "expected bytes or str for content argument",
+                ));
+            }
+        };
+
+        let parser = arcdom::ArcDom::parse_html(
+            arcdom::Node::new(arcdom::DocumentData),
+            options.full_document,
+            html5ever::tokenizer::TokenizerOpts {
+                exact_errors: options.exact_errors,
+                discard_bom: options.discard_bom,
+                profile: options.profile,
+                ..Default::default()
+            },
+            html5ever::tree_builder::TreeBuilderOpts {
+                exact_errors: options.exact_errors,
+                iframe_srcdoc: options.iframe_srcdoc,
+                drop_doctype: options.drop_doctype,
+                quirks_mode: options.quirks_mode,
+                ..Default::default()
+            },
+        )
+        .from_utf8()
+        .one(tendril::ByteTendril::from_slice(&content));
+
+        Ok(Self(parser))
     }
 
-    /// Returns a list of errors with its line
+    /// Returns a list of errors
     #[getter]
-    pub fn errors(&self) -> Vec<(String, u64)> {
+    pub(super) fn errors(&self) -> Vec<String> {
         self.0
-            .errors()
+            .errors
             .borrow()
             .iter()
-            .map(|e| (e.0.to_string(), e.1))
+            .map(|x| x.to_string())
             .collect()
-    }
-
-    /// Returns the line count of the parsed document
-    #[getter]
-    pub fn lineno(&self) -> u64 {
-        unsafe { *self.0.lineno().get() }
     }
 
     /// Returns the quirks mode
     #[getter]
-    pub fn quirks_mode(&self) -> u8 {
-        quirks_mode_to_u8(self.0.quirks_mode().get())
+    pub(super) fn quirks_mode(&self) -> u8 {
+        quirks_mode_to_u8(self.0.quirks_mode.get())
     }
 
     /// Returns the root node
     ///
     /// Most of the time is document node
     #[getter]
-    pub fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+    pub(super) fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
         let node = super::node::PyNode(self.0.root.clone());
         pyo3::Py::new(py, node).map(|x| x.into_any())
     }
-
-    /// Serialize the content into bytes
-    pub fn serialize(&self) -> pyo3::PyResult<Vec<u8>> {
-        let mut writer = Vec::new();
-
-        serialize_html(&mut writer, &self.0.root)
-            .map_err(|x| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(x.to_string()))?;
-
-        Ok(writer)
-    }
-
-    // pub fn __repr__(&self) -> String {
-    //     self.to_string()
-    // }
 }
 
 /// HTML Tree / HTML Document Parser
 ///
 /// Parses a HTML document into a tree link of `Node`s
 #[pyo3::pyclass(name = "Xml", module = "markupselect._rustlib", frozen)]
-pub struct PyXml(TreeBuilder);
+pub struct PyXml(arcdom::ArcDom);
 
 #[pyo3::pymethods]
 impl PyXml {
     #[new]
-    #[pyo3(signature=(content, exact_errors=false, /))]
-    pub fn new(content: Vec<u8>, exact_errors: bool) -> Self {
-        let dom = parse_xml_utf8(content.as_slice(), exact_errors);
+    pub(super) fn new(
+        py: pyo3::Python<'_>,
+        content: pyo3::PyObject,
+        options: pyo3::PyObject,
+    ) -> pyo3::PyResult<Self> {
+        use tendril::TendrilSink;
 
-        Self(dom)
+        let options = options
+            .bind(py)
+            .extract::<pyo3::PyRef<'_, PyXmlOptions>>()
+            .map_err(|_| {
+                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    "expected XmlOptions for options argument",
+                )
+            })?;
+
+        let content = unsafe {
+            if pyo3::ffi::PyBytes_Check(content.as_ptr()) == 1 {
+                content.bind(py).extract::<Vec<u8>>().unwrap()
+            } else if pyo3::ffi::PyUnicode_Check(content.as_ptr()) == 1 {
+                let s = content.bind(py).extract::<String>().unwrap();
+                s.into_bytes()
+            } else {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    "expected bytes or str for content argument",
+                ));
+            }
+        };
+
+        let parser = arcdom::ArcDom::parse_xml(
+            arcdom::Node::new(arcdom::DocumentData),
+            xml5ever::tokenizer::XmlTokenizerOpts {
+                exact_errors: options.exact_errors,
+                discard_bom: options.discard_bom,
+                profile: options.profile,
+                ..Default::default()
+            },
+        )
+        .from_utf8()
+        .one(tendril::ByteTendril::from_slice(&content));
+
+        Ok(Self(parser))
     }
 
-    /// Returns a list of errors with its line
+    /// Returns a list of errors
     #[getter]
-    pub fn errors(&self) -> Vec<(String, u64)> {
+    pub(super) fn errors(&self) -> Vec<String> {
         self.0
-            .errors()
+            .errors
             .borrow()
             .iter()
-            .map(|e| (e.0.to_string(), e.1))
+            .map(|x| x.to_string())
             .collect()
     }
 
-    // /// Returns the line count of the parsed document
-    // #[getter]
-    // pub fn lineno(&self) -> u64 {
-    //     unsafe { *self.0.lineno().get() }
-    // }
-
     /// Returns the quirks mode
     #[getter]
-    pub fn quirks_mode(&self) -> u8 {
-        quirks_mode_to_u8(self.0.quirks_mode().get())
+    pub(super) fn quirks_mode(&self) -> u8 {
+        quirks_mode_to_u8(self.0.quirks_mode.get())
     }
 
     /// Returns the root node
     ///
     /// Most of the time is document node
     #[getter]
-    pub fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+    pub(super) fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
         let node = super::node::PyNode(self.0.root.clone());
         pyo3::Py::new(py, node).map(|x| x.into_any())
     }
-
-    pub fn serialize(&self) -> pyo3::PyResult<Vec<u8>> {
-        let mut writer = Vec::new();
-
-        serialize_xml(&mut writer, &self.0.root)
-            .map_err(|x| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(x.to_string()))?;
-
-        Ok(writer)
-    }
-
-    // pub fn __repr__(&self) -> String {
-    //     self.to_string()
-    // }
 }

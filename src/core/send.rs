@@ -69,6 +69,12 @@ impl<T> OnceLock<T> {
     }
 }
 
+impl<T> Clone for OnceLock<T> {
+    fn clone(&self) -> Self {
+        Self::new()
+    }
+}
+
 impl<T> Default for OnceLock<T> {
     fn default() -> Self {
         Self::new()

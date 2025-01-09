@@ -5,13 +5,11 @@ use crate::core::send::{make_atomic_tendril, AtomicTendril};
 use std::sync::Arc;
 use std::sync::Weak;
 
+pub type SizedSmallVec<T> = smallvec::SmallVec<[T; 4]>;
+
 /// The root of HTML document
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DocumentData;
-
-/// The root of a minimal document object
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct FragmentData;
 
 /// the doctype is the required <!doctype html> preamble found at the top of all documents.
 /// Its sole purpose is to prevent a browser from switching into so-called "quirks mode"
@@ -26,12 +24,24 @@ pub struct DoctypeData {
 }
 
 impl DoctypeData {
-    pub fn new(name: StrTendril, public_id: StrTendril, system_id: StrTendril) -> Self {
+    /// Create a new `DoctypeData`
+    #[inline]
+    pub fn new(name: AtomicTendril, public_id: AtomicTendril, system_id: AtomicTendril) -> Self {
         Self {
-            name: make_atomic_tendril(name),
-            public_id: make_atomic_tendril(public_id),
-            system_id: make_atomic_tendril(system_id),
+            name,
+            public_id,
+            system_id,
         }
+    }
+
+    /// Create a new `DoctypeData` from non-atomic tendril
+    #[inline]
+    pub fn from_non_atomic(name: StrTendril, public_id: StrTendril, system_id: StrTendril) -> Self {
+        Self::new(
+            make_atomic_tendril(name),
+            make_atomic_tendril(public_id),
+            make_atomic_tendril(system_id),
+        )
     }
 }
 
@@ -46,10 +56,16 @@ pub struct CommentData {
 }
 
 impl CommentData {
-    pub fn new(contents: StrTendril) -> Self {
-        Self {
-            contents: make_atomic_tendril(contents),
-        }
+    /// Create a new `CommentData`
+    #[inline]
+    pub fn new(contents: AtomicTendril) -> Self {
+        Self { contents }
+    }
+
+    /// Create a new `CommentData` from non-atomic tendril
+    #[inline]
+    pub fn from_non_atomic(contents: StrTendril) -> Self {
+        Self::new(make_atomic_tendril(contents))
     }
 }
 
@@ -60,51 +76,54 @@ pub struct TextData {
 }
 
 impl TextData {
-    pub fn new(contents: StrTendril) -> Self {
-        Self {
-            contents: make_atomic_tendril(contents),
-        }
+    /// Create a new `TextData`
+    #[inline]
+    pub fn new(contents: AtomicTendril) -> Self {
+        Self { contents }
+    }
+
+    /// Create a new `TextData` from non-atomic tendril
+    #[inline]
+    pub fn from_non_atomic(contents: StrTendril) -> Self {
+        Self::new(make_atomic_tendril(contents))
+    }
+
+    /// Push another StrTendril onto the end of this one.
+    #[inline]
+    pub fn push_non_atomic(&mut self, contents: StrTendril) {
+        self.contents.push_tendril(&make_atomic_tendril(contents));
     }
 }
 
-/// An element
-pub struct ElementData {
-    pub name: markup5ever::QualName,
-    pub attrs: Vec<(markup5ever::QualName, AtomicTendril)>,
-    pub template: bool,
-    pub mathml_annotation_xml_integration_point: bool,
-
-    /// cache id attribute
+/// ElementData attributes that caches 'id' and 'class' attributes of element
+/// and also triggers update will removes caches when attributes updated
+#[derive(Clone)]
+pub struct ElementAttributeTrigger {
+    item: SizedSmallVec<(markup5ever::QualName, AtomicTendril)>,
     id: OnceLock<Option<AtomicTendril>>,
-
-    /// cache class attribute
     classes: OnceLock<Vec<markup5ever::LocalName>>,
 }
 
-impl ElementData {
-    pub fn new(
-        name: markup5ever::QualName,
-        attrs: Vec<(markup5ever::QualName, AtomicTendril)>,
-        template: bool,
-        mathml_annotation_xml_integration_point: bool,
-    ) -> Self {
+impl ElementAttributeTrigger {
+    /// Creates a new `ElementAttributeTrigger`
+    #[inline]
+    pub fn new<I>(item: I) -> Self
+    where
+        I: Iterator<Item = (markup5ever::QualName, AtomicTendril)>,
+    {
         Self {
-            name,
-            attrs,
-            template,
-            mathml_annotation_xml_integration_point,
+            item: item.collect(),
             id: OnceLock::new(),
             classes: OnceLock::new(),
         }
     }
 
-    /// Finds the first 'id' attribute and returns its value.
-    ///
-    /// Also, caches it for the next calls.
+    /// Finds, caches, and returns the 'id' attribute from attributes.
+    #[inline]
     pub fn id(&self) -> Option<&str> {
         self.id
             .get_or_init(|| {
-                self.attrs
+                self.item
                     .iter()
                     .find(|(name, _)| &name.local == "id")
                     .map(|(_, value)| value.clone())
@@ -112,13 +131,12 @@ impl ElementData {
             .as_deref()
     }
 
-    /// Finds 'class' attributes and returns its' values as a list.
-    ///
-    /// Also, caches it for the next calls.
+    /// Finds, caches, and returns the 'class' attributes from attributes.
+    #[inline]
     pub fn classes(&self) -> std::slice::Iter<'_, markup5ever::LocalName> {
         let classes = self.classes.get_or_init(|| {
             let mut classes = self
-                .attrs
+                .item
                 .iter()
                 .filter(|(name, _)| name.local.as_ref() == "class")
                 .flat_map(|(_, value)| {
@@ -136,15 +154,71 @@ impl ElementData {
 
         classes.iter()
     }
+}
 
-    /// Clears the 'id' attribute cache
-    pub fn clear_id(&mut self) {
+impl std::ops::Deref for ElementAttributeTrigger {
+    type Target = SizedSmallVec<(markup5ever::QualName, AtomicTendril)>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.item
+    }
+}
+
+impl std::ops::DerefMut for ElementAttributeTrigger {
+    fn deref_mut(&mut self) -> &mut Self::Target {
         self.id.take();
+        self.classes.take();
+
+        &mut self.item
+    }
+}
+
+/// An element
+#[derive(Clone)]
+pub struct ElementData {
+    pub name: markup5ever::QualName,
+    pub attrs: ElementAttributeTrigger,
+    pub template: bool,
+    pub mathml_annotation_xml_integration_point: bool,
+}
+
+impl ElementData {
+    /// Creates a new `ElementData`
+    #[inline]
+    pub fn new<I>(
+        name: markup5ever::QualName,
+        attrs: I,
+        template: bool,
+        mathml_annotation_xml_integration_point: bool,
+    ) -> Box<Self>
+    where
+        I: Iterator<Item = (markup5ever::QualName, AtomicTendril)>,
+    {
+        Box::new(Self {
+            name,
+            attrs: ElementAttributeTrigger::new(attrs),
+            template,
+            mathml_annotation_xml_integration_point,
+        })
     }
 
-    /// Clears 'class' attributes cache
-    pub fn clear_classes(&mut self) {
-        self.classes.take();
+    /// Creates a new `ElementData` from non-atomic tendril
+    #[inline]
+    pub fn from_non_atomic<I>(
+        name: markup5ever::QualName,
+        attrs: I,
+        template: bool,
+        mathml_annotation_xml_integration_point: bool,
+    ) -> Box<Self>
+    where
+        I: Iterator<Item = (markup5ever::QualName, StrTendril)>,
+    {
+        Self::new(
+            name,
+            attrs.map(|(key, val)| (key, make_atomic_tendril(val))),
+            template,
+            mathml_annotation_xml_integration_point,
+        )
     }
 }
 
@@ -170,7 +244,7 @@ impl std::fmt::Debug for ElementData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ElementData")
             .field("name", &self.name)
-            .field("attrs", &self.attrs)
+            .field("attrs", &*self.attrs)
             .field("template", &self.template)
             .field(
                 "mathml_annotation_xml_integration_point",
@@ -190,22 +264,26 @@ pub struct ProcessingInstructionData {
 }
 
 impl ProcessingInstructionData {
-    pub fn new(data: StrTendril, target: StrTendril) -> Self {
-        Self {
-            data: make_atomic_tendril(data),
-            target: make_atomic_tendril(target),
-        }
+    /// Creates a new `ProcessingInstructionData`
+    #[inline]
+    pub fn new(data: AtomicTendril, target: AtomicTendril) -> Self {
+        Self { data, target }
+    }
+
+    /// Creates a new `ProcessingInstructionData` from non-atomic tendril
+    #[inline]
+    pub fn from_non_atomic(data: StrTendril, target: StrTendril) -> Self {
+        Self::new(make_atomic_tendril(data), make_atomic_tendril(target))
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum NodeData {
     Document(DocumentData),
-    Fragment(FragmentData),
     Doctype(DoctypeData),
     Comment(CommentData),
     Text(TextData),
-    Element(ElementData),
+    Element(Box<ElementData>),
     ProcessingInstruction(ProcessingInstructionData),
 }
 
@@ -220,35 +298,25 @@ macro_rules! _impl_nodedata_from_trait {
 }
 
 _impl_nodedata_from_trait!(DocumentData, Document);
-_impl_nodedata_from_trait!(FragmentData, Fragment);
 _impl_nodedata_from_trait!(DoctypeData, Doctype);
 _impl_nodedata_from_trait!(CommentData, Comment);
 _impl_nodedata_from_trait!(TextData, Text);
-_impl_nodedata_from_trait!(ElementData, Element);
+_impl_nodedata_from_trait!(Box<ElementData>, Element);
 _impl_nodedata_from_trait!(ProcessingInstructionData, ProcessingInstruction);
 
 pub(super) struct NodeInner {
-    /// Parent node.
     pub(super) parent: parking_lot::Mutex<Option<WeakNode>>,
-    /// Child nodes of this node.
-    pub(super) children: parking_lot::Mutex<Vec<Node>>,
-    /// Represents this node's data.
+    pub(super) children: parking_lot::Mutex<smallvec::SmallVec<[Node; 4]>>,
     pub(super) data: parking_lot::Mutex<NodeData>,
 }
 
-impl std::fmt::Debug for NodeInner {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Node")
-            .field("data", &*self.data.lock())
-            .field("children", &*self.children.lock())
-            .finish()
-    }
-}
-
-/// A node that uses [`Arc`] to prevent clone. Also [`Arc`] is a help for connecting `Rust` to `Python`.
-#[derive(Clone, Debug)]
+/// A `Node` of DOM. each data is wrapped by [`parking_lot::Mutex`]
+/// to keep `Node` [`Sync`] and [`Send`].
+///
+/// All data is wrapped by a [`Arc`] so you can clone and move the node without worry.
+#[derive(Clone)]
 pub struct Node {
-    value: Arc<NodeInner>,
+    pub(super) inner: Arc<NodeInner>,
 }
 
 macro_rules! _impl_nodedata_functions {
@@ -258,19 +326,21 @@ macro_rules! _impl_nodedata_functions {
 
         $(#[$docs2:meta])*
         get $gname:ident($pattern:pat_param => $param:expr, $ret:ty)
-
-        $(#[$docs3:meta])*
-        unch $uname:ident()
     ) => {
         $(#[$docs1])*
         pub fn $isname(&self) -> bool {
-            let ref_ = self.value.data.lock();
-            matches!(&*ref_, $enum_)
+            matches!(
+                // SAFETY: there's no important what is the data.
+                // we only want to know what is the NodeData used here
+                // and the NodeData never be changed.
+                unsafe { &*self.inner.data.data_ptr() },
+                $enum_
+            )
         }
 
         $(#[$docs2])*
         pub fn $gname(&self) -> Option<parking_lot::MappedMutexGuard<'_, $ret>> {
-            let ref_ = self.value.data.lock();
+            let ref_ = self.inner.data.lock();
             let mapped = parking_lot::MutexGuard::try_map(ref_, |x| match x {
                 $pattern => Some($param),
                 _ => None,
@@ -281,34 +351,27 @@ macro_rules! _impl_nodedata_functions {
                 Err(_) => None,
             }
         }
-
-        $(#[$docs3])*
-        pub unsafe fn $uname(&self) -> parking_lot::MappedMutexGuard<'_, $ret> {
-            let ref_ = self.value.data.lock();
-            parking_lot::MutexGuard::map(ref_, |x| match x {
-                $pattern => $param,
-                _ => std::hint::unreachable_unchecked(),
-            })
-        }
     };
 }
 
 impl Node {
+    /// Creates a new `Node` with a parent [`None`] and an empty children
     #[inline]
     pub fn new<T: Into<NodeData>>(data: T) -> Self {
-        Self::new_with(data, None, Vec::new())
+        Self::new_with(data, None, [])
     }
 
+    /// Creates a new `Node`
     #[inline]
-    pub fn new_with<T: Into<NodeData>>(
+    pub fn new_with<T: Into<NodeData>, I: IntoIterator<Item = Node>>(
         data: T,
         parent: Option<WeakNode>,
-        children: Vec<Node>,
+        children: I,
     ) -> Self {
         Self {
-            value: Arc::new(NodeInner {
+            inner: Arc::new(NodeInner {
                 parent: parking_lot::Mutex::new(parent),
-                children: parking_lot::Mutex::new(children),
+                children: parking_lot::Mutex::new(children.into_iter().collect()),
                 data: parking_lot::Mutex::new(data.into()),
             }),
         }
@@ -322,28 +385,6 @@ impl Node {
         ///
         /// It is necessary to drop it when you don't need it
         get as_document(NodeData::Document(d) => d, DocumentData)
-
-        /// Locks the data mutex and returns the [`DocumentData`] but never checks that is the holded data is document or not.
-        ///
-        /// # Safety
-        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
-        unch as_document_unchecked()
-    );
-
-    _impl_nodedata_functions!(
-        /// Returns `true` if the node data is [`FragmentData`]
-        is is_fragment(NodeData::Fragment(..))
-
-        /// Locks the data mutex and returns the [`FragmentData`]
-        ///
-        /// It is necessary to drop it when you don't need it
-        get as_fragment(NodeData::Fragment(d) => d, FragmentData)
-
-        /// Locks the data mutex and returns the [`FragmentData`] but never checks that is the holded data is document or not.
-        ///
-        /// # Safety
-        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
-        unch as_fragment_unchecked()
     );
 
     _impl_nodedata_functions!(
@@ -354,12 +395,6 @@ impl Node {
         ///
         /// It is necessary to drop it when you don't need it
         get as_doctype(NodeData::Doctype(d) => d, DoctypeData)
-
-        /// Locks the data mutex and returns the [`DoctypeData`] but never checks that is the holded data is document or not.
-        ///
-        /// # Safety
-        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
-        unch as_doctype_unchecked()
     );
 
     _impl_nodedata_functions!(
@@ -370,12 +405,6 @@ impl Node {
         ///
         /// It is necessary to drop it when you don't need it
         get as_comment(NodeData::Comment(d) => d, CommentData)
-
-        /// Locks the data mutex and returns the [`CommentData`] but never checks that is the holded data is document or not.
-        ///
-        /// # Safety
-        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
-        unch as_comment_unchecked()
     );
 
     _impl_nodedata_functions!(
@@ -386,12 +415,6 @@ impl Node {
         ///
         /// It is necessary to drop it when you don't need it
         get as_text(NodeData::Text(d) => d, TextData)
-
-        /// Locks the data mutex and returns the [`TextData`] but never checks that is the holded data is document or not.
-        ///
-        /// # Safety
-        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
-        unch as_text_unchecked()
     );
 
     _impl_nodedata_functions!(
@@ -401,13 +424,7 @@ impl Node {
         /// Locks the data mutex and returns the [`ElementData`]
         ///
         /// It is necessary to drop it when you don't need it
-        get as_element(NodeData::Element(d) => d, ElementData)
-
-        /// Locks the data mutex and returns the [`ElementData`] but never checks that is the holded data is document or not.
-        ///
-        /// # Safety
-        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
-        unch as_element_unchecked()
+        get as_element(NodeData::Element(d) => d, Box<ElementData>)
     );
 
     _impl_nodedata_functions!(
@@ -418,19 +435,13 @@ impl Node {
         ///
         /// It is necessary to drop it when you don't need it
         get as_processing_instruction(NodeData::ProcessingInstruction(d) => d, ProcessingInstructionData)
-
-        /// Locks the data mutex and returns the [`ProcessingInstructionData`] but never checks that is the holded data is document or not.
-        ///
-        /// # Safety
-        /// If you're not sure about the data that node keeps, don't use this method; otherwise you will see a undefined behaviour.
-        unch as_processing_instruction_unchecked()
     );
 
     /// Creates a new [`WeakNode`] pointer to this allocation.
     #[inline]
     pub fn downgrade(&self) -> WeakNode {
         WeakNode {
-            value: std::sync::Arc::downgrade(&self.value),
+            inner: std::sync::Arc::downgrade(&self.inner),
         }
     }
 
@@ -438,65 +449,120 @@ impl Node {
     ///
     /// It is necessary to drop it when you don't need it
     pub fn parent(&self) -> parking_lot::MappedMutexGuard<'_, Option<WeakNode>> {
-        let ref_ = self.value.parent.lock();
+        #[cfg(debug_assertions)]
+        let ref_ = self.inner.parent.try_lock().expect("parent is locked");
+
+        #[cfg(not(debug_assertions))]
+        let ref_ = self.inner.parent.lock();
+
         parking_lot::MutexGuard::map(ref_, |x| x)
     }
 
     /// Locks the children and returns it
     ///
     /// It is necessary to drop it when you don't need it
-    pub fn children(&self) -> Children<'_> {
-        let ref_ = self.value.children.lock();
-
-        Children {
-            node: self,
-            vec: parking_lot::MutexGuard::map(ref_, |x| x),
-        }
+    #[inline]
+    pub fn children(&self) -> super::iter::ChildrenMutexGuard<'_> {
+        super::iter::ChildrenMutexGuard::new(self)
     }
 
-    /// Iterates all nodes and their children like a tree
-    pub fn tree(&self) -> NodesTree {
-        NodesTree::new(self.clone(), false)
+    /// Returns a [`TreeIterator`](struct@super::iter::TreeIterator) that iterates all children
+    /// and also their children like a tree.
+    ///
+    /// Use [`Node::into_tree`] method if you want to include self in [`TreeIterator`](struct@super::iter::TreeIterator).
+    pub fn tree(&self) -> super::iter::TreeIterator {
+        super::iter::TreeIterator::new(self.children())
     }
 
-    /// Unlike the iter method, iterates all the parents.
-    pub fn parents(&self) -> ParentsIterator {
-        ParentsIterator::new(self, false)
+    /// Returns a [`TreeIterator`](struct@super::iter::TreeIterator) that iterates all children
+    /// and also their children like a tree.
+    ///
+    /// See also [`Node::tree`].
+    pub fn into_tree(self) -> super::iter::TreeIterator {
+        super::iter::TreeIterator::new_with_node(self)
+    }
+
+    /// Returns a [`ParentsIterator`](struct@super::iter::ParentsIterator) that iterates all parents.
+    ///
+    /// Use [`Node::into_parents`] method if you want to include self
+    pub fn parents(&self) -> super::iter::ParentsIterator {
+        super::iter::ParentsIterator::new(self.parent().clone())
+    }
+
+    /// Returns a [`ParentsIterator`](struct@super::iter::ParentsIterator) that iterates all parents.
+    ///
+    /// See also [`Node::parents`]
+    pub fn into_parents(self) -> super::iter::ParentsIterator {
+        super::iter::ParentsIterator::new_with_node(self)
     }
 
     /// Returns `true` if the two [`Node`]s point to the same allocation
     pub fn ptr_eq(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.value, &other.value)
+        Arc::ptr_eq(&self.inner, &other.inner)
     }
 
-    /// Works like self.unlink but does not remove self from parent's children
-    pub(super) unsafe fn unlink_parent(&self) {
-        debug_assert!(
-            !self.value.parent.is_locked(),
-            "before using this method you have to unlock the parent with dropping the mutex guard"
-        );
-
-        self.parent().take();
+    /// Locks and returns the `Node`'s data as [`NodeData`]
+    pub fn as_enum(&self) -> parking_lot::MappedMutexGuard<'_, NodeData> {
+        let ref_ = self.inner.data.lock();
+        parking_lot::MutexGuard::map(ref_, |x| x)
     }
 
-    /// Removes this node from its parent.
-    #[inline]
-    pub fn unlink(&self) {
-        debug_assert!(
-            !self.value.parent.is_locked(),
-            "before using this method you have to unlock the parent with dropping the mutex guard"
-        );
+    /// Serializes node as HTML5
+    pub fn serialize_html<Wr>(&self, writer: Wr, include_self: bool) -> std::io::Result<()>
+    where
+        Wr: std::io::Write,
+    {
+        html5ever::serialize::serialize(
+            writer,
+            self,
+            html5ever::serialize::SerializeOpts {
+                scripting_enabled: false,
+                create_missing_parent: false,
+                traversal_scope: if include_self {
+                    html5ever::serialize::TraversalScope::IncludeNode
+                } else {
+                    html5ever::serialize::TraversalScope::ChildrenOnly(None)
+                },
+            },
+        )
+    }
 
-        if let Some(parent) = self.parent().take() {
-            let parent = parent.upgrade().expect("dangling weak pointer");
-            let mut c = parent.children();
-            unsafe { c.remove_index(c.position(self).unwrap()) };
+    /// Serializes node as XML
+    pub fn serialize_xml<Wr>(&self, writer: Wr, include_self: bool) -> std::io::Result<()>
+    where
+        Wr: std::io::Write,
+    {
+        xml5ever::serialize::serialize(
+            writer,
+            self,
+            xml5ever::serialize::SerializeOpts {
+                traversal_scope: if include_self {
+                    xml5ever::serialize::TraversalScope::IncludeNode
+                } else {
+                    xml5ever::serialize::TraversalScope::ChildrenOnly(None)
+                },
+            },
+        )
+    }
+
+    /// Clones the inner data and returns a new `Node` that uses another `Arc` and `Mutex`s.
+    pub fn copy(node: &Node) -> Node {
+        Self {
+            inner: Arc::new(NodeInner {
+                parent: parking_lot::Mutex::new( node.inner.parent.lock().clone() ),
+                children: parking_lot::Mutex::new( node.inner.children.lock().clone() ),
+                data: parking_lot::Mutex::new( node.inner.data.lock().clone() ),
+            }),
         }
     }
+}
 
-    pub fn as_nodedata(&self) -> parking_lot::MappedMutexGuard<'_, NodeData> {
-        let ref_ = self.value.data.lock();
-        parking_lot::MutexGuard::map(ref_, |x| x)
+impl std::fmt::Debug for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Node")
+            .field("data", &*self.inner.data.lock())
+            .field("children", &*self.inner.children.lock())
+            .finish()
     }
 }
 
@@ -534,7 +600,7 @@ impl markup5ever::serialize::Serialize for Node {
                     serializer.end_elem(name)?;
                 }
 
-                NodeEdge::Open(node) => match &*node.as_nodedata() {
+                NodeEdge::Open(node) => match &*node.as_enum() {
                     NodeData::Element(elem) => {
                         serializer.start_elem(
                             elem.name.clone(),
@@ -543,12 +609,7 @@ impl markup5ever::serialize::Serialize for Node {
 
                         edges.push(NodeEdge::Close(elem.name.clone()));
 
-                        edges.extend(
-                            node.children()
-                                .into_iter()
-                                .rev()
-                                .map(|child| NodeEdge::Open(child.clone())),
-                        );
+                        edges.extend(node.children().iter().cloned().rev().map(NodeEdge::Open));
                     }
 
                     NodeData::Doctype(doctype) => serializer.write_doctype(&doctype.name)?,
@@ -561,7 +622,7 @@ impl markup5ever::serialize::Serialize for Node {
                         serializer.write_processing_instruction(&pi.target, &pi.data)?
                     }
 
-                    _ => unreachable!(),
+                    NodeData::Document(_) => (),
                 },
             }
         }
@@ -572,13 +633,13 @@ impl markup5ever::serialize::Serialize for Node {
 
 impl PartialEq for Node {
     fn eq(&self, other: &Self) -> bool {
-        if Arc::ptr_eq(&self.value, &other.value) {
+        if Arc::ptr_eq(&self.inner, &other.inner) {
             return true;
         }
 
-        let data1 = self.value.data.lock();
+        let data1 = self.inner.data.lock();
         let data2: parking_lot::lock_api::MutexGuard<'_, parking_lot::RawMutex, NodeData> =
-            other.value.data.lock();
+            other.inner.data.lock();
 
         data1.eq(&data2)
     }
@@ -587,263 +648,16 @@ impl PartialEq for Node {
 impl Eq for Node {}
 
 /// [`WeakNode`] is a version of [`Node`] that holds a non-owning reference to the managed allocation.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct WeakNode {
-    value: Weak<NodeInner>,
+    inner: Weak<NodeInner>,
 }
 
 impl WeakNode {
     /// Upgrade self to [`Node`]
     #[inline]
     pub fn upgrade(&self) -> Option<Node> {
-        self.value.upgrade().map(|x| Node { value: x })
-    }
-}
-
-pub struct Children<'a> {
-    node: &'a Node,
-    vec: parking_lot::MappedMutexGuard<'a, Vec<Node>>,
-}
-
-impl<'a> Children<'a> {
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.vec.len()
-    }
-
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.vec.is_empty()
-    }
-
-    pub fn position(&self, child: &Node) -> Option<usize> {
-        self.vec.iter().position(|x| x.ptr_eq(child))
-    }
-
-    #[inline]
-    pub fn append(&mut self, child: Node) -> Result<(), Node> {
-        if self.node.ptr_eq(&child) {
-            // Avoid cycle
-            return Err(child);
-        }
-
-        #[cfg(not(debug_assertions))]
-        child.parent().replace(self.node.downgrade());
-
-        #[cfg(debug_assertions)]
-        let old = child.parent().replace(self.node.downgrade());
-
-        debug_assert!(old.is_none(), "child cannot have existing parent");
-
-        self.vec.push(child);
-        Ok(())
-    }
-
-    #[inline]
-    pub fn insert(&mut self, index: usize, child: Node) -> Result<(), Node> {
-        if self.node.ptr_eq(&child) {
-            // Avoid cycle
-            return Err(child);
-        }
-
-        #[cfg(not(debug_assertions))]
-        child.parent().replace(self.node.downgrade());
-
-        #[cfg(debug_assertions)]
-        let old = child.parent().replace(self.node.downgrade());
-
-        debug_assert!(old.is_none(), "child cannot have existing parent");
-
-        self.vec.insert(index, child);
-        Ok(())
-    }
-
-    #[inline]
-    pub fn last(&self) -> Option<&Node> {
-        self.vec.last()
-    }
-
-    #[inline]
-    pub fn first(&self) -> Option<&Node> {
-        self.vec.first()
-    }
-
-    #[inline]
-    pub fn iter(&self) -> std::slice::Iter<'_, Node> {
-        self.vec.iter()
-    }
-
-    /// NOTE: don't forgot to unlink children
-    #[inline]
-    pub fn drain<R: std::ops::RangeBounds<usize>>(
-        &mut self,
-        range: R,
-    ) -> std::vec::Drain<'_, Node> {
-        self.vec.drain(range)
-    }
-
-    pub(super) unsafe fn remove_index(&mut self, index: usize) -> Node {
-        self.vec.remove(index)
-    }
-
-    #[inline]
-    pub fn remove(&mut self, index: usize) -> Node {
-        let node = self.vec.remove(index);
-
-        {
-            debug_assert!(
-                !node.value.parent.is_locked(),
-                "The child node parent is locked; Unlock it first."
-            );
-
-            let mut p = node.value.parent.lock();
-            p.take();
-        }
-
-        node
-    }
-
-    #[inline]
-    pub fn clear(&mut self) {
-        self.vec.clear();
-    }
-
-    #[inline]
-    pub fn get(&self, index: usize) -> Option<&Node> {
-        self.vec.get(index)
-    }
-}
-
-impl<'a> std::ops::Index<usize> for Children<'a> {
-    type Output = Node;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.vec[index]
-    }
-}
-
-impl<'a> std::ops::IndexMut<usize> for Children<'a> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.vec[index]
-    }
-}
-
-impl<'a> std::ops::Index<std::ops::Range<usize>> for Children<'a> {
-    type Output = [Node];
-
-    fn index(&self, index: std::ops::Range<usize>) -> &Self::Output {
-        &self.vec[index]
-    }
-}
-
-impl<'a> std::ops::IndexMut<std::ops::Range<usize>> for Children<'a> {
-    fn index_mut(&mut self, index: std::ops::Range<usize>) -> &mut Self::Output {
-        &mut self.vec[index]
-    }
-}
-
-impl<'a> std::ops::Index<std::ops::RangeTo<usize>> for Children<'a> {
-    type Output = [Node];
-
-    fn index(&self, index: std::ops::RangeTo<usize>) -> &Self::Output {
-        &self.vec[index]
-    }
-}
-
-impl<'a> std::ops::IndexMut<std::ops::RangeTo<usize>> for Children<'a> {
-    fn index_mut(&mut self, index: std::ops::RangeTo<usize>) -> &mut Self::Output {
-        &mut self.vec[index]
-    }
-}
-
-impl<'a> std::ops::Index<std::ops::RangeFrom<usize>> for Children<'a> {
-    type Output = [Node];
-
-    fn index(&self, index: std::ops::RangeFrom<usize>) -> &Self::Output {
-        &self.vec[index]
-    }
-}
-
-impl<'a> std::ops::IndexMut<std::ops::RangeFrom<usize>> for Children<'a> {
-    fn index_mut(&mut self, index: std::ops::RangeFrom<usize>) -> &mut Self::Output {
-        &mut self.vec[index]
-    }
-}
-
-impl<'a> IntoIterator for Children<'a> {
-    type Item = Node;
-    type IntoIter = std::vec::IntoIter<Node>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.vec.clone().into_iter()
-    }
-}
-
-pub struct NodesTree {
-    vec: Vec<Node>,
-}
-
-impl NodesTree {
-    pub fn new(node: Node, include_node: bool) -> Self {
-        let mut s = Self { vec: Vec::new() };
-
-        if include_node {
-            s.vec.push(node);
-        } else {
-            let children = node.children().into_iter();
-            s.vec.extend(children.rev());
-        }
-
-        s
-    }
-}
-
-impl Iterator for NodesTree {
-    type Item = Node;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let node = self.vec.pop()?;
-
-        self.vec.extend(node.children().into_iter().rev());
-
-        Some(node)
-    }
-}
-
-pub struct ParentsIterator {
-    last: Option<Node>,
-}
-
-impl ParentsIterator {
-    pub fn new(node: &Node, include_node: bool) -> Self {
-        let mut s = Self { last: None };
-
-        if include_node {
-            s.last = Some(node.clone());
-        } else {
-            s.last = node
-                .parent()
-                .clone()
-                .map(|x| x.upgrade().expect("dangling weak reference"));
-        }
-
-        s
-    }
-}
-
-impl Iterator for ParentsIterator {
-    type Item = Node;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let node = self.last.take()?;
-
-        self.last = node
-            .parent()
-            .clone()
-            .map(|x| x.upgrade())
-            .unwrap_or_default();
-
-        Some(node)
+        self.inner.upgrade().map(|x| Node { inner: x })
     }
 }
 
@@ -859,13 +673,13 @@ mod tests {
 
     macro_rules! create_element {
         ($name:expr, $attrs:expr) => {
-            ElementData::new(
+            ElementData::from_non_atomic(
                 markup5ever::QualName::new(
                     None,
                     markup5ever::namespace_url!(""),
                     markup5ever::LocalName::from($name),
                 ),
-                $attrs,
+                $attrs.into_iter(),
                 false,
                 false,
             )
@@ -914,47 +728,42 @@ mod tests {
                 ),
             ])
         );
-        assert_eq!(elem.id(), Some("example_id"));
-        assert_eq!(elem.classes().len(), 3);
+        assert_eq!(elem.attrs.id(), Some("example_id"));
+        assert_eq!(elem.attrs.classes().len(), 3);
 
         elem.attrs.clear();
-        elem.clear_id();
-        elem.clear_classes();
 
-        assert_eq!(elem.id(), None);
-        assert_eq!(elem.classes().len(), 0);
+        assert_eq!(elem.attrs.id(), None);
+        assert_eq!(elem.attrs.classes().len(), 0);
     }
 
     #[test]
     fn test_nodedata() {
         let data: NodeData = DocumentData.into();
         debug_assert!(matches!(data, NodeData::Document(..)));
-
-        let data: NodeData = FragmentData.into();
-        debug_assert!(matches!(data, NodeData::Fragment(..)));
     }
 
     #[test]
     fn test_node_children() {
-        let node = Node::new(create_element!("div", Default::default()));
+        let node = Node::new(create_element!("div", vec![]));
 
-        let child1 = Node::new(create_element!("h1", Default::default()));
+        let child1 = Node::new(create_element!("h1", vec![]));
         let child1_child = Node::new(TextData::new("Come here 1".into()));
-        child1.children().append(child1_child.clone()).unwrap();
+        child1.children().push(child1_child.clone()).unwrap();
 
-        node.children().append(child1.clone()).unwrap();
+        node.children().push(child1.clone()).unwrap();
 
-        let child2 = Node::new(create_element!("h2", Default::default()));
+        let child2 = Node::new(create_element!("h2", vec![]));
         let child2_child = Node::new(TextData::new("Come here 2".into()));
-        child2.children().append(child2_child.clone()).unwrap();
+        child2.children().push(child2_child.clone()).unwrap();
 
-        node.children().append(child2.clone()).unwrap();
+        node.children().push(child2.clone()).unwrap();
 
-        let child3 = Node::new(create_element!("p", Default::default()));
+        let child3 = Node::new(create_element!("p", vec![]));
         let child3_child = Node::new(TextData::new("Come here 3".into()));
-        child3.children().append(child3_child).unwrap();
+        child3.children().push(child3_child).unwrap();
 
-        node.children().append(child3.clone()).unwrap();
+        node.children().push(child3.clone()).unwrap();
 
         assert_eq!(node.children().len(), 3);
 
@@ -965,7 +774,10 @@ mod tests {
 
         assert_eq!(v.len(), 6);
 
-        assert_eq!(node.children().position(&child3), Some(2));
+        assert_eq!(
+            node.children().iter().position(|x| x.ptr_eq(&child3)),
+            Some(2)
+        );
         assert!(node.children().remove(2).ptr_eq(&child3));
 
         assert_eq!(node.children().len(), 2);
@@ -976,7 +788,7 @@ mod tests {
         }
 
         assert_eq!(v.len(), 4);
-        
+
         let have_to = vec![child1, child1_child, child2, child2_child];
 
         for (v1, v2) in v.iter().zip(have_to.iter()) {
@@ -987,6 +799,6 @@ mod tests {
     #[test]
     fn test_cycle() {
         let node = Node::new(DocumentData);
-        node.children().append(node.clone()).unwrap_err();
+        node.children().push(node.clone()).unwrap_err();
     }
 }

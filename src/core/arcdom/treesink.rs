@@ -1,20 +1,15 @@
-use crate::core::send::make_atomic_tendril;
-
+use super::node::CommentData;
+use super::node::DoctypeData;
 use super::node::DocumentData;
 use super::node::ElementData;
 use super::node::Node;
+use super::node::ProcessingInstructionData;
+use super::node::TextData;
+
+use crate::core::send::make_atomic_tendril;
+
 use std::cell::Cell;
 use std::cell::RefCell;
-use std::cell::UnsafeCell;
-
-#[derive(Debug, Clone)]
-pub struct ErrorWithLine(pub std::borrow::Cow<'static, str>, pub u64);
-
-impl std::fmt::Display for ErrorWithLine {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[line {}] {}", self.1, self.0)
-    }
-}
 
 /// We have to implement a clonable
 #[derive(Debug, Clone)]
@@ -41,61 +36,70 @@ impl From<markup5ever::ExpandedName<'_>> for ClonedExpandedName {
     }
 }
 
-struct SyncCells {
-    /// The errors list
-    errors: RefCell<Vec<ErrorWithLine>>,
-
-    /// The quirks mode
-    quirks_mode: Cell<markup5ever::interface::QuirksMode>,
-
-    /// Line counter
-    lineno: UnsafeCell<u64>,
-}
-
-unsafe impl Send for SyncCells {}
-unsafe impl Sync for SyncCells {}
-
-/// DOM tree builder & parser
-pub struct TreeBuilder {
-    /// The root node
+/// ArcDom that implemented [`markup5ever::interface::TreeSink`]
+#[derive(Debug)]
+pub struct ArcDom {
     pub root: Node,
-
-    /// The errors list
-    other: SyncCells,
+    pub errors: RefCell<Vec<std::borrow::Cow<'static, str>>>,
+    pub quirks_mode: Cell<markup5ever::interface::QuirksMode>,
 }
 
-impl TreeBuilder {
+impl ArcDom {
     pub fn new(root: Node) -> Self {
         Self {
             root,
-            other: SyncCells {
-                errors: RefCell::new(Vec::new()),
-                quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
-                lineno: UnsafeCell::new(0),
-            },
+            errors: RefCell::new(Vec::new()),
+            quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
         }
     }
 
-    pub fn errors(&self) -> &RefCell<Vec<ErrorWithLine>> {
-        &self.other.errors
+    pub fn parse_html(
+        root: Node,
+        full_document: bool,
+        tokenizer: html5ever::tokenizer::TokenizerOpts,
+        tree_builder: html5ever::tree_builder::TreeBuilderOpts,
+    ) -> html5ever::driver::Parser<Self> {
+        let opts = html5ever::driver::ParseOpts {
+            tokenizer,
+            tree_builder,
+        };
+
+        if full_document {
+            html5ever::driver::parse_document(Self::new(root), opts)
+        } else {
+            html5ever::driver::parse_fragment(
+                Self::new(root),
+                opts,
+                html5ever::QualName::new(
+                    None,
+                    markup5ever::namespace_url!("http://www.w3.org/1999/xhtml"),
+                    markup5ever::local_name!("body"),
+                ),
+                Vec::new(),
+            )
+        }
     }
 
-    pub fn quirks_mode(&self) -> &Cell<markup5ever::interface::QuirksMode> {
-        &self.other.quirks_mode
-    }
+    pub fn parse_xml(
+        root: Node,
+        tokenizer: xml5ever::tokenizer::XmlTokenizerOpts,
+    ) -> xml5ever::driver::XmlParser<Self> {
+        let opts = xml5ever::driver::XmlParseOpts {
+            tokenizer,
+            tree_builder: Default::default(),
+        };
 
-    pub fn lineno(&self) -> &UnsafeCell<u64> {
-        &self.other.lineno
+        xml5ever::driver::parse_document(Self::new(root), opts)
     }
 }
 
-impl Default for TreeBuilder {
+impl Default for ArcDom {
     fn default() -> Self {
         Self::new(Node::new(DocumentData))
     }
 }
 
-impl markup5ever::interface::TreeSink for TreeBuilder {
+impl markup5ever::interface::TreeSink for ArcDom {
     type Handle = Node;
     type Output = Self;
     type ElemName<'a> = ClonedExpandedName;
@@ -105,33 +109,29 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
     }
 
     fn parse_error(&self, msg: std::borrow::Cow<'static, str>) {
-        self.other
-            .errors
-            .borrow_mut()
-            .push(ErrorWithLine(msg, unsafe { *self.other.lineno.get() }));
+        self.errors.borrow_mut().push(msg);
     }
 
-    fn set_current_line(&self, _line_number: u64) {
-        unsafe { *self.other.lineno.get() = _line_number }
-    }
+    fn set_current_line(&self, _line_number: u64) {}
 
     fn get_document(&self) -> Self::Handle {
         self.root.clone()
     }
 
     fn get_template_contents(&self, target: &Self::Handle) -> Self::Handle {
-        let element = target.as_element().expect("target is not a element");
-
-        if !element.template {
+        if !target
+            .as_element()
+            .expect("target is not a element")
+            .template
+        {
             unreachable!("target is not a template");
         }
 
-        _ = element;
         target.clone()
     }
 
     fn set_quirks_mode(&self, mode: markup5ever::interface::QuirksMode) {
-        self.other.quirks_mode.set(mode);
+        self.quirks_mode.set(mode);
     }
 
     fn same_node(&self, x: &Self::Handle, y: &Self::Handle) -> bool {
@@ -149,26 +149,25 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
         attrs: Vec<markup5ever::Attribute>,
         flags: markup5ever::interface::ElementFlags,
     ) -> Self::Handle {
-        let mut elem = ElementData::new(
+        let mut elem = ElementData::from_non_atomic(
             name,
-            attrs
-                .into_iter()
-                .map(|x| (x.name, make_atomic_tendril(x.value)))
-                .collect(),
+            attrs.into_iter().map(|x| (x.name, x.value)),
             flags.template,
             flags.mathml_annotation_xml_integration_point,
         );
 
         elem.attrs.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+        elem.attrs.dedup();
+
         Node::new(elem)
     }
 
     fn create_comment(&self, text: tendril::StrTendril) -> Self::Handle {
-        Node::new(super::node::CommentData::new(text))
+        Node::new(CommentData::from_non_atomic(text))
     }
 
     fn create_pi(&self, target: tendril::StrTendril, data: tendril::StrTendril) -> Self::Handle {
-        Node::new(super::node::ProcessingInstructionData::new(data, target))
+        Node::new(ProcessingInstructionData::from_non_atomic(data, target))
     }
 
     fn append_doctype_to_document(
@@ -177,8 +176,8 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
         public_id: tendril::StrTendril,
         system_id: tendril::StrTendril,
     ) {
-        let d = Node::new(super::node::DoctypeData::new(name, public_id, system_id));
-        self.root.children().append(d).unwrap();
+        let d = Node::new(DoctypeData::from_non_atomic(name, public_id, system_id));
+        unsafe { self.root.children().push(d).unwrap_unchecked() };
     }
 
     fn append(
@@ -188,19 +187,19 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
     ) {
         match child {
             markup5ever::interface::NodeOrText::AppendNode(handle) => {
-                parent.children().append(handle).unwrap();
+                parent.children().push(handle).unwrap();
             }
             markup5ever::interface::NodeOrText::AppendText(text) => {
                 let mut c = parent.children();
+
                 if let Some(last) = c.last() {
                     if let Some(mut last_text) = last.as_text() {
-                        last_text.contents.push_tendril(&make_atomic_tendril(text));
+                        last_text.push_non_atomic(text);
                         return;
                     }
                 }
 
-                c.append(Node::new(super::node::TextData::new(text)))
-                    .unwrap();
+                c.push(Node::new(TextData::from_non_atomic(text))).unwrap();
             }
         }
     }
@@ -224,29 +223,36 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
         let parent = parent.clone().upgrade().expect("dangling weak pointer");
 
         let mut p_children = parent.children();
+
         let index = p_children
-            .position(sibling)
+            .iter()
+            .position(|x| x.ptr_eq(sibling))
             .expect("have parent but couldn't find in parent's children!");
 
         let new_node = match (new_node, index) {
             (markup5ever::interface::NodeOrText::AppendText(text), 0) => {
-                Node::new(super::node::TextData::new(text))
+                Node::new(TextData::from_non_atomic(text))
             }
 
             (markup5ever::interface::NodeOrText::AppendText(text), index) => {
                 let c = parent.children();
 
                 if let Some(mut last_text) = c[index - 1].as_text() {
-                    last_text.contents.push_tendril(&make_atomic_tendril(text));
+                    last_text.push_non_atomic(text);
                     return;
                 }
 
-                Node::new(super::node::TextData::new(text))
+                Node::new(TextData::from_non_atomic(text))
             }
 
             (markup5ever::interface::NodeOrText::AppendNode(node), _) => {
                 // unlink node from its parent
-                node.unlink();
+                if let Some(oldparent) = node.parent().take() {
+                    let oldparent = oldparent.upgrade().expect("dangling weak pointer");
+                    let mut oldchildren = oldparent.children();
+                    oldchildren.remove(oldchildren.iter().position(|x| x.ptr_eq(&node)).unwrap());
+                }
+
                 node
             }
         };
@@ -277,17 +283,24 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
                 .into_iter()
                 .map(|x| (x.name, make_atomic_tendril(x.value))),
         );
+        elem.attrs.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+        elem.attrs.dedup();
     }
 
     fn remove_from_parent(&self, target: &Self::Handle) {
-        target.unlink();
+        if let Some(oldparent) = target.parent().take() {
+            let oldparent = oldparent.upgrade().expect("dangling weak pointer");
+            let mut oldchildren = oldparent.children();
+            oldchildren.remove(oldchildren.iter().position(|x| x.ptr_eq(target)).unwrap());
+        }
     }
 
     fn reparent_children(&self, node: &Self::Handle, new_parent: &Self::Handle) {
         let mut c = new_parent.children();
-        for child in node.children().drain(..) {
-            unsafe { child.unlink_parent() };
-            c.append(child).unwrap();
+
+        for child in unsafe { node.children().drain(..) } {
+            child.parent().take();
+            c.push(child).unwrap();
         }
     }
 
@@ -298,3 +311,6 @@ impl markup5ever::interface::TreeSink for TreeBuilder {
             .mathml_annotation_xml_integration_point
     }
 }
+
+unsafe impl Send for ArcDom {}
+unsafe impl Sync for ArcDom {}

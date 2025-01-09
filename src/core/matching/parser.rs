@@ -3,8 +3,8 @@ use super::PseudoElement;
 use super::ToCssLocalName;
 use super::ToCssString;
 use super::_impl::SelectorImpl;
+use crate::core::arcdom::iter::TreeIterator;
 use crate::core::arcdom::Node;
-use crate::core::arcdom::NodesTree;
 use markup5ever::{namespace_url, ns};
 
 impl selectors::Element for Node {
@@ -57,8 +57,10 @@ impl selectors::Element for Node {
         let parent = parent.clone().upgrade().expect("dangling weak pointer");
 
         let p_children = parent.children();
+
         let index = p_children
-            .position(self)
+            .iter()
+            .position(|x| x.ptr_eq(self))
             .expect("have parent but couldn't find in parent's children!");
 
         if index == 0 {
@@ -84,7 +86,8 @@ impl selectors::Element for Node {
 
         let p_children = parent.children();
         let index = p_children
-            .position(self)
+            .iter()
+            .position(|x| x.ptr_eq(self))
             .expect("have parent but couldn't find in parent's children!");
 
         if index == p_children.len() - 1 {
@@ -157,7 +160,7 @@ impl selectors::Element for Node {
         id: &ToCssLocalName,
         case_sensitivity: selectors::attr::CaseSensitivity,
     ) -> bool {
-        match self.as_element().unwrap().id() {
+        match self.as_element().unwrap().attrs.id() {
             Some(val) => case_sensitivity.eq(val.as_bytes(), id.0.as_bytes()),
             None => false,
         }
@@ -170,6 +173,7 @@ impl selectors::Element for Node {
     ) -> bool {
         self.as_element()
             .unwrap()
+            .attrs
             .classes()
             .any(|c| case_sensitivity.eq(c.as_bytes(), name.0.as_bytes()))
     }
@@ -207,6 +211,10 @@ impl<'i> selectors::parser::Parser<'i> for Parser {
     }
 
     fn parse_has(&self) -> bool {
+        true
+    }
+
+    fn parse_nth_child_of(&self) -> bool {
         true
     }
 }
@@ -253,14 +261,14 @@ impl SelectExprGroup {
 }
 
 pub struct Select {
-    inner: NodesTree,
+    inner: TreeIterator,
     expr: SelectExprGroup,
     caches: selectors::context::SelectorCaches,
 }
 
 impl Select {
     pub fn new(
-        iterator: NodesTree,
+        iterator: TreeIterator,
         expr: &str,
     ) -> Result<Select, cssparser::ParseError<'_, super::errors::CssParserKindError<'_>>> {
         let expr = SelectExprGroup::new(expr)?;
@@ -292,7 +300,10 @@ impl Iterator for Select {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::arcdom::parse_html;
+    use tendril::TendrilSink;
+
+    use crate::core::arcdom::ArcDom;
+    use crate::core::arcdom::DocumentData;
 
     use super::*;
 
@@ -307,6 +318,7 @@ mod tests {
         let _ = SelectExprGroup::new("a:has(href)").unwrap();
         let _ = SelectExprGroup::new(":root").unwrap();
         let _ = SelectExprGroup::new(".title, div.m").unwrap();
+        let _ = SelectExprGroup::new("a:nth-child(1)").unwrap();
     }
 
     #[test]
@@ -317,23 +329,26 @@ mod tests {
 
     #[test]
     fn test_select() {
-        let tree = parse_html(
-            r#"<div class="title">
-                        <nav class="navbar">
-                            <p id="title">Hello World</p><p id="text">Hello World</p>
-                        </nav>
-                        <nav class="nav2"><p>World</p></nav>
-                        </div>"#,
-            markup5ever::interface::QuirksMode::NoQuirks,
+        let tree = ArcDom::parse_html(
+            Node::new(DocumentData),
             true,
-            false,
+            html5ever::tokenizer::TokenizerOpts::default(),
+            html5ever::tree_builder::TreeBuilderOpts::default(),
+        )
+        .one(
+            r#"<div class="title">
+        <nav class="navbar">
+            <p id="title">Hello World</p><p id="text">Hello World</p>
+        </nav>
+        <nav class="nav2"><p>World</p></nav>
+        </div>"#,
         );
 
         for res in Select::new(tree.root.tree(), "div.title").unwrap() {
             let elem = res.as_element().unwrap();
             assert_eq!(&*elem.name.local, "div");
             assert_eq!(
-                elem.classes().collect::<Vec<_>>(),
+                elem.attrs.classes().collect::<Vec<_>>(),
                 &[&markup5ever::LocalName::from("title")]
             );
         }
@@ -341,13 +356,13 @@ mod tests {
         for res in Select::new(tree.root.tree(), "nav.navbar p").unwrap() {
             let elem = res.as_element().unwrap();
             assert_eq!(&*elem.name.local, "p");
-            assert!(elem.id().is_some());
+            assert!(elem.attrs.id().is_some());
         }
 
         for res in Select::new(tree.root.tree(), "nav.nav2 p").unwrap() {
             let elem = res.as_element().unwrap();
             assert_eq!(&*elem.name.local, "p");
-            assert!(elem.id().is_none());
+            assert!(elem.attrs.id().is_none());
         }
     }
 }

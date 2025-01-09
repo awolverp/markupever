@@ -1,982 +1,68 @@
-#![allow(clippy::new_without_default)]
-
+use super::docdata;
+use super::elementdata;
+use super::utils::{get_node_from_pyobject, make_repr};
 use crate::core::arcdom;
 use crate::core::matching;
-use markup5ever::{namespace_url, ns};
-use pyo3::types::PyAnyMethods;
-use pyo3::PyTypeInfo;
 
-unsafe fn qualname_from_pyobject(
-    py: pyo3::Python<'_>,
-    object: &pyo3::PyObject,
-) -> pyo3::PyResult<markup5ever::QualName> {
-    if pyo3::ffi::PyUnicode_Check(object.as_ptr()) == 1 {
-        Ok(markup5ever::QualName::new(
-            None,
-            ns!(),
-            object
-                .bind(py)
-                .extract::<String>()
-                .unwrap_unchecked()
-                .into(),
-        ))
-    } else {
-        let pyqual = object.bind(py).extract::<pyo3::PyRef<'_, PyQualName>>()?;
-        let lock = pyqual.0.lock();
-        Ok(lock.clone())
-    }
-}
-
-#[inline]
-fn get_node_from_pyobject(val: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<arcdom::Node> {
-    if PyNode::is_type_of(val) {
-        let data = val.extract::<pyo3::PyRef<'_, PyNode>>().unwrap();
-
-        Ok(data.0.clone())
-    } else if PyDocumentData::is_type_of(val) {
-        let data = val.extract::<pyo3::PyRef<'_, PyDocumentData>>().unwrap();
-
-        Ok(data.0.clone())
-    } else if PyFragmentData::is_type_of(val) {
-        let data = val.extract::<pyo3::PyRef<'_, PyFragmentData>>().unwrap();
-
-        Ok(data.0.clone())
-    } else if PyDoctypeData::is_type_of(val) {
-        let data = val.extract::<pyo3::PyRef<'_, PyDoctypeData>>().unwrap();
-
-        Ok(data.0.clone())
-    } else if PyCommentData::is_type_of(val) {
-        let data = val.extract::<pyo3::PyRef<'_, PyCommentData>>().unwrap();
-
-        Ok(data.0.clone())
-    } else if PyTextData::is_type_of(val) {
-        let data = val.extract::<pyo3::PyRef<'_, PyTextData>>().unwrap();
-
-        Ok(data.0.clone())
-    } else if PyElementData::is_type_of(val) {
-        let data = val.extract::<pyo3::PyRef<'_, PyElementData>>().unwrap();
-
-        Ok(data.0.clone())
-    } else if PyProcessingInstructionData::is_type_of(val) {
-        let data = val
-            .extract::<pyo3::PyRef<'_, PyProcessingInstructionData>>()
-            .unwrap();
-
-        Ok(data.0.clone())
-    } else {
-        Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-            "argument is not acceptable. must be an instance of: Node, PyDocumentData, PyFragmentData, PyDoctypeData, PyCommentData, PytextData, PyElementData, or PyProcessingInstructionData",
-        ))
-    }
-}
-
-#[inline]
-fn make_repr(data: &arcdom::NodeData) -> String {
-    match data {
-        arcdom::NodeData::Document(..) => String::from("DocumentData"),
-        arcdom::NodeData::Fragment(..) => String::from("FragmentData"),
-        arcdom::NodeData::Doctype(doc) => {
-            format!(
-                "DoctypeData(name={:?}, public_id={:?}, system_id={:?})",
-                &*doc.name, &*doc.public_id, &*doc.system_id
-            )
-        }
-        arcdom::NodeData::Text(text) => format!("TextData(contents={:?})", &*text.contents),
-        arcdom::NodeData::Comment(comment) => {
-            format!("CommentData(contents={:?})", &*comment.contents)
-        }
-        arcdom::NodeData::Element(element) => {
-            let mut writer = format!(
-                "ElementData(name=QualName(local={:?}, namespace={:?}, prefix={:?}), attrs=[",
-                &*element.name.local,
-                &*element.name.ns,
-                element.name.prefix.as_deref()
-            );
-
-            let mut iter_ = element.attrs.iter();
-
-            if let Some((key, val)) = iter_.next() {
-                writer += &format!("({:?}, {:?})", &*key.local, val.as_ref());
-            }
-
-            for (key, val) in iter_ {
-                writer += &format!(", ({:?}, {:?})", &*key.local, val.as_ref());
-            }
-
-            writer
-                + &format!(
-                    "], template={}, mathml_annotation_xml_integration_point={})",
-                    element.template, element.mathml_annotation_xml_integration_point
-                )
-        }
-        arcdom::NodeData::ProcessingInstruction(pi) => {
-            format!(
-                "ProcessingInstructionData(data={:?}, target={:?})",
-                &*pi.data, &*pi.target
-            )
-        }
-    }
-}
-
-/// A fully qualified name (with a namespace), used to depict names of tags and attributes.
-///
-/// Namespaces can be used to differentiate between similar XML fragments. For example:
-///
-/// ```text
-/// // HTML
-/// <table>
-///   <tr>
-///     <td>Apples</td>
-///     <td>Bananas</td>
-///   </tr>
-/// </table>
-///
-/// // Furniture XML
-/// <table>
-///   <name>African Coffee Table</name>
-///   <width>80</width>
-///   <length>120</length>
-/// </table>
-/// ```
-///
-/// Without XML namespaces, we can't use those two fragments in the same document
-/// at the same time. However if we declare a namespace we could instead say:
-///
-/// ```text
-///
-/// // Furniture XML
-/// <furn:table xmlns:furn="https://furniture.rs">
-///   <furn:name>African Coffee Table</furn:name>
-///   <furn:width>80</furn:width>
-///   <furn:length>120</furn:length>
-/// </furn:table>
-/// ```
-///
-/// and bind the prefix `furn` to a different namespace.
-///
-/// For this reason we parse names that contain a colon in the following way:
-///
-/// ```text
-/// <furn:table>
-///    |    |
-///    |    +- local name
-///    |
-///  prefix (when resolved gives namespace_url `https://furniture.rs`)
-/// ```
-///
-#[pyo3::pyclass(name = "QualName", module = "markupselect._rustlib", frozen)]
-pub struct PyQualName(parking_lot::Mutex<markup5ever::QualName>);
-
-#[pyo3::pymethods]
-impl PyQualName {
-    #[new]
-    #[pyo3(signature=(local, namespace=String::new(), prefix=None, /))]
-    pub fn new(local: String, namespace: String, prefix: Option<String>) -> pyo3::PyResult<Self> {
-        let namespace = match &*namespace {
-            "html" => ns!(html),
-            "xhtml" => ns!(html),
-            "xml" => ns!(xml),
-            "xmlns" => ns!(xmlns),
-            "xlink" => ns!(xlink),
-            "svg" => ns!(svg),
-            "mathml" => ns!(mathml),
-            "*" => ns!(*),
-            "" => ns!(),
-            _ => markup5ever::Namespace::from(namespace),
-        };
-
-        let q = markup5ever::QualName::new(
-            prefix.map(markup5ever::Prefix::from),
-            namespace,
-            markup5ever::LocalName::from(local),
-        );
-
-        Ok(Self(parking_lot::Mutex::new(q)))
-    }
-
-    #[getter]
-    pub fn local(&self) -> String {
-        let lock = self.0.lock();
-        lock.local.to_string()
-    }
-
-    #[getter]
-    pub fn namespace(&self) -> String {
-        let lock = self.0.lock();
-        lock.ns.to_string()
-    }
-
-    #[getter]
-    pub fn prefix(&self) -> Option<String> {
-        let lock = self.0.lock();
-        lock.prefix.clone().map(|x| x.to_string())
-    }
-
-    pub fn __eq__(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<bool> {
-        let value = value.bind(py);
-
-        if PyQualName::is_type_of(value) {
-            let data = value.extract::<pyo3::PyRef<'_, PyQualName>>()?;
-            let l1 = self.0.lock();
-            let l2 = data.0.lock();
-
-            Ok(l1.eq(&*l2))
-        } else {
-            Ok(false)
-        }
-    }
-
-    pub fn __repr__(&self) -> String {
-        let lock = self.0.lock();
-        format!(
-            "QualName(local={:?}, namespace={:?}, prefix={:?})",
-            &*lock.local,
-            &*lock.ns,
-            lock.prefix.as_deref()
-        )
-    }
-}
-
-/// A document node data
-///
-/// The root node
-#[pyo3::pyclass(name = "DocumentData", module = "markupselect._rustlib", frozen)]
-pub struct PyDocumentData(pub arcdom::Node);
-
-#[pyo3::pymethods]
-impl PyDocumentData {
-    #[new]
-    pub fn new() -> Self {
-        Self(arcdom::Node::new(arcdom::DocumentData))
-    }
-
-    /// Converts self into `Node`
-    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let node = PyNode(self.0.clone());
-        pyo3::Py::new(py, node).map(|x| x.into_any())
-    }
-
-    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
-        let other = get_node_from_pyobject(other.bind(py))?;
-        Ok(self.0.eq(&other))
-    }
-
-    pub fn __repr__(&self) -> String {
-        let data = self.0.as_nodedata();
-        make_repr(&data)
-    }
-}
-
-// /// A fragment node data
-// ///
-// /// This is like document, but isn't root; we specialy used it for specifying templates
-#[pyo3::pyclass(name = "FragmentData", module = "markupselect._rustlib", frozen)]
-pub struct PyFragmentData(pub arcdom::Node);
-
-#[pyo3::pymethods]
-impl PyFragmentData {
-    #[new]
-    pub fn new() -> Self {
-        Self(arcdom::Node::new(arcdom::FragmentData))
-    }
-
-    /// Converts self into `Node`
-    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let node = PyNode(self.0.clone());
-        pyo3::Py::new(py, node).map(|x| x.into_any())
-    }
-
-    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
-        let other = get_node_from_pyobject(other.bind(py))?;
-        Ok(self.0.eq(&other))
-    }
-
-    pub fn __repr__(&self) -> String {
-        let data = self.0.as_nodedata();
-        make_repr(&data)
-    }
-}
-
-/// A doctype node data
-///
-/// the doctype is the required <!doctype html> preamble found at the top of all documents.
-/// Its sole purpose is to prevent a browser from switching into so-called "quirks mode"
-/// when rendering a document; that is, the <!doctype html> doctype ensures that the browser makes
-/// a best-effort attempt at following the relevant specifications, rather than using a different
-/// rendering mode that is incompatible with some specifications.
-#[pyo3::pyclass(name = "DoctypeData", module = "markupselect._rustlib", frozen)]
-pub struct PyDoctypeData(pub arcdom::Node);
-
-#[pyo3::pymethods]
-impl PyDoctypeData {
-    #[new]
-    #[pyo3(signature=(name, public_id, system_id, /))]
-    pub fn new(name: String, public_id: String, system_id: String) -> Self {
-        let node = arcdom::Node::new(arcdom::DoctypeData::new(
-            name.into(),
-            public_id.into(),
-            system_id.into(),
-        ));
-
-        Self(node)
-    }
-
-    /// Converts self into `Node`
-    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let node = PyNode(self.0.clone());
-        pyo3::Py::new(py, node).map(|x| x.into_any())
-    }
-
-    #[getter]
-    pub fn name(&self) -> String {
-        self.0
-            .as_doctype()
-            .expect("PyDoctypeData holds a node other than doctype")
-            .name
-            .clone()
-            .into()
-    }
-
-    #[setter]
-    pub fn set_name(&self, value: String) {
-        self.0
-            .as_doctype()
-            .expect("PyDoctypeData holds a node other than doctype")
-            .name = value.into();
-    }
-
-    #[getter]
-    pub fn public_id(&self) -> String {
-        self.0
-            .as_doctype()
-            .expect("PyDoctypeData holds a node other than doctype")
-            .public_id
-            .clone()
-            .into()
-    }
-
-    #[setter]
-    pub fn set_public_id(&self, value: String) {
-        self.0
-            .as_doctype()
-            .expect("PyDoctypeData holds a node other than doctype")
-            .public_id = value.into();
-    }
-
-    #[getter]
-    pub fn system_id(&self) -> String {
-        self.0
-            .as_doctype()
-            .expect("PyDoctypeData holds a node other than doctype")
-            .system_id
-            .clone()
-            .into()
-    }
-
-    #[setter]
-    pub fn set_system_id(&self, value: String) {
-        self.0
-            .as_doctype()
-            .expect("PyDoctypeData holds a node other than doctype")
-            .system_id = value.into();
-    }
-
-    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
-        let other = get_node_from_pyobject(other.bind(py))?;
-        Ok(self.0.eq(&other))
-    }
-
-    pub fn __repr__(&self) -> String {
-        let data = self.0.as_nodedata();
-        make_repr(&data)
-    }
-}
-
-/// A comment node data
-///
-/// The comment interface represents textual notations within markup; although it is generally not
-/// visually shown, such comments are available to be read in the source view.
-///
-/// Comments are represented in HTML and XML as content between <!-- and -->. In XML,
-/// like inside SVG or MathML markup, the character sequence -- cannot be used within a comment.
-#[pyo3::pyclass(name = "CommentData", module = "markupselect._rustlib", frozen)]
-pub struct PyCommentData(pub arcdom::Node);
-
-#[pyo3::pymethods]
-impl PyCommentData {
-    #[new]
-    #[pyo3(signature=(contents, /))]
-    pub fn new(contents: String) -> Self {
-        let node = arcdom::Node::new(arcdom::CommentData::new(contents.into()));
-
-        Self(node)
-    }
-
-    /// Converts self into `Node`
-    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let node = PyNode(self.0.clone());
-        pyo3::Py::new(py, node).map(|x| x.into_any())
-    }
-
-    #[getter]
-    pub fn contents(&self) -> String {
-        self.0
-            .as_comment()
-            .expect("PyCommentData holds a node other than comment")
-            .contents
-            .clone()
-            .into()
-    }
-
-    #[setter]
-    pub fn set_contents(&self, value: String) {
-        self.0
-            .as_comment()
-            .expect("PyCommentData holds a node other than comment")
-            .contents = value.into();
-    }
-
-    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
-        let other = get_node_from_pyobject(other.bind(py))?;
-        Ok(self.0.eq(&other))
-    }
-
-    pub fn __repr__(&self) -> String {
-        let data = self.0.as_nodedata();
-        make_repr(&data)
-    }
-}
-
-/// A text node data
-#[pyo3::pyclass(name = "TextData", module = "markupselect._rustlib", frozen)]
-pub struct PyTextData(pub arcdom::Node);
-
-#[pyo3::pymethods]
-impl PyTextData {
-    #[new]
-    #[pyo3(signature=(contents, /))]
-    pub fn new(contents: String) -> Self {
-        let node = arcdom::Node::new(arcdom::TextData::new(contents.into()));
-
-        Self(node)
-    }
-
-    /// Converts self into `Node`
-    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let node = PyNode(self.0.clone());
-        pyo3::Py::new(py, node).map(|x| x.into_any())
-    }
-
-    #[getter]
-    pub fn contents(&self) -> String {
-        self.0
-            .as_text()
-            .expect("PyTextData holds a node other than text")
-            .contents
-            .clone()
-            .into()
-    }
-
-    #[setter]
-    pub fn set_contents(&self, value: String) {
-        self.0
-            .as_text()
-            .expect("PyTextData holds a node other than text")
-            .contents = value.into();
-    }
-
-    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
-        let other = get_node_from_pyobject(other.bind(py))?;
-        Ok(self.0.eq(&other))
-    }
-
-    pub fn __repr__(&self) -> String {
-        let data = self.0.as_nodedata();
-        make_repr(&data)
-    }
-}
-
-/// A processing instruction node data
-///
-/// The ProcessingInstruction interface represents a processing instruction; that is,
-/// a Node which embeds an instruction targeting a specific application but that can
-/// be ignored by any other applications which don't recognize the instruction.
-#[pyo3::pyclass(
-    name = "ProcessingInstructionData",
-    module = "markupselect._rustlib",
-    frozen
-)]
-pub struct PyProcessingInstructionData(pub arcdom::Node);
-
-#[pyo3::pymethods]
-impl PyProcessingInstructionData {
-    #[new]
-    #[pyo3(signature=(data, target, /))]
-    pub fn new(data: String, target: String) -> Self {
-        let node = arcdom::Node::new(arcdom::ProcessingInstructionData::new(
-            data.into(),
-            target.into(),
-        ));
-
-        Self(node)
-    }
-
-    /// Converts self into `Node`
-    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let node = PyNode(self.0.clone());
-        pyo3::Py::new(py, node).map(|x| x.into_any())
-    }
-
-    #[getter]
-    pub fn data(&self) -> String {
-        self.0
-            .as_processing_instruction()
-            .expect("PyProcessingInstructionData holds a node other than processing instruction")
-            .data
-            .clone()
-            .into()
-    }
-
-    #[setter]
-    pub fn set_data(&self, value: String) {
-        self.0
-            .as_processing_instruction()
-            .expect("PyProcessingInstructionData holds a node other than processing instruction")
-            .data = value.into();
-    }
-
-    #[getter]
-    pub fn target(&self) -> String {
-        self.0
-            .as_processing_instruction()
-            .expect("PyProcessingInstructionData holds a node other than processing instruction")
-            .target
-            .clone()
-            .into()
-    }
-
-    #[setter]
-    pub fn set_target(&self, value: String) {
-        self.0
-            .as_processing_instruction()
-            .expect("PyProcessingInstructionData holds a node other than processing instruction")
-            .target = value.into();
-    }
-
-    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
-        let other = get_node_from_pyobject(other.bind(py))?;
-        Ok(self.0.eq(&other))
-    }
-
-    pub fn __repr__(&self) -> String {
-        let data = self.0.as_nodedata();
-        make_repr(&data)
-    }
-}
-
-/// An element node data
-#[pyo3::pyclass(name = "ElementAttributes", module = "markupselect._rustlib", frozen)]
-pub struct PyElementAttributes {
-    pub node: arcdom::Node,
-    pub index: std::sync::atomic::AtomicUsize,
-    pub len: std::sync::atomic::AtomicUsize,
+/// Children vector of a node
+#[pyo3::pyclass(name = "NodeChildren", module = "markupselect._rustlib", frozen)]
+pub struct PyNodeChildren {
+    node: arcdom::Node,
+    len: std::sync::atomic::AtomicUsize,
+    index: std::sync::atomic::AtomicUsize,
 }
 
 #[pyo3::pymethods]
-impl PyElementAttributes {
+impl PyNodeChildren {
     #[new]
-    pub fn new() -> pyo3::PyResult<Self> {
-        Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            "Use ElementNodeData.attrs property; don't use this constructor directly.",
-        ))
-    }
-
-    pub fn __len__(&self) -> usize {
-        self.node
-            .as_element()
-            .expect("PyElementAttributes holds a node other than element")
-            .attrs
-            .len()
-    }
-
-    pub fn __getitem__(
-        &self,
-        py: pyo3::Python<'_>,
-        index: usize,
-    ) -> pyo3::PyResult<pyo3::PyObject> {
-        let elem = self
-            .node
-            .as_element()
-            .expect("PyElementAttributes holds a node other than element");
-
-        let n = match elem.attrs.get(index) {
-            Some(x) => x,
-            None => {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
-                    "out of range",
-                ))
-            }
-        };
-
-        let tuple = pyo3::types::PyTuple::new(
-            py,
-            [
-                pyo3::Py::new(py, PyQualName(parking_lot::Mutex::new(n.0.clone())))?.into_any(),
-                pyo3::types::PyString::new(py, &n.1).into(),
-            ],
-        )?;
-
-        Ok(tuple.into())
-    }
-
-    pub fn __setitem__(
-        &self,
-        py: pyo3::Python<'_>,
-        index: usize,
-        value: Vec<pyo3::PyObject>,
-    ) -> pyo3::PyResult<()> {
-        if value.len() != 2 {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                "the value must be a tuple (or list) with size 2",
-            ));
-        }
-
-        let mut elem = self
-            .node
-            .as_element()
-            .expect("PyElementAttributes holds a node other than element");
-
-        if index >= elem.attrs.len() {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
-                "out of range",
-            ));
-        }
-
-        let qual = unsafe { qualname_from_pyobject(py, &value[0])? };
-
-        if unsafe { pyo3::ffi::PyUnicode_Check(value[1].as_ptr()) == 0 } {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                "the value argument #2 must be str",
-            ));
-        }
-
-        let val = unsafe { value[1].extract::<String>(py).unwrap_unchecked() };
-
-        if &*qual.local == "class" {
-            elem.clear_classes();
-        } else if &*qual.local == "id" {
-            elem.clear_id();
-        }
-
-        elem.attrs[index] = (qual, val.into());
-        Ok(())
-    }
-
-    pub fn __delitem__(&self, index: usize) -> pyo3::PyResult<()> {
-        let mut elem = self
-            .node
-            .as_element()
-            .expect("PyElementAttributes holds a node other than element");
-
-        if index >= elem.attrs.len() {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
-                "out of range",
-            ));
-        }
-
-        let (qual, _) = elem.attrs.remove(index);
-
-        if &*qual.local == "class" {
-            elem.clear_classes();
-        } else if &*qual.local == "id" {
-            elem.clear_id();
-        }
-
-        Ok(())
-    }
-
-    pub fn sort(&self) {
-        let mut elem = self
-            .node
-            .as_element()
-            .expect("PyElementAttributes holds a node other than element");
-
-        elem.attrs.sort_unstable_by(|a, b| a.0.cmp(&b.0));
-    }
-
-    pub fn clear(&self) {
-        let mut elem = self
-            .node
-            .as_element()
-            .expect("PyElementAttributes holds a node other than element");
-
-        elem.attrs.clear();
-        elem.clear_classes();
-        elem.clear_id();
-    }
-
-    pub fn append(&self, py: pyo3::Python<'_>, value: Vec<pyo3::PyObject>) -> pyo3::PyResult<()> {
-        if value.len() != 2 {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                "the value must be a tuple (or list) with size 2",
-            ));
-        }
-
-        let mut elem = self
-            .node
-            .as_element()
-            .expect("PyElementAttributes holds a node other than element");
-
-        let qual = unsafe { qualname_from_pyobject(py, &value[0])? };
-
-        if unsafe { pyo3::ffi::PyUnicode_Check(value[1].as_ptr()) == 0 } {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                "the value argument #2 must be str",
-            ));
-        }
-
-        let val = unsafe { value[1].extract::<String>(py).unwrap_unchecked() };
-
-        if &*qual.local == "class" {
-            elem.clear_classes();
-        } else if &*qual.local == "id" {
-            elem.clear_id();
-        }
-
-        elem.attrs.push((qual, val.into()));
-        Ok(())
-    }
-
-    pub fn __iter__(slf: pyo3::PyRef<'_, Self>) -> pyo3::PyResult<pyo3::PyRef<'_, Self>> {
-        if slf.len.load(std::sync::atomic::Ordering::Relaxed) != 0 {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "you can only call PyElementAttributes' __iter__() once in a time.",
-            ));
-        }
-
-        slf.index.store(0, std::sync::atomic::Ordering::Relaxed);
-        slf.len
-            .store(slf.__len__(), std::sync::atomic::Ordering::Relaxed);
-        Ok(slf)
-    }
-
-    pub fn __next__(
-        slf: pyo3::PyRef<'_, Self>,
-        py: pyo3::Python<'_>,
-    ) -> pyo3::PyResult<*mut pyo3::ffi::PyObject> {
-        let elem = slf
-            .node
-            .as_element()
-            .expect("PyElementAttributes holds a node other than element");
-
-        if slf.len.load(std::sync::atomic::Ordering::Relaxed) != elem.attrs.len() {
-            std::mem::drop(elem);
-            slf.len.store(0, std::sync::atomic::Ordering::Relaxed);
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "node attrs size changed during iteration",
-            ));
-        }
-
-        if slf.index.load(std::sync::atomic::Ordering::Relaxed) >= elem.attrs.len() {
-            std::mem::drop(elem);
-            slf.len.store(0, std::sync::atomic::Ordering::Relaxed);
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()));
-        }
-
-        let n = &elem.attrs[slf.index.load(std::sync::atomic::Ordering::Relaxed)];
-        let tuple = pyo3::types::PyTuple::new(
-            py,
-            [
-                pyo3::Py::new(py, PyQualName(parking_lot::Mutex::new(n.0.clone())))?.into_any(),
-                pyo3::types::PyString::new(py, &n.1).into(),
-            ],
-        )?;
-
-        std::mem::drop(elem);
-        slf.index.store(
-            slf.index.load(std::sync::atomic::Ordering::Relaxed) + 1,
-            std::sync::atomic::Ordering::Relaxed,
-        );
-
-        Ok(tuple.into_ptr())
-    }
-}
-
-/// An element node data
-#[pyo3::pyclass(name = "ElementData", module = "markupselect._rustlib", frozen)]
-pub struct PyElementData(pub arcdom::Node);
-
-#[pyo3::pymethods]
-impl PyElementData {
-    #[new]
-    #[pyo3(signature=(name, attrs, template=false, mathml_annotation_xml_integration_point=false, /))]
-    pub fn new(
-        py: pyo3::Python<'_>,
-        name: pyo3::PyObject,
-        attrs: Vec<(pyo3::PyObject, String)>,
-        template: bool,
-        mathml_annotation_xml_integration_point: bool,
-    ) -> pyo3::PyResult<Self> {
-        let name = unsafe { qualname_from_pyobject(py, &name)? };
-
-        let mut attributes: Vec<(markup5ever::QualName, crate::core::send::AtomicTendril)> =
-            Vec::new();
-
-        attributes
-            .try_reserve(attrs.len())
-            .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyMemoryError, _>(e.to_string()))?;
-
-        for (key, val) in attrs.into_iter() {
-            let key = unsafe { qualname_from_pyobject(py, &key)? };
-            attributes.push((key, val.into()));
-        }
-
-        let node = arcdom::Node::new(arcdom::ElementData::new(
-            name,
-            attributes,
-            template,
-            mathml_annotation_xml_integration_point,
-        ));
-
-        Ok(Self(node))
-    }
-
-    /// Converts self into `Node`
-    pub fn as_node(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let node = PyNode(self.0.clone());
-        pyo3::Py::new(py, node).map(|x| x.into_any())
-    }
-
-    #[getter]
-    pub fn name(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let qual = PyQualName(parking_lot::Mutex::new(
-            self.0
-                .as_element()
-                .expect("PyElementData holds a node other than element")
-                .name
-                .clone(),
-        ));
-        pyo3::Py::new(py, qual).map(|x| x.into_any())
-    }
-
-    #[setter]
-    pub fn set_name(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<()> {
-        let value = unsafe { qualname_from_pyobject(py, &value)? };
-
-        self.0
-            .as_element()
-            .expect("PyElementData holds a node other than element")
-            .name = value;
-
-        Ok(())
-    }
-
-    #[getter]
-    pub fn attrs(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let attrs = PyElementAttributes {
-            node: self.0.clone(),
-            index: std::sync::atomic::AtomicUsize::new(0),
-            len: std::sync::atomic::AtomicUsize::new(0),
-        };
-
-        pyo3::Py::new(py, attrs).map(|x| x.into_any())
-    }
-
-    #[getter]
-    pub fn id(&self) -> Option<String> {
-        self.0
-            .as_element()
-            .expect("PyElementData holds a node other than element")
-            .id()
-            .map(String::from)
-    }
-
-    #[getter]
-    pub fn classes(&self) -> Vec<String> {
-        let mut classes = Vec::new();
-
-        for cls in self
-            .0
-            .as_element()
-            .expect("PyElementData holds a node other than element")
-            .classes()
-        {
-            classes.push(String::from(cls.as_ref()));
-        }
-
-        classes
-    }
-
-    #[getter]
-    pub fn template(&self) -> bool {
-        self.0
-            .as_element()
-            .expect("PyElementData holds a node other than element")
-            .template
-    }
-
-    #[setter]
-    pub fn set_template(&self, value: bool) {
-        self.0
-            .as_element()
-            .expect("PyElementData holds a node other than element")
-            .template = value;
-    }
-
-    #[getter]
-    pub fn mathml_annotation_xml_integration_point(&self) -> bool {
-        self.0
-            .as_element()
-            .expect("PyElementData holds a node other than element")
-            .mathml_annotation_xml_integration_point
-    }
-
-    #[setter]
-    pub fn set_mathml_annotation_xml_integration_point(&self, value: bool) {
-        self.0
-            .as_element()
-            .expect("PyElementData holds a node other than element")
-            .mathml_annotation_xml_integration_point = value;
-    }
-
-    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
-        let other = get_node_from_pyobject(other.bind(py))?;
-        Ok(self.0.eq(&other))
-    }
-
-    pub fn __repr__(&self) -> String {
-        let data = self.0.as_nodedata();
-        make_repr(&data)
-    }
-}
-
-/// An element node data
-#[pyo3::pyclass(name = "Children", module = "markupselect._rustlib", frozen)]
-pub struct PyChildren {
-    pub node: arcdom::Node,
-    pub index: std::sync::atomic::AtomicUsize,
-    pub len: std::sync::atomic::AtomicUsize,
-}
-
-#[pyo3::pymethods]
-impl PyChildren {
-    #[new]
-    pub fn new() -> pyo3::PyResult<Self> {
+    pub(super) fn new() -> pyo3::PyResult<Self> {
         Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
             "Use Node.children() method; don't use this constructor directly.",
         ))
     }
 
-    pub fn __len__(&self) -> usize {
+    /// Returns `len(self)` - length of the attributes vector.
+    pub(super) fn __len__(&self) -> usize {
         self.node.children().len()
     }
 
-    pub fn __getitem__(
+    /// Returns `bool(self)` - `true` if the vector is not empty
+    pub(super) fn __bool__(&self) -> bool {
+        !self.node.children().is_empty()
+    }
+
+    /// Clears the attributes vector
+    pub(super) fn clear(&self) {
+        self.node.children().clear();
+    }
+
+    pub(super) fn append(&self, py: pyo3::Python<'_>, node: pyo3::PyObject) -> pyo3::PyResult<()> {
+        let n = get_node_from_pyobject(node.bind(py))?;
+
+        self.node
+            .children()
+            .push(n)
+            .map_err(|x| pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(x.to_string()))
+    }
+
+    pub(super) fn pop(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let n = self.node.children().pop().ok_or_else(|| {
+            pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>("pop from empty children")
+        })?;
+
+        let n = PyNode(n);
+        Ok(pyo3::Py::new(py, n)?.into_any())
+    }
+
+    /// Returns `self[index]`
+    pub(super) fn __getitem__(
         &self,
         py: pyo3::Python<'_>,
         index: usize,
     ) -> pyo3::PyResult<pyo3::PyObject> {
-        let node = match self.node.children().get(index) {
+        let children = self.node.children();
+
+        let n = match children.get(index) {
             Some(x) => PyNode(x.clone()),
             None => {
                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
@@ -985,15 +71,17 @@ impl PyChildren {
             }
         };
 
-        Ok(pyo3::Py::new(py, node)?.into_any())
+        Ok(pyo3::Py::new(py, n)?.into_any())
     }
 
-    pub fn __setitem__(
+    /// Performs `self[index] = Node`
+    pub(super) fn __setitem__(
         &self,
         py: pyo3::Python<'_>,
         index: usize,
         value: pyo3::PyObject,
     ) -> pyo3::PyResult<()> {
+        let node = get_node_from_pyobject(value.bind(py))?;
         let mut children = self.node.children();
 
         if index >= children.len() {
@@ -1002,11 +90,16 @@ impl PyChildren {
             ));
         }
 
-        children[index] = get_node_from_pyobject(value.bind(py))?;
+        children
+            .insert(index + 1, node)
+            .map_err(|x| pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(x.to_string()))?;
+        children.remove(index);
+
         Ok(())
     }
 
-    pub fn __delitem__(&self, index: usize) -> pyo3::PyResult<()> {
+    /// Performs `del self[index]`
+    pub(super) fn __delitem__(&self, index: usize) -> pyo3::PyResult<()> {
         let mut children = self.node.children();
 
         if index >= children.len() {
@@ -1019,30 +112,63 @@ impl PyChildren {
         Ok(())
     }
 
-    pub fn clear(&self) {
-        let mut children = self.node.children();
-        children.clear();
+    /// Return first index of value.
+    ///
+    /// Raises ValueError if the value is not present.
+    #[pyo3(signature=(value, start=0))]
+    pub(super) fn index(
+        &self,
+        py: pyo3::Python<'_>,
+        value: pyo3::PyObject,
+        start: usize,
+    ) -> pyo3::PyResult<usize> {
+        let node = get_node_from_pyobject(value.bind(py))?;
+        let children = self.node.children();
+
+        let mut iter = children.iter();
+
+        if start > 0 {
+            iter.skip(start - 1)
+                .position(|x| x.ptr_eq(&node))
+                .ok_or_else(|| pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(()))
+        } else {
+            iter.position(|x| x.ptr_eq(&node))
+                .ok_or_else(|| pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(()))
+        }
     }
 
-    pub fn append(&self, py: pyo3::Python<'_>, value: pyo3::PyObject) -> pyo3::PyResult<()> {
+    /// Inserts a child at position `index`.
+    ///
+    /// Returns error if the child has parent for itself.
+    /// Also returns error if child cycle be detected.
+    pub(super) fn insert(
+        &self,
+        py: pyo3::Python<'_>,
+        index: usize,
+        value: pyo3::PyObject,
+    ) -> pyo3::PyResult<()> {
         let node = get_node_from_pyobject(value.bind(py))?;
+        let mut children = self.node.children();
 
-        if node.parent().is_some() {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>("you cannot append a node that has parent itself; you can use Node.unlink() before this method."));
+        if index > children.len() {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                "out of range",
+            ));
         }
 
-        let mut children = self.node.children();
-        children.append(node).map_err(|_| {
-            pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("cycle detected")
-        })?;
-
-        Ok(())
+        children
+            .insert(index, node)
+            .map_err(|x| pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(x.to_string()))
     }
 
+    /// Returns `iter(self)`
+    ///
+    /// Note that you cannot have multiple `iter(self)` in a same time.
+    /// each one must be done before creating next one.
     pub fn __iter__(slf: pyo3::PyRef<'_, Self>) -> pyo3::PyResult<pyo3::PyRef<'_, Self>> {
         if slf.len.load(std::sync::atomic::Ordering::Relaxed) != 0 {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "you can only call Children's __iter__() once in a time.",
+                "you can only call PyNodeChildren's __iter__() once in a time.",
             ));
         }
 
@@ -1052,42 +178,42 @@ impl PyChildren {
         Ok(slf)
     }
 
+    /// Returns `next(self)`
     pub fn __next__(
         slf: pyo3::PyRef<'_, Self>,
         py: pyo3::Python<'_>,
-    ) -> pyo3::PyResult<pyo3::PyObject> {
+    ) -> pyo3::PyResult<*mut pyo3::ffi::PyObject> {
         let children = slf.node.children();
 
         if slf.len.load(std::sync::atomic::Ordering::Relaxed) != children.len() {
             std::mem::drop(children);
             slf.len.store(0, std::sync::atomic::Ordering::Relaxed);
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "node chidlren size changed during iteration",
+                "node attrs size changed during iteration",
             ));
         }
+
         if slf.index.load(std::sync::atomic::Ordering::Relaxed) >= children.len() {
             std::mem::drop(children);
             slf.len.store(0, std::sync::atomic::Ordering::Relaxed);
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()));
         }
 
-        let node = PyNode(children[slf.index.load(std::sync::atomic::Ordering::Relaxed)].clone());
+        let n = &children[slf.index.load(std::sync::atomic::Ordering::Relaxed)];
+        let n = PyNode(n.clone());
 
         std::mem::drop(children);
-
         slf.index.store(
             slf.index.load(std::sync::atomic::Ordering::Relaxed) + 1,
             std::sync::atomic::Ordering::Relaxed,
         );
-        Ok(pyo3::Py::new(py, node)?.into_any())
+        Ok(pyo3::Py::new(py, n)?.into_ptr())
     }
 }
 
-/// An element node data
+/// Children vector of a node
 #[pyo3::pyclass(name = "TreeIterator", module = "markupselect._rustlib")]
-pub struct PyTreeIterator {
-    pub tree: arcdom::NodesTree,
-}
+pub struct PyTreeIterator(arcdom::iter::TreeIterator);
 
 #[pyo3::pymethods]
 impl PyTreeIterator {
@@ -1106,7 +232,7 @@ impl PyTreeIterator {
         mut slf: pyo3::PyRefMut<'_, Self>,
         py: pyo3::Python<'_>,
     ) -> pyo3::PyResult<pyo3::PyObject> {
-        match slf.tree.next() {
+        match slf.0.next() {
             None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
             Some(node) => {
                 let node = PyNode(node);
@@ -1116,18 +242,16 @@ impl PyTreeIterator {
     }
 }
 
-/// An element node data
+/// Children vector of a node
 #[pyo3::pyclass(name = "ParentsIterator", module = "markupselect._rustlib")]
-pub struct PyParentsIterator {
-    pub parents: arcdom::ParentsIterator,
-}
+pub struct PyParentsIterator(arcdom::iter::ParentsIterator);
 
 #[pyo3::pymethods]
 impl PyParentsIterator {
     #[new]
     pub fn new() -> pyo3::PyResult<Self> {
         Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            "Use Node.parents() method; don't use this constructor directly.",
+            "Use Node.tree() method; don't use this constructor directly.",
         ))
     }
 
@@ -1139,7 +263,7 @@ impl PyParentsIterator {
         mut slf: pyo3::PyRefMut<'_, Self>,
         py: pyo3::Python<'_>,
     ) -> pyo3::PyResult<pyo3::PyObject> {
-        match slf.parents.next() {
+        match slf.0.next() {
             None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
             Some(node) => {
                 let node = PyNode(node);
@@ -1149,12 +273,13 @@ impl PyParentsIterator {
     }
 }
 
-/// A node
-#[pyo3::pyclass(name = "Select", module = "markupselect._rustlib")]
-pub struct PySelect(pub matching::Select);
+
+/// Children vector of a node
+#[pyo3::pyclass(name = "SelectExpr", module = "markupselect._rustlib")]
+pub struct PySelectExpr(matching::Select);
 
 #[pyo3::pymethods]
-impl PySelect {
+impl PySelectExpr {
     #[new]
     pub fn new() -> pyo3::PyResult<Self> {
         Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
@@ -1180,7 +305,8 @@ impl PySelect {
     }
 }
 
-/// A node
+
+/// A node of DOM
 #[pyo3::pyclass(name = "Node", module = "markupselect._rustlib", frozen)]
 pub struct PyNode(pub arcdom::Node);
 
@@ -1188,43 +314,39 @@ pub struct PyNode(pub arcdom::Node);
 impl PyNode {
     #[new]
     #[pyo3(signature=(data, /))]
-    pub fn new(py: pyo3::Python<'_>, data: pyo3::PyObject) -> pyo3::PyResult<Self> {
+    pub(super) fn new(py: pyo3::Python<'_>, data: pyo3::PyObject) -> pyo3::PyResult<Self> {
         let data = data.bind(py);
 
         Ok(Self(get_node_from_pyobject(data)?))
     }
 
     /// Returns the node data as `Py*Data` classes
-    pub fn data(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let data = self.0.as_nodedata();
+    pub(super) fn data(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let data = self.0.as_enum();
 
         let result = match &*data {
             arcdom::NodeData::Document(..) => {
-                let r = pyo3::Py::new(py, PyDocumentData(self.0.clone()))?;
-                r.into_any()
-            }
-            arcdom::NodeData::Fragment(..) => {
-                let r = pyo3::Py::new(py, PyFragmentData(self.0.clone()))?;
+                let r = pyo3::Py::new(py, docdata::PyDocumentData(self.0.clone()))?;
                 r.into_any()
             }
             arcdom::NodeData::Doctype(..) => {
-                let r = pyo3::Py::new(py, PyDoctypeData(self.0.clone()))?;
+                let r = pyo3::Py::new(py, docdata::PyDoctypeData(self.0.clone()))?;
                 r.into_any()
             }
             arcdom::NodeData::Text(..) => {
-                let r = pyo3::Py::new(py, PyTextData(self.0.clone()))?;
+                let r = pyo3::Py::new(py, docdata::PyTextData(self.0.clone()))?;
                 r.into_any()
             }
             arcdom::NodeData::Comment(..) => {
-                let r = pyo3::Py::new(py, PyCommentData(self.0.clone()))?;
+                let r = pyo3::Py::new(py, docdata::PyCommentData(self.0.clone()))?;
                 r.into_any()
             }
             arcdom::NodeData::Element(..) => {
-                let r = pyo3::Py::new(py, PyElementData(self.0.clone()))?;
+                let r = pyo3::Py::new(py, elementdata::PyElementData(self.0.clone()))?;
                 r.into_any()
             }
             arcdom::NodeData::ProcessingInstruction(..) => {
-                let r = pyo3::Py::new(py, PyProcessingInstructionData(self.0.clone()))?;
+                let r = pyo3::Py::new(py, docdata::PyProcessingInstructionData(self.0.clone()))?;
                 r.into_any()
             }
         };
@@ -1233,42 +355,37 @@ impl PyNode {
     }
 
     /// Returns `True` if the node is a document
-    pub fn is_document(&self) -> bool {
+    pub(super) fn is_document(&self) -> bool {
         self.0.is_document()
     }
 
-    /// Returns `True` if the node is a fragment
-    pub fn is_fragment(&self) -> bool {
-        self.0.is_fragment()
-    }
-
     /// Returns `True` if the node is a doctype
-    pub fn is_doctype(&self) -> bool {
+    pub(super) fn is_doctype(&self) -> bool {
         self.0.is_doctype()
     }
 
     /// Returns `True` if the node is a comment
-    pub fn is_comment(&self) -> bool {
+    pub(super) fn is_comment(&self) -> bool {
         self.0.is_comment()
     }
 
     /// Returns `True` if the node is a text
-    pub fn is_text(&self) -> bool {
+    pub(super) fn is_text(&self) -> bool {
         self.0.is_text()
     }
 
     /// Returns `True` if the node is an element
-    pub fn is_element(&self) -> bool {
+    pub(super) fn is_element(&self) -> bool {
         self.0.is_element()
     }
 
     /// Returns `True` if the node is a processing instruction
-    pub fn is_processing_instruction(&self) -> bool {
+    pub(super) fn is_processing_instruction(&self) -> bool {
         self.0.is_processing_instruction()
     }
 
     /// Returns the parent if exist
-    pub fn parent(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<Option<pyo3::PyObject>> {
+    pub(super) fn parent(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<Option<pyo3::PyObject>> {
         let parent = self.0.parent();
 
         if parent.is_none() {
@@ -1288,8 +405,13 @@ impl PyNode {
         ))
     }
 
-    pub fn children(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let children = PyChildren {
+    /// Copies the `self` and returns a new one
+    pub(super) fn copy(&self) -> Self {
+        Self(arcdom::Node::copy(&self.0))
+    }
+
+    pub(super) fn children(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
+        let children = PyNodeChildren {
             node: self.0.clone(),
             index: std::sync::atomic::AtomicUsize::new(0),
             len: std::sync::atomic::AtomicUsize::new(0),
@@ -1298,60 +420,81 @@ impl PyNode {
         Ok(pyo3::Py::new(py, children)?.into_any())
     }
 
-    pub fn tree(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let tree_iter = PyTreeIterator {
-            tree: self.0.tree(),
+    #[pyo3(signature=(include_self=true))]
+    pub(super) fn tree(
+        &self,
+        py: pyo3::Python<'_>,
+        include_self: bool,
+    ) -> pyo3::PyResult<pyo3::PyObject> {
+        let obj = {
+            if include_self {
+                PyTreeIterator(self.0.clone().into_tree())
+            } else {
+                PyTreeIterator(self.0.tree())
+            }
         };
 
-        Ok(pyo3::Py::new(py, tree_iter)?.into_any())
+        Ok(pyo3::Py::new(py, obj)?.into_any())
     }
 
-    pub fn parents(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let parents_iter = PyParentsIterator {
-            parents: self.0.parents(),
+    #[pyo3(signature=(include_self=true))]
+    pub(super) fn parents(
+        &self,
+        py: pyo3::Python<'_>,
+        include_self: bool,
+    ) -> pyo3::PyResult<pyo3::PyObject> {
+        let obj = {
+            if include_self {
+                PyParentsIterator(self.0.clone().into_parents())
+            } else {
+                PyParentsIterator(self.0.parents())
+            }
         };
 
-        Ok(pyo3::Py::new(py, parents_iter)?.into_any())
+        Ok(pyo3::Py::new(py, obj)?.into_any())
     }
 
-    pub fn serialize_html(&self) -> pyo3::PyResult<Vec<u8>> {
+    #[pyo3(signature=(include_self=true))]
+    pub(super) fn serialize_html(&self, include_self: bool) -> pyo3::PyResult<Vec<u8>> {
         let mut writer = Vec::new();
 
-        arcdom::serialize_html(&mut writer, &self.0)
+        self.0
+            .serialize_html(&mut writer, include_self)
             .map_err(|x| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(x.to_string()))?;
 
         Ok(writer)
     }
 
-    pub fn serialize_xml(&self) -> pyo3::PyResult<Vec<u8>> {
+    #[pyo3(signature=(include_self=true))]
+    pub(super) fn serialize_xml(&self, include_self: bool) -> pyo3::PyResult<Vec<u8>> {
         let mut writer = Vec::new();
 
-        arcdom::serialize_xml(&mut writer, &self.0)
+        self.0
+            .serialize_xml(&mut writer, include_self)
             .map_err(|x| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(x.to_string()))?;
 
         Ok(writer)
     }
 
-    /// Removes this node from its parent
-    pub fn unlink(&self) {
-        self.0.unlink();
-    }
-
-    pub fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+    pub(super) fn __eq__(
+        &self,
+        py: pyo3::Python<'_>,
+        other: pyo3::PyObject,
+    ) -> pyo3::PyResult<bool> {
         let other = get_node_from_pyobject(other.bind(py))?;
         Ok(self.0.eq(&other))
     }
 
-    pub fn __repr__(&self) -> String {
-        let data = self.0.as_nodedata();
+    pub(super) fn __repr__(&self) -> String {
+        let data = self.0.as_enum();
         format!("Node({})", make_repr(&data))
     }
 
-    pub fn select(&self, py: pyo3::Python<'_>, expr: String) -> pyo3::PyResult<pyo3::PyObject> {
+    pub(super) fn select(&self, py: pyo3::Python<'_>, expr: String) -> pyo3::PyResult<pyo3::PyObject> {
         let expr = matching::Select::new(self.0.tree(), &expr).map_err(|err| {
             pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(err.to_string())
         })?;
 
-        Ok(pyo3::Py::new(py, PySelect(expr))?.into_any())
+        Ok(pyo3::Py::new(py, PySelectExpr(expr))?.into_any())
     }
 }
