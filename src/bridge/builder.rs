@@ -21,6 +21,7 @@ fn quirks_mode_to_u8(value: markup5ever::interface::QuirksMode) -> u8 {
     }
 }
 
+/// These are options for HTML parsing
 #[pyo3::pyclass(name = "HtmlOptions", module = "markupselect._rustlib", frozen)]
 pub struct PyHtmlOptions {
     /// Report all parse errors described in the spec, at some
@@ -42,7 +43,7 @@ pub struct PyHtmlOptions {
     drop_doctype: bool,
 
     /// Is this a complete document? (means includes html, head, and body tag)
-    /// Default: false
+    /// Default: true
     full_document: bool,
 
     /// Initial TreeBuilder quirks mode. Default: NoQuirks
@@ -52,14 +53,14 @@ pub struct PyHtmlOptions {
 #[pyo3::pymethods]
 impl PyHtmlOptions {
     #[new]
-    #[pyo3(signature=(*, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, full_document=true, quirks_mode=QUIRKS_MODE_OFF))]
+    #[pyo3(signature=(full_document=true, *, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, quirks_mode=QUIRKS_MODE_OFF))]
     fn new(
+        full_document: bool,
         exact_errors: bool,
         discard_bom: bool,
         profile: bool,
         iframe_srcdoc: bool,
         drop_doctype: bool,
-        full_document: bool,
         quirks_mode: u8,
     ) -> Self {
         Self {

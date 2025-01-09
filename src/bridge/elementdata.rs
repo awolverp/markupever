@@ -190,7 +190,7 @@ impl PyElementData {
     }
 }
 
-/// An element node data
+/// An element node data attributes
 #[pyo3::pyclass(
     name = "ElementDataAttributes",
     module = "markupselect._rustlib",

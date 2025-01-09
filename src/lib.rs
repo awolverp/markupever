@@ -19,18 +19,20 @@ fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("QUIRKS_MODE_OFF", bridge::QUIRKS_MODE_OFF)?;
 
     m.add_class::<bridge::PyNode>()?;
-    m.add_class::<bridge::PyCommentData>()?;
-    m.add_class::<bridge::PyDoctypeData>()?;
-    m.add_class::<bridge::PyDocumentData>()?;
-    m.add_class::<bridge::PyProcessingInstructionData>()?;
-    m.add_class::<bridge::PyQualName>()?;
-    m.add_class::<bridge::PyTextData>()?;
-    m.add_class::<bridge::PyElementDataAttributes>()?;
-    m.add_class::<bridge::PyElementData>()?;
     m.add_class::<bridge::PyNodeChildren>()?;
     m.add_class::<bridge::PyTreeIterator>()?;
     m.add_class::<bridge::PyParentsIterator>()?;
     m.add_class::<bridge::PySelectExpr>()?;
+
+    m.add_class::<bridge::PyCommentData>()?;
+    m.add_class::<bridge::PyDoctypeData>()?;
+    m.add_class::<bridge::PyDocumentData>()?;
+    m.add_class::<bridge::PyProcessingInstructionData>()?;
+    m.add_class::<bridge::PyTextData>()?;
+    m.add_class::<bridge::PyElementDataAttributes>()?;
+    m.add_class::<bridge::PyElementData>()?;
+
+    m.add_class::<bridge::PyQualName>()?;
 
     Ok(())
 }

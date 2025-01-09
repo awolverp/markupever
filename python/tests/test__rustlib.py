@@ -85,7 +85,7 @@ def test_html():
     for p in last_node.parents():
         assert isinstance(p, _rustlib.Node)
         first_node = p
-    
+
     assert first_node == html.root
 
 
@@ -360,7 +360,7 @@ def test_parent():
 
     index = root.children().index(element)
     del root.children()[index]
-    
+
     assert len(root.children()) == 0
     assert element.parent() is None
 
@@ -368,18 +368,6 @@ def test_parent():
     del root.children()[0]
     assert len(root.children()) == 0
     assert element.parent() is None
-
-
-# def _to_text(node):
-#     text = ""
-
-#     tree = node.tree()
-
-#     for n in tree:
-#         if n.is_text():
-#             text += n.data().contents.strip()
-
-#     return text
 
 
 def test_select():
