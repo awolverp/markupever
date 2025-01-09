@@ -661,6 +661,7 @@ dependencies = [
  "pyo3",
  "pyo3-build-config",
  "selectors",
+ "smallvec",
  "tendril",
  "xml5ever",
 ]

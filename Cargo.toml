@@ -30,6 +30,7 @@ selectors = { version = "^0.26" }
 cssparser = { version = "^0.34" }
 precomputed-hash = { version = "^0.1" }
 parking_lot = { version = "^0.12" }
+smallvec = { version = "1.13.2" }
 
 [build-dependencies]
 pyo3-build-config = { version = "0.23.3", features = ["resolve-config"] }
