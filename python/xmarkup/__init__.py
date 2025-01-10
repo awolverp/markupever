@@ -8,5 +8,7 @@ from ._rustlib import (
 from .driver import (
     HtmlOptions as HtmlOptions,
     XmlOptions as XmlOptions,
+    Html as Html,
+    Xml as Xml,
 )
 from . import node as node
