@@ -549,9 +549,9 @@ impl Node {
     pub fn copy(node: &Node) -> Node {
         Self {
             inner: Arc::new(NodeInner {
-                parent: parking_lot::Mutex::new( node.inner.parent.lock().clone() ),
-                children: parking_lot::Mutex::new( node.inner.children.lock().clone() ),
-                data: parking_lot::Mutex::new( node.inner.data.lock().clone() ),
+                parent: parking_lot::Mutex::new(node.inner.parent.lock().clone()),
+                children: parking_lot::Mutex::new(node.inner.children.lock().clone()),
+                data: parking_lot::Mutex::new(node.inner.data.lock().clone()),
             }),
         }
     }

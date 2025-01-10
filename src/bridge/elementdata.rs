@@ -116,6 +116,7 @@ impl PyElementData {
         Ok(())
     }
 
+    /// Finds, caches, and returns the 'id' attribute from attributes.
     #[getter]
     pub(super) fn id(&self) -> Option<String> {
         self.0
@@ -126,6 +127,7 @@ impl PyElementData {
             .map(String::from)
     }
 
+    /// Finds, caches, and returns the 'class' attributes as list from attributes.
     #[getter]
     pub(super) fn classes(&self) -> Vec<String> {
         let mut classes = Vec::new();
@@ -391,6 +393,9 @@ impl PyElementDataAttributes {
         Ok(())
     }
 
+    /// Insert a `(QualName, str)` at position `index`, shifting all elements after it to the right.
+    ///
+    /// Raises `IndexError` if `index > len`
     pub(super) fn insert(
         &self,
         py: pyo3::Python<'_>,
@@ -458,7 +463,8 @@ impl PyElementDataAttributes {
 
     /// Sorts the slice with a comparison function, without preserving the initial order of equal elements.
     ///
-    /// This sort is unstable (i.e., may reorder equal elements), in-place (i.e., does not allocate), and O(n * log(n)) worst-case.
+    /// This sort is unstable (i.e., may reorder equal elements), in-place (i.e., does not allocate),
+    /// and O(n * log(n)) worst-case.
     pub(super) fn sort(&self) {
         let mut elem = self
             .node

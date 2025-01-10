@@ -119,7 +119,11 @@ impl PyDoctypeData {
             .system_id = value.into();
     }
 
-    pub(super) fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+    pub(super) fn __eq__(
+        &self,
+        py: pyo3::Python<'_>,
+        other: pyo3::PyObject,
+    ) -> pyo3::PyResult<bool> {
         let other = get_node_from_pyobject(other.bind(py))?;
         Ok(self.0.eq(&other))
     }
@@ -173,7 +177,11 @@ impl PyCommentData {
             .contents = value.into();
     }
 
-    pub(super) fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+    pub(super) fn __eq__(
+        &self,
+        py: pyo3::Python<'_>,
+        other: pyo3::PyObject,
+    ) -> pyo3::PyResult<bool> {
         let other = get_node_from_pyobject(other.bind(py))?;
         Ok(self.0.eq(&other))
     }
@@ -221,7 +229,11 @@ impl PyTextData {
             .contents = value.into();
     }
 
-    pub(super) fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+    pub(super) fn __eq__(
+        &self,
+        py: pyo3::Python<'_>,
+        other: pyo3::PyObject,
+    ) -> pyo3::PyResult<bool> {
         let other = get_node_from_pyobject(other.bind(py))?;
         Ok(self.0.eq(&other))
     }
@@ -298,7 +310,11 @@ impl PyProcessingInstructionData {
             .target = value.into();
     }
 
-    pub(super) fn __eq__(&self, py: pyo3::Python<'_>, other: pyo3::PyObject) -> pyo3::PyResult<bool> {
+    pub(super) fn __eq__(
+        &self,
+        py: pyo3::Python<'_>,
+        other: pyo3::PyObject,
+    ) -> pyo3::PyResult<bool> {
         let other = get_node_from_pyobject(other.bind(py))?;
         Ok(self.0.eq(&other))
     }

@@ -22,8 +22,8 @@ fn quirks_mode_to_u8(value: markup5ever::interface::QuirksMode) -> u8 {
 }
 
 /// These are options for HTML parsing
-#[pyo3::pyclass(name = "HtmlOptions", module = "markupselect._rustlib", frozen)]
-pub struct PyHtmlOptions {
+#[pyo3::pyclass(name = "RawHtmlOptions", module = "markupselect._rustlib", frozen)]
+pub struct PyRawHtmlOptions {
     /// Report all parse errors described in the spec, at some
     /// performance penalty?  Default: false
     exact_errors: bool,
@@ -51,7 +51,7 @@ pub struct PyHtmlOptions {
 }
 
 #[pyo3::pymethods]
-impl PyHtmlOptions {
+impl PyRawHtmlOptions {
     #[new]
     #[pyo3(signature=(full_document=true, *, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, quirks_mode=QUIRKS_MODE_OFF))]
     fn new(
@@ -110,8 +110,8 @@ impl PyHtmlOptions {
     }
 }
 
-#[pyo3::pyclass(name = "XmlOptions", module = "markupselect._rustlib", frozen)]
-pub struct PyXmlOptions {
+#[pyo3::pyclass(name = "RawXmlOptions", module = "markupselect._rustlib", frozen)]
+pub struct PyRawXmlOptions {
     /// Report all parse errors described in the spec, at some
     /// performance penalty?  Default: false
     exact_errors: bool,
@@ -126,7 +126,7 @@ pub struct PyXmlOptions {
 }
 
 #[pyo3::pymethods]
-impl PyXmlOptions {
+impl PyRawXmlOptions {
     #[new]
     #[pyo3(signature=(*, exact_errors=false, discard_bom=true, profile=false))]
     pub(super) fn new(exact_errors: bool, discard_bom: bool, profile: bool) -> Self {
@@ -156,11 +156,11 @@ impl PyXmlOptions {
 /// HTML Tree / HTML Document Parser
 ///
 /// Parses a HTML document into a tree link of `Node`s
-#[pyo3::pyclass(name = "Html", module = "markupselect._rustlib", frozen)]
-pub struct PyHtml(arcdom::ArcDom);
+#[pyo3::pyclass(name = "RawHtml", module = "markupselect._rustlib", frozen)]
+pub struct PyRawHtml(arcdom::ArcDom);
 
 #[pyo3::pymethods]
-impl PyHtml {
+impl PyRawHtml {
     #[new]
     pub(super) fn new(
         py: pyo3::Python<'_>,
@@ -171,10 +171,10 @@ impl PyHtml {
 
         let options = options
             .bind(py)
-            .extract::<pyo3::PyRef<'_, PyHtmlOptions>>()
+            .extract::<pyo3::PyRef<'_, PyRawHtmlOptions>>()
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    "expected HtmlOptions for options argument",
+                    "expected RawHtmlOptions for options argument",
                 )
             })?;
 
@@ -236,7 +236,7 @@ impl PyHtml {
     /// Most of the time is document node
     #[getter]
     pub(super) fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let node = super::node::PyNode(self.0.root.clone());
+        let node = super::node::PyRawNode(self.0.root.clone());
         pyo3::Py::new(py, node).map(|x| x.into_any())
     }
 }
@@ -244,11 +244,11 @@ impl PyHtml {
 /// HTML Tree / HTML Document Parser
 ///
 /// Parses a HTML document into a tree link of `Node`s
-#[pyo3::pyclass(name = "Xml", module = "markupselect._rustlib", frozen)]
-pub struct PyXml(arcdom::ArcDom);
+#[pyo3::pyclass(name = "RawXml", module = "markupselect._rustlib", frozen)]
+pub struct PyRawXml(arcdom::ArcDom);
 
 #[pyo3::pymethods]
-impl PyXml {
+impl PyRawXml {
     #[new]
     pub(super) fn new(
         py: pyo3::Python<'_>,
@@ -259,10 +259,10 @@ impl PyXml {
 
         let options = options
             .bind(py)
-            .extract::<pyo3::PyRef<'_, PyXmlOptions>>()
+            .extract::<pyo3::PyRef<'_, PyRawXmlOptions>>()
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    "expected XmlOptions for options argument",
+                    "expected RawXmlOptions for options argument",
                 )
             })?;
 
@@ -305,18 +305,12 @@ impl PyXml {
             .collect()
     }
 
-    /// Returns the quirks mode
-    #[getter]
-    pub(super) fn quirks_mode(&self) -> u8 {
-        quirks_mode_to_u8(self.0.quirks_mode.get())
-    }
-
     /// Returns the root node
     ///
     /// Most of the time is document node
     #[getter]
     pub(super) fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let node = super::node::PyNode(self.0.root.clone());
+        let node = super::node::PyRawNode(self.0.root.clone());
         pyo3::Py::new(py, node).map(|x| x.into_any())
     }
 }

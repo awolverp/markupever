@@ -66,11 +66,11 @@ _XML = """<bookstore>
 
 
 def test_html():
-    html = _rustlib.Html(_HTML.encode("utf-8"), _rustlib.HtmlOptions())
+    html = _rustlib.RawHtml(_HTML.encode("utf-8"), _rustlib.RawHtmlOptions())
 
     assert not html.errors
     assert html.quirks_mode == _rustlib.QUIRKS_MODE_OFF
-    assert isinstance(html.root, _rustlib.Node)
+    assert isinstance(html.root, _rustlib.RawNode)
     assert isinstance(html.root.data(), _rustlib.DocumentData)
 
     html.root.serialize_html()
@@ -78,23 +78,23 @@ def test_html():
     # test parents() & tree()
     last_node = None
     for n in html.root.tree():
-        assert isinstance(n, _rustlib.Node)
+        assert isinstance(n, _rustlib.RawNode)
         last_node = n
 
     first_node = None
     for p in last_node.parents():
-        assert isinstance(p, _rustlib.Node)
+        assert isinstance(p, _rustlib.RawNode)
         first_node = p
 
     assert first_node == html.root
 
 
 def test_xml():
-    xml = _rustlib.Xml(_XML.encode("utf-8"), _rustlib.XmlOptions())
+    xml = _rustlib.RawXml(_XML.encode("utf-8"), _rustlib.RawXmlOptions())
 
     assert not xml.errors
     assert xml.quirks_mode == _rustlib.QUIRKS_MODE_OFF
-    assert isinstance(xml.root, _rustlib.Node)
+    assert isinstance(xml.root, _rustlib.RawNode)
     assert isinstance(xml.root.data(), _rustlib.DocumentData)
 
     xml.root.serialize_xml()
@@ -139,8 +139,8 @@ def _construct_data(cls: type, is_name: str, *args, **kwargs) -> object:
 
     assert isinstance(obj, cls)
 
-    node = _rustlib.Node(obj)
-    assert isinstance(node, _rustlib.Node)
+    node = _rustlib.RawNode(obj)
+    assert isinstance(node, _rustlib.RawNode)
     assert isinstance(node.data(), cls)
 
     assert node == obj
@@ -305,7 +305,7 @@ def test_element_attrs():
 
 
 def test_node_children():
-    root = _rustlib.Node(_rustlib.DocumentData())
+    root = _rustlib.RawNode(_rustlib.DocumentData())
 
     assert len(root.children()) == 0
 
@@ -324,12 +324,12 @@ def test_node_children():
     root.children()[0] = _rustlib.TextData("content")
     assert isinstance(root.children()[0].data(), _rustlib.TextData)
 
-    root.children().append(_rustlib.Node(_rustlib.ElementData("div", [])))
+    root.children().append(_rustlib.RawNode(_rustlib.ElementData("div", [])))
 
     del root.children()[0]
     assert len(root.children()) == 1
 
-    newroot = _rustlib.Node(_rustlib.DocumentData())
+    newroot = _rustlib.RawNode(_rustlib.DocumentData())
     newroot.children().append(root)
 
     with pytest.raises(ValueError):
@@ -349,8 +349,8 @@ def test_node_children():
 
 
 def test_parent():
-    root = _rustlib.Node(_rustlib.DocumentData())
-    element = _rustlib.Node(_rustlib.ElementData("html", []))
+    root = _rustlib.RawNode(_rustlib.DocumentData())
+    element = _rustlib.RawNode(_rustlib.ElementData("html", []))
 
     root.children().append(element)
 
@@ -371,7 +371,7 @@ def test_parent():
 
 
 def test_select():
-    html = _rustlib.Html(_HTML.encode("utf-8"), _rustlib.HtmlOptions())
+    html = _rustlib.RawHtml(_HTML.encode("utf-8"), _rustlib.RawHtmlOptions())
 
     for node in html.root.select("p"):
         data = node.data()

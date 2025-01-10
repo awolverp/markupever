@@ -5,15 +5,15 @@ use crate::core::arcdom;
 use crate::core::matching;
 
 /// Children vector of a node
-#[pyo3::pyclass(name = "NodeChildren", module = "markupselect._rustlib", frozen)]
-pub struct PyNodeChildren {
+#[pyo3::pyclass(name = "RawChildren", module = "markupselect._rustlib", frozen)]
+pub struct PyRawChildren {
     node: arcdom::Node,
     len: std::sync::atomic::AtomicUsize,
     index: std::sync::atomic::AtomicUsize,
 }
 
 #[pyo3::pymethods]
-impl PyNodeChildren {
+impl PyRawChildren {
     #[new]
     pub(super) fn new() -> pyo3::PyResult<Self> {
         Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
@@ -21,7 +21,7 @@ impl PyNodeChildren {
         ))
     }
 
-    /// Returns `len(self)` - length of the attributes vector.
+    /// Returns `len(self)` - length of the vector.
     pub(super) fn __len__(&self) -> usize {
         self.node.children().len()
     }
@@ -36,6 +36,10 @@ impl PyNodeChildren {
         self.node.children().clear();
     }
 
+    /// Append a new child into node and sets its new parent
+    ///
+    /// Returns error if the child has parent for itself.
+    /// Also returns error if child cycle be detected.
     pub(super) fn append(&self, py: pyo3::Python<'_>, node: pyo3::PyObject) -> pyo3::PyResult<()> {
         let n = get_node_from_pyobject(node.bind(py))?;
 
@@ -50,7 +54,7 @@ impl PyNodeChildren {
             pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>("pop from empty children")
         })?;
 
-        let n = PyNode(n);
+        let n = PyRawNode(n);
         Ok(pyo3::Py::new(py, n)?.into_any())
     }
 
@@ -63,7 +67,7 @@ impl PyNodeChildren {
         let children = self.node.children();
 
         let n = match children.get(index) {
-            Some(x) => PyNode(x.clone()),
+            Some(x) => PyRawNode(x.clone()),
             None => {
                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
                     "out of range",
@@ -168,7 +172,7 @@ impl PyNodeChildren {
     pub fn __iter__(slf: pyo3::PyRef<'_, Self>) -> pyo3::PyResult<pyo3::PyRef<'_, Self>> {
         if slf.len.load(std::sync::atomic::Ordering::Relaxed) != 0 {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "you can only call PyNodeChildren's __iter__() once in a time.",
+                "you can only call PyRawChildren's __iter__() once in a time.",
             ));
         }
 
@@ -200,7 +204,7 @@ impl PyNodeChildren {
         }
 
         let n = &children[slf.index.load(std::sync::atomic::Ordering::Relaxed)];
-        let n = PyNode(n.clone());
+        let n = PyRawNode(n.clone());
 
         std::mem::drop(children);
         slf.index.store(
@@ -211,12 +215,12 @@ impl PyNodeChildren {
     }
 }
 
-/// Children vector of a node
-#[pyo3::pyclass(name = "TreeIterator", module = "markupselect._rustlib")]
-pub struct PyTreeIterator(arcdom::iter::TreeIterator);
+
+#[pyo3::pyclass(name = "RawTree", module = "markupselect._rustlib")]
+pub struct PyRawTree(arcdom::iter::TreeIterator);
 
 #[pyo3::pymethods]
-impl PyTreeIterator {
+impl PyRawTree {
     #[new]
     pub fn new() -> pyo3::PyResult<Self> {
         Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
@@ -235,19 +239,19 @@ impl PyTreeIterator {
         match slf.0.next() {
             None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
             Some(node) => {
-                let node = PyNode(node);
+                let node = PyRawNode(node);
                 Ok(pyo3::Py::new(py, node)?.into_any())
             }
         }
     }
 }
 
-/// Children vector of a node
-#[pyo3::pyclass(name = "ParentsIterator", module = "markupselect._rustlib")]
-pub struct PyParentsIterator(arcdom::iter::ParentsIterator);
+
+#[pyo3::pyclass(name = "RawParents", module = "markupselect._rustlib")]
+pub struct PyRawParents(arcdom::iter::ParentsIterator);
 
 #[pyo3::pymethods]
-impl PyParentsIterator {
+impl PyRawParents {
     #[new]
     pub fn new() -> pyo3::PyResult<Self> {
         Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
@@ -266,20 +270,18 @@ impl PyParentsIterator {
         match slf.0.next() {
             None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
             Some(node) => {
-                let node = PyNode(node);
+                let node = PyRawNode(node);
                 Ok(pyo3::Py::new(py, node)?.into_any())
             }
         }
     }
 }
 
-
-/// Children vector of a node
-#[pyo3::pyclass(name = "SelectExpr", module = "markupselect._rustlib")]
-pub struct PySelectExpr(matching::Select);
+#[pyo3::pyclass(name = "RawSelectExpr", module = "markupselect._rustlib")]
+pub struct PyRawSelectExpr(matching::Select);
 
 #[pyo3::pymethods]
-impl PySelectExpr {
+impl PyRawSelectExpr {
     #[new]
     pub fn new() -> pyo3::PyResult<Self> {
         Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
@@ -298,20 +300,19 @@ impl PySelectExpr {
         match slf.0.next() {
             None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
             Some(node) => {
-                let node = PyNode(node);
+                let node = PyRawNode(node);
                 Ok(pyo3::Py::new(py, node)?.into_any())
             }
         }
     }
 }
 
-
 /// A node of DOM
-#[pyo3::pyclass(name = "Node", module = "markupselect._rustlib", frozen)]
-pub struct PyNode(pub arcdom::Node);
+#[pyo3::pyclass(name = "RawNode", module = "markupselect._rustlib", frozen)]
+pub struct PyRawNode(pub arcdom::Node);
 
 #[pyo3::pymethods]
-impl PyNode {
+impl PyRawNode {
     #[new]
     #[pyo3(signature=(data, /))]
     pub(super) fn new(py: pyo3::Python<'_>, data: pyo3::PyObject) -> pyo3::PyResult<Self> {
@@ -401,7 +402,7 @@ impl PyNode {
         };
 
         Ok(Some(
-            pyo3::Py::new(py, PyNode(parent)).map(|x| x.into_any())?,
+            pyo3::Py::new(py, PyRawNode(parent)).map(|x| x.into_any())?,
         ))
     }
 
@@ -411,7 +412,7 @@ impl PyNode {
     }
 
     pub(super) fn children(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
-        let children = PyNodeChildren {
+        let children = PyRawChildren {
             node: self.0.clone(),
             index: std::sync::atomic::AtomicUsize::new(0),
             len: std::sync::atomic::AtomicUsize::new(0),
@@ -428,9 +429,9 @@ impl PyNode {
     ) -> pyo3::PyResult<pyo3::PyObject> {
         let obj = {
             if include_self {
-                PyTreeIterator(self.0.clone().into_tree())
+                PyRawTree(self.0.clone().into_tree())
             } else {
-                PyTreeIterator(self.0.tree())
+                PyRawTree(self.0.tree())
             }
         };
 
@@ -445,9 +446,9 @@ impl PyNode {
     ) -> pyo3::PyResult<pyo3::PyObject> {
         let obj = {
             if include_self {
-                PyParentsIterator(self.0.clone().into_parents())
+                PyRawParents(self.0.clone().into_parents())
             } else {
-                PyParentsIterator(self.0.parents())
+                PyRawParents(self.0.parents())
             }
         };
 
@@ -490,11 +491,15 @@ impl PyNode {
         format!("Node({})", make_repr(&data))
     }
 
-    pub(super) fn select(&self, py: pyo3::Python<'_>, expr: String) -> pyo3::PyResult<pyo3::PyObject> {
+    pub(super) fn select(
+        &self,
+        py: pyo3::Python<'_>,
+        expr: String,
+    ) -> pyo3::PyResult<pyo3::PyObject> {
         let expr = matching::Select::new(self.0.tree(), &expr).map_err(|err| {
             pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(err.to_string())
         })?;
 
-        Ok(pyo3::Py::new(py, PySelectExpr(expr))?.into_any())
+        Ok(pyo3::Py::new(py, PyRawSelectExpr(expr))?.into_any())
     }
 }

@@ -9,20 +9,20 @@ fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add("__author__", "awolverp")?;
 
-    m.add_class::<bridge::PyHtml>()?;
-    m.add_class::<bridge::PyHtmlOptions>()?;
-    m.add_class::<bridge::PyXml>()?;
-    m.add_class::<bridge::PyXmlOptions>()?;
+    m.add_class::<bridge::PyRawHtml>()?;
+    m.add_class::<bridge::PyRawHtmlOptions>()?;
+    m.add_class::<bridge::PyRawXml>()?;
+    m.add_class::<bridge::PyRawXmlOptions>()?;
 
     m.add("QUIRKS_MODE_FULL", bridge::QUIRKS_MODE_FULL)?;
     m.add("QUIRKS_MODE_LIMITED", bridge::QUIRKS_MODE_LIMITED)?;
     m.add("QUIRKS_MODE_OFF", bridge::QUIRKS_MODE_OFF)?;
 
-    m.add_class::<bridge::PyNode>()?;
-    m.add_class::<bridge::PyNodeChildren>()?;
-    m.add_class::<bridge::PyTreeIterator>()?;
-    m.add_class::<bridge::PyParentsIterator>()?;
-    m.add_class::<bridge::PySelectExpr>()?;
+    m.add_class::<bridge::PyRawNode>()?;
+    m.add_class::<bridge::PyRawChildren>()?;
+    m.add_class::<bridge::PyRawTree>()?;
+    m.add_class::<bridge::PyRawParents>()?;
+    m.add_class::<bridge::PyRawSelectExpr>()?;
 
     m.add_class::<bridge::PyCommentData>()?;
     m.add_class::<bridge::PyDoctypeData>()?;

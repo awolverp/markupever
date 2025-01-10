@@ -4,10 +4,10 @@ mod elementdata;
 mod node;
 mod qualname;
 
-pub use builder::PyHtml;
-pub use builder::PyHtmlOptions;
-pub use builder::PyXml;
-pub use builder::PyXmlOptions;
+pub use builder::PyRawHtml;
+pub use builder::PyRawHtmlOptions;
+pub use builder::PyRawXml;
+pub use builder::PyRawXmlOptions;
 pub use builder::QUIRKS_MODE_FULL;
 pub use builder::QUIRKS_MODE_LIMITED;
 pub use builder::QUIRKS_MODE_OFF;
@@ -23,16 +23,16 @@ pub use docdata::PyTextData;
 pub use elementdata::PyElementData;
 pub use elementdata::PyElementDataAttributes;
 
-pub use node::PyNode;
-pub use node::PyNodeChildren;
-pub use node::PyParentsIterator;
-pub use node::PySelectExpr;
-pub use node::PyTreeIterator;
+pub use node::PyRawChildren;
+pub use node::PyRawParents;
+pub use node::PyRawNode;
+pub use node::PyRawSelectExpr;
+pub use node::PyRawTree;
 
 mod utils {
     use super::docdata;
     use super::elementdata;
-    use super::node::PyNode;
+    use super::node::PyRawNode;
     use crate::core::arcdom;
 
     use pyo3::types::PyAnyMethods;
@@ -42,8 +42,8 @@ mod utils {
     pub(super) fn get_node_from_pyobject(
         val: &pyo3::Bound<'_, pyo3::PyAny>,
     ) -> pyo3::PyResult<arcdom::Node> {
-        if PyNode::is_type_of(val) {
-            let data = val.extract::<pyo3::PyRef<'_, PyNode>>().unwrap();
+        if PyRawNode::is_type_of(val) {
+            let data = val.extract::<pyo3::PyRef<'_, PyRawNode>>().unwrap();
 
             Ok(data.0.clone())
         } else if docdata::PyDocumentData::is_type_of(val) {

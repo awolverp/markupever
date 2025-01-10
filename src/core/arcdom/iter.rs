@@ -30,7 +30,7 @@ impl<'a> ChildrenMutexGuard<'a> {
         }
     }
 
-    /// Push a new child into node and sets its new parent
+    /// Append a new child into node and sets its new parent
     ///
     /// Returns error if the child has parent for itself.
     /// Also returns error if child cycle be detected.
@@ -58,7 +58,7 @@ impl<'a> ChildrenMutexGuard<'a> {
         Some(node)
     }
 
-    /// Clears children and removes thier parent
+    /// Clears children and removes their parent
     pub fn clear(&mut self) {
         for child in self.item.drain(..) {
             child.parent().take().unwrap();
