@@ -5,6 +5,7 @@ use super::node::ElementData;
 use super::node::Node;
 use super::node::ProcessingInstructionData;
 use super::node::TextData;
+use super::node::NamespacesHashMap;
 
 use crate::core::send::make_atomic_tendril;
 
@@ -42,6 +43,7 @@ pub struct ArcDom {
     pub root: Node,
     pub errors: RefCell<Vec<std::borrow::Cow<'static, str>>>,
     pub quirks_mode: Cell<markup5ever::interface::QuirksMode>,
+    pub namespaces: RefCell<NamespacesHashMap>,
 }
 
 impl ArcDom {
@@ -50,6 +52,7 @@ impl ArcDom {
             root,
             errors: RefCell::new(Vec::new()),
             quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
+            namespaces: RefCell::new(NamespacesHashMap::new()),
         }
     }
 
@@ -149,6 +152,12 @@ impl markup5ever::interface::TreeSink for ArcDom {
         attrs: Vec<markup5ever::Attribute>,
         flags: markup5ever::interface::ElementFlags,
     ) -> Self::Handle {
+        if let Some(ref prefix) = name.prefix {
+            self.namespaces
+                .borrow_mut()
+                .insert(prefix.clone(), name.ns.clone());
+        }
+
         let mut elem = ElementData::from_non_atomic(
             name,
             attrs.into_iter().map(|x| (x.name, x.value)),

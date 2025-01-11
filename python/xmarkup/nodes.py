@@ -166,25 +166,28 @@ class ParentsIterator:
         return Node(next(self._parents))
 
 
-class SelectExpr:
-    __slots__ = ("_select_expr",)
+class Matching:
+    __slots__ = ("_raw_matching",)
 
     def __init__(
-        self,
-        node: typing.Union["Node", RawNode],
-        expr: str,
+        self, node: typing.Union["Node", RawNode, NodeData], expr: str, *, parser: typing.Any = None
     ) -> None:
+        from .driver import Html, Xml
+
         if isinstance(node, Node):
             node = node._node
 
-        self._select_expr: _rustlib.RawSelectExpr = node.select(expr)
+        if isinstance(parser, (Html, Xml)):
+            parser = parser._parser
 
-    def __iter__(self) -> "SelectExpr":
-        self._select_expr = iter(self._select_expr)
+        self._raw_matching = _rustlib.RawMatching(node, expr, parser)
+
+    def __iter__(self) -> "Matching":
+        self._raw_matching = iter(self._raw_matching)
         return self
 
     def __next__(self) -> "Node":
-        return Node(next(self._select_expr))
+        return Node(next(self._raw_matching))
 
 
 class Node:
@@ -265,9 +268,46 @@ class Node:
         """Iterates all parents"""
         return ParentsIterator(self._node, include_self=include_self)
 
-    def select(self, expr: str) -> SelectExpr:
+    def select(self, expr: str, *, parser: typing.Any = None) -> Matching:
         """Execute a css expr and iterates all matched nodes"""
-        return SelectExpr(self, expr)
+        return Matching(self, expr, parser=parser)
+
+    def text(self, strip: bool = False, strip_chars: typing.Optional[str] = None) -> str:
+        _text = ""
+
+        for node in self.tree(include_self=True):
+            data = node.data()
+
+            if isinstance(data, TextData):
+                _text += data.contents if not strip else data.contents.strip(strip_chars)
+
+        return _text
+
+    def previous_sibling(self) -> typing.Optional["Node"]:
+        parent = self.parent()
+        if parent is None:
+            return None
+
+        children = parent.children()
+        index = children.index(self)
+
+        if index == 0:
+            return None
+
+        return children[index - 1]
+
+    def next_sibling(self) -> typing.Optional["Node"]:
+        parent = self.parent()
+        if parent is None:
+            return None
+
+        children = parent.children()
+        index = children.index(self)
+
+        if index + 1 == len(children):
+            return None
+
+        return children[index + 1]
 
     def __eq__(self, value: typing.Union["Node", RawNode, NodeData]) -> bool:
         if isinstance(value, Node):

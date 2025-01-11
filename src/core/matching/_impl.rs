@@ -48,6 +48,25 @@ impl<'a> From<&'a str> for ToCssLocalName {
     }
 }
 
+/// A [`markup5ever::Prefix`] with ToCss impl
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
+pub struct ToCssNamespacePrefix(pub markup5ever::Prefix);
+
+impl cssparser::ToCss for ToCssNamespacePrefix {
+    fn to_css<W>(&self, dest: &mut W) -> std::fmt::Result
+    where
+        W: std::fmt::Write,
+    {
+        dest.write_str(&self.0)
+    }
+}
+
+impl<'a> From<&'a str> for ToCssNamespacePrefix {
+    fn from(value: &'a str) -> Self {
+        Self(value.into())
+    }
+}
+
 #[derive(PartialEq, Eq, Clone)]
 pub struct NonTSPseudoClass;
 
@@ -97,7 +116,7 @@ impl selectors::SelectorImpl for SelectorImpl {
     type AttrValue = ToCssString;
     type LocalName = ToCssLocalName;
     type Identifier = ToCssLocalName;
-    type NamespacePrefix = ToCssLocalName;
+    type NamespacePrefix = ToCssNamespacePrefix;
     type NamespaceUrl = markup5ever::Namespace;
     type BorrowedLocalName = ToCssLocalName;
     type BorrowedNamespaceUrl = markup5ever::Namespace;

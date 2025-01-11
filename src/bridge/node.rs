@@ -2,7 +2,9 @@ use super::docdata;
 use super::elementdata;
 use super::utils::{get_node_from_pyobject, make_repr};
 use crate::core::arcdom;
-use crate::core::matching;
+
+#[pyo3::pyclass(name = "RawNamespaces", module = "markupselect._rustlib", frozen)]
+pub struct PyNamespaces(pub arcdom::NamespacesHashMap);
 
 /// Children vector of a node
 #[pyo3::pyclass(name = "RawChildren", module = "markupselect._rustlib", frozen)]
@@ -277,36 +279,6 @@ impl PyRawParents {
     }
 }
 
-#[pyo3::pyclass(name = "RawSelectExpr", module = "markupselect._rustlib")]
-pub struct PyRawSelectExpr(matching::Select);
-
-#[pyo3::pymethods]
-impl PyRawSelectExpr {
-    #[new]
-    pub fn new() -> pyo3::PyResult<Self> {
-        Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
-            "Use Node.select() method; don't use this constructor directly.",
-        ))
-    }
-
-    pub fn __iter__(slf: pyo3::PyRef<'_, Self>) -> pyo3::PyRef<'_, Self> {
-        slf
-    }
-
-    pub fn __next__(
-        mut slf: pyo3::PyRefMut<'_, Self>,
-        py: pyo3::Python<'_>,
-    ) -> pyo3::PyResult<pyo3::PyObject> {
-        match slf.0.next() {
-            None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
-            Some(node) => {
-                let node = PyRawNode(node);
-                Ok(pyo3::Py::new(py, node)?.into_any())
-            }
-        }
-    }
-}
-
 /// A node of DOM
 #[pyo3::pyclass(name = "RawNode", module = "markupselect._rustlib", frozen)]
 pub struct PyRawNode(pub arcdom::Node);
@@ -489,17 +461,5 @@ impl PyRawNode {
     pub(super) fn __repr__(&self) -> String {
         let data = self.0.as_enum();
         format!("Node({})", make_repr(&data))
-    }
-
-    pub(super) fn select(
-        &self,
-        py: pyo3::Python<'_>,
-        expr: String,
-    ) -> pyo3::PyResult<pyo3::PyObject> {
-        let expr = matching::Select::new(self.0.tree(), &expr).map_err(|err| {
-            pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(err.to_string())
-        })?;
-
-        Ok(pyo3::Py::new(py, PyRawSelectExpr(expr))?.into_any())
     }
 }

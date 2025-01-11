@@ -1,4 +1,4 @@
-from . import node, _rustlib
+from . import _rustlib, nodes
 import typing
 
 
@@ -73,6 +73,18 @@ class HtmlOptions:
         """document's quirks mode, for compatibility with old browsers."""
         return self._options.quirks_mode
 
+    def __repr__(self) -> str:
+        return (
+            "HtmlOptions("
+            f"full_document={self._options.full_document}, "
+            f"exact_errors={self._options.exact_errors}, "
+            f"discard_bom={self._options.discard_bom}, "
+            f"profile={self._options.profile}, "
+            f"iframe_srcdoc={self._options.iframe_srcdoc}, "
+            f"drop_doctype={self._options.drop_doctype}, "
+            f"quirks_mode={self._options.quirks_mode})"
+        )
+
 
 class XmlOptions:
     __slots__ = ("_options",)
@@ -112,6 +124,14 @@ class XmlOptions:
         """Keep a record of how long we spent in each state? (records will printed in stdout)"""
         return self._options.profile
 
+    def __repr__(self) -> str:
+        return (
+            "XmlOptions("
+            f"exact_errors={self._options.exact_errors}, "
+            f"discard_bom={self._options.discard_bom}, "
+            f"profile={self._options.profile})"
+        )
+
 
 class Html:
     __slots__ = ("_parser",)
@@ -148,13 +168,24 @@ class Html:
         return self._parser.quirks_mode
 
     @property
-    def root(self) -> node.Node:
-        """the root node of the parsed document. always is a `node.DocumentData`."""
-        return node.Node(self._parser.root)
+    def root(self) -> nodes.Node:
+        """the root node of the parsed document. always is a `nodes.DocumentData`."""
+        return nodes.Node(self._parser.root)
 
     def serialize(self) -> bytes:
         """Shorthand for `self.root.serialize_html()`"""
         return self.root.serialize_html()
+
+    def select(
+        self, expr: str, node: typing.Union[nodes.Node, _rustlib.RawNode, None] = None
+    ) -> nodes.Matching:
+        if node is not None and isinstance(node, nodes.Node):
+            node = node._node
+
+        return nodes.Matching(node or self.root, expr, parser=self._parser)
+
+    def __repr__(self) -> str:
+        return self._parser.__repr__()
 
 
 class Xml:
@@ -187,10 +218,21 @@ class Xml:
         return self._parser.errors
 
     @property
-    def root(self) -> node.Node:
-        """the root node of the parsed document. always is a `node.DocumentData`."""
-        return node.Node(self._parser.root)
+    def root(self) -> nodes.Node:
+        """the root node of the parsed document. always is a `nodes.DocumentData`."""
+        return nodes.Node(self._parser.root)
 
     def serialize(self) -> bytes:
         """Shorthand for `self.root.serialize_xml()`"""
         return self.root.serialize_xml()
+
+    def select(
+        self, expr: str, node: typing.Union[nodes.Node, _rustlib.RawNode, None] = None
+    ) -> nodes.Matching:
+        if node is not None and isinstance(node, nodes.Node):
+            node = node._node
+
+        return nodes.Matching(node or self.root, expr, parser=self._parser)
+
+    def __repr__(self) -> str:
+        return self._parser.__repr__()

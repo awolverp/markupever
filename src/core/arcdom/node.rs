@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::sync::Weak;
 
 pub type SizedSmallVec<T> = smallvec::SmallVec<[T; 4]>;
+pub type NamespacesHashMap = std::collections::HashMap<markup5ever::Prefix, markup5ever::Namespace>;
 
 /// The root of HTML document
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

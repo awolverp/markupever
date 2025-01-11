@@ -11,6 +11,7 @@ pub use builder::PyRawXmlOptions;
 pub use builder::QUIRKS_MODE_FULL;
 pub use builder::QUIRKS_MODE_LIMITED;
 pub use builder::QUIRKS_MODE_OFF;
+pub use builder::PyRawMatching;
 
 pub use qualname::PyQualName;
 
@@ -26,7 +27,6 @@ pub use elementdata::PyElementDataAttributes;
 pub use node::PyRawChildren;
 pub use node::PyRawParents;
 pub use node::PyRawNode;
-pub use node::PyRawSelectExpr;
 pub use node::PyRawTree;
 
 mod utils {

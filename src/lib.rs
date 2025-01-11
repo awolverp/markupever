@@ -19,11 +19,12 @@ fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("QUIRKS_MODE_LIMITED", bridge::QUIRKS_MODE_LIMITED)?;
     m.add("QUIRKS_MODE_OFF", bridge::QUIRKS_MODE_OFF)?;
 
+    m.add_class::<bridge::PyRawMatching>()?;
+
     m.add_class::<bridge::PyRawNode>()?;
     m.add_class::<bridge::PyRawChildren>()?;
     m.add_class::<bridge::PyRawTree>()?;
     m.add_class::<bridge::PyRawParents>()?;
-    m.add_class::<bridge::PyRawSelectExpr>()?;
 
     m.add_class::<bridge::PyCommentData>()?;
     m.add_class::<bridge::PyDoctypeData>()?;

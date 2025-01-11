@@ -1,4 +1,6 @@
+use super::utils::get_node_from_pyobject;
 use crate::core::arcdom;
+use crate::core::matching;
 use pyo3::types::PyAnyMethods;
 
 pub const QUIRKS_MODE_FULL: u8 = 0;
@@ -312,5 +314,75 @@ impl PyRawXml {
     pub(super) fn root(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<pyo3::PyObject> {
         let node = super::node::PyRawNode(self.0.root.clone());
         pyo3::Py::new(py, node).map(|x| x.into_any())
+    }
+}
+
+#[pyo3::pyclass(name = "RawMatching", module = "markupselect._rustlib")]
+pub struct PyRawMatching(pub matching::Select);
+
+#[pyo3::pymethods]
+impl PyRawMatching {
+    #[new]
+    #[pyo3(signature=(node, expr, parser=None))]
+    pub(super) fn new(
+        py: pyo3::Python<'_>,
+        node: pyo3::PyObject,
+        expr: String,
+        parser: Option<pyo3::PyObject>,
+    ) -> pyo3::PyResult<Self> {
+        let node = get_node_from_pyobject(node.bind(py))?;
+
+        // find namespaces
+        let mut namespaces = arcdom::NamespacesHashMap::new();
+
+        if let Some(parser) = parser {
+            if let Ok(html) = parser.extract::<pyo3::PyRef<'_, PyRawHtml>>(py) {
+                namespaces = html.0.namespaces.borrow().clone();
+            } else if let Ok(html) = parser.extract::<pyo3::PyRef<'_, PyRawXml>>(py) {
+                namespaces = html.0.namespaces.borrow().clone();
+            } else {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    "expected RawHtml or RawXml as parser",
+                ));
+            }
+        } else {
+            if let Some(elem) = node.as_element() {
+                if let Some(ref prefix) = elem.name.prefix {
+                    namespaces.insert(prefix.clone(), elem.name.ns.clone());
+                }
+            }
+
+            for n in node.tree() {
+                if let Some(elem) = n.as_element() {
+                    if let Some(ref prefix) = elem.name.prefix {
+                        namespaces.insert(prefix.clone(), elem.name.ns.clone());
+                    }
+                }
+            }
+        }
+
+        let expr =
+            matching::Select::new(node.into_tree(), &expr, Some(namespaces)).map_err(|err| {
+                pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(err.to_string())
+            })?;
+        
+        Ok(Self(expr))
+    }
+
+    pub fn __iter__(slf: pyo3::PyRef<'_, Self>) -> pyo3::PyRef<'_, Self> {
+        slf
+    }
+
+    pub fn __next__(
+        mut slf: pyo3::PyRefMut<'_, Self>,
+        py: pyo3::Python<'_>,
+    ) -> pyo3::PyResult<pyo3::PyObject> {
+        match slf.0.next() {
+            None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
+            Some(node) => {
+                let node = super::node::PyRawNode(node);
+                Ok(pyo3::Py::new(py, node)?.into_any())
+            }
+        }
     }
 }

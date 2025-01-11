@@ -4,6 +4,7 @@ use super::ToCssLocalName;
 use super::ToCssString;
 use super::_impl::SelectorImpl;
 use crate::core::arcdom::iter::TreeIterator;
+use crate::core::arcdom::NamespacesHashMap;
 use crate::core::arcdom::Node;
 use markup5ever::{namespace_url, ns};
 
@@ -200,7 +201,7 @@ impl selectors::Element for Node {
     }
 }
 
-pub struct Parser;
+pub struct Parser(Option<NamespacesHashMap>);
 
 impl<'i> selectors::parser::Parser<'i> for Parser {
     type Impl = SelectorImpl;
@@ -217,6 +218,20 @@ impl<'i> selectors::parser::Parser<'i> for Parser {
     fn parse_nth_child_of(&self) -> bool {
         true
     }
+
+    fn namespace_for_prefix(
+        &self,
+        _prefix: &<Self::Impl as selectors::SelectorImpl>::NamespacePrefix,
+    ) -> Option<<Self::Impl as selectors::SelectorImpl>::NamespaceUrl> {
+        if _prefix.0.is_empty() {
+            return None;
+        }
+
+        match &self.0 {
+            Some(hs) => hs.get(&_prefix.0).cloned(),
+            None => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -225,12 +240,13 @@ struct SelectExprGroup(selectors::SelectorList<SelectorImpl>);
 impl SelectExprGroup {
     pub fn new(
         content: &'_ str,
+        namespaces: Option<NamespacesHashMap>,
     ) -> Result<Self, cssparser::ParseError<'_, super::errors::CssParserKindError>> {
         let mut parser_input = cssparser::ParserInput::new(content);
         let mut parser = cssparser::Parser::new(&mut parser_input);
 
         let sl = selectors::SelectorList::parse(
-            &Parser,
+            &Parser(namespaces),
             &mut parser,
             selectors::parser::ParseRelative::No,
         )?;
@@ -268,13 +284,14 @@ pub struct Select {
 
 impl Select {
     pub fn new(
-        iterator: TreeIterator,
+        tree: TreeIterator,
         expr: &str,
+        namespaces: Option<NamespacesHashMap>
     ) -> Result<Select, cssparser::ParseError<'_, super::errors::CssParserKindError<'_>>> {
-        let expr = SelectExprGroup::new(expr)?;
+        let expr = SelectExprGroup::new(expr, namespaces)?;
 
         Ok(Select {
-            inner: iterator,
+            inner: tree,
             expr,
             caches: Default::default(),
         })
@@ -309,22 +326,22 @@ mod tests {
 
     #[test]
     fn test_parsing() {
-        let _ = SelectExprGroup::new("#id").unwrap();
-        let _ = SelectExprGroup::new("div#id").unwrap();
-        let _ = SelectExprGroup::new("div.cls").unwrap();
-        let _ = SelectExprGroup::new(".cls").unwrap();
-        let _ = SelectExprGroup::new(".title div.cls nav.pad").unwrap();
-        let _ = SelectExprGroup::new("#table .row-1 div").unwrap();
-        let _ = SelectExprGroup::new("a:has(href)").unwrap();
-        let _ = SelectExprGroup::new(":root").unwrap();
-        let _ = SelectExprGroup::new(".title, div.m").unwrap();
-        let _ = SelectExprGroup::new("a:nth-child(1)").unwrap();
+        let _ = SelectExprGroup::new("#id", None).unwrap();
+        let _ = SelectExprGroup::new("div#id", None).unwrap();
+        let _ = SelectExprGroup::new("div.cls", None).unwrap();
+        let _ = SelectExprGroup::new(".cls", None).unwrap();
+        let _ = SelectExprGroup::new(".title div.cls nav.pad", None).unwrap();
+        let _ = SelectExprGroup::new("#table .row-1 div", None).unwrap();
+        let _ = SelectExprGroup::new("a:has(href)", None).unwrap();
+        let _ = SelectExprGroup::new(":root", None).unwrap();
+        let _ = SelectExprGroup::new(".title, div.m", None).unwrap();
+        let _ = SelectExprGroup::new("a:nth-child(1)", None).unwrap();
     }
 
     #[test]
     fn test_invalid_expr() {
-        let _ = SelectExprGroup::new("<bad expr>").unwrap_err();
-        let _ = SelectExprGroup::new("a:child-nth(1)").unwrap_err();
+        let _ = SelectExprGroup::new("<bad expr>", None).unwrap_err();
+        let _ = SelectExprGroup::new("a:child-nth(1)", None).unwrap_err();
     }
 
     #[test]
@@ -344,7 +361,7 @@ mod tests {
         </div>"#,
         );
 
-        for res in Select::new(tree.root.tree(), "div.title").unwrap() {
+        for res in Select::new(tree.root.tree(), "div.title", None).unwrap() {
             let elem = res.as_element().unwrap();
             assert_eq!(&*elem.name.local, "div");
             assert_eq!(
@@ -353,13 +370,13 @@ mod tests {
             );
         }
 
-        for res in Select::new(tree.root.tree(), "nav.navbar p").unwrap() {
+        for res in Select::new(tree.root.tree(), "nav.navbar p", None).unwrap() {
             let elem = res.as_element().unwrap();
             assert_eq!(&*elem.name.local, "p");
             assert!(elem.attrs.id().is_some());
         }
 
-        for res in Select::new(tree.root.tree(), "nav.nav2 p").unwrap() {
+        for res in Select::new(tree.root.tree(), "nav.nav2 p", None).unwrap() {
             let elem = res.as_element().unwrap();
             assert_eq!(&*elem.name.local, "p");
             assert!(elem.attrs.id().is_none());

@@ -32,5 +32,6 @@ pub use node::ProcessingInstructionData;
 pub use node::SizedSmallVec;
 pub use node::TextData;
 pub use node::WeakNode;
+pub use node::NamespacesHashMap;
 
 pub use treesink::ArcDom;

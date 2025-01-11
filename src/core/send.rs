@@ -69,6 +69,15 @@ impl<T> OnceLock<T> {
     }
 }
 
+impl<T: std::fmt::Debug> std::fmt::Debug for OnceLock<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.get() {
+            Some(val) => write!(f, "OnceLock<{:?}>", val),
+            None => write!(f, "OnceLock<uninialized>"),
+        }
+    }
+}
+
 impl<T> Clone for OnceLock<T> {
     fn clone(&self) -> Self {
         Self::new()

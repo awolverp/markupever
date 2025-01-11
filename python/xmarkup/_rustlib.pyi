@@ -1,3 +1,4 @@
+from __future__ import annotations
 import typing
 
 __version__: str
@@ -24,23 +25,23 @@ class RawHtml:
     ...
 
 class RawNode:
-    # built-in - use node.Node
+    # built-in - use nodes.Node
     ...
 
 class RawChildren:
-    # built-in - use node.Children
+    # built-in - use nodes.Children
     ...
 
 class RawTree:
-    # built-in - use node.Children
+    # built-in - use nodes.TreeIterator
     ...
 
 class RawParents:
-    # built-in - use node.Children
+    # built-in - use nodes.ParentsIterator
     ...
 
-class RawSelectExpr:
-    # built-in - use node.Children
+class RawMatching:
+    # built-in - use nodes.Matching
     ...
 
 Namespaces = typing.Literal["", "*", "xhtml", "html", "xml", "xmlns", "xlink", "svg", "mathml"]

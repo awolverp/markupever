@@ -93,7 +93,6 @@ def test_xml():
     xml = _rustlib.RawXml(_XML.encode("utf-8"), _rustlib.RawXmlOptions())
 
     assert not xml.errors
-    assert xml.quirks_mode == _rustlib.QUIRKS_MODE_OFF
     assert isinstance(xml.root, _rustlib.RawNode)
     assert isinstance(xml.root.data(), _rustlib.DocumentData)
 
@@ -373,13 +372,41 @@ def test_parent():
 def test_select():
     html = _rustlib.RawHtml(_HTML.encode("utf-8"), _rustlib.RawHtmlOptions())
 
-    for node in html.root.select("p"):
+    for node in _rustlib.RawMatching(html.root, "p", html):
         data = node.data()
         assert isinstance(data, _rustlib.ElementData)
         assert data.name.local == "p"
 
-    for node in html.root.select("header div > img:first-child"):
+    for node in _rustlib.RawMatching(html.root, "header div > img:first-child"):
         data = node.data()
         assert isinstance(data, _rustlib.ElementData)
         assert data.name.local == "img"
         assert data.id == "1"
+
+
+_xml_doc_ns = """<tag xmlns:ns1="http://namespace1/" xmlns:ns2="http://namespace2/">
+ <ns1:child>I'm in namespace 1</ns1:child>
+ <ns2:child>I'm in namespace 2</ns2:child>
+</tag>"""
+
+
+def test_namespaces():
+    html = _rustlib.RawXml(_xml_doc_ns, _rustlib.RawXmlOptions())
+
+    select = _rustlib.RawMatching(html.root, "ns1|child", html)
+    selected = next(select)
+
+    assert isinstance(selected.data(), _rustlib.ElementData)
+    assert selected.data().name.local == "child"
+    assert selected.data().name.prefix == "ns1"
+    assert selected.data().name.namespace == "http://namespace1/"
+    assert selected.children()[0].data().contents == "I'm in namespace 1"
+
+    select = _rustlib.RawMatching(html.root, "ns2|child")
+    selected = next(select)
+
+    assert isinstance(selected.data(), _rustlib.ElementData)
+    assert selected.data().name.local == "child"
+    assert selected.data().name.prefix == "ns2"
+    assert selected.data().name.namespace == "http://namespace2/"
+    assert selected.children()[0].data().contents == "I'm in namespace 2"
