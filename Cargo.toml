@@ -1,16 +1,31 @@
 [package]
 name = "xmarkup"
-version = "0.1.0-beta.1"
-edition = "2021"
 description = "The fast, most optimal, and correct HTML & XML parsing library."
+version.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[workspace.package]
+version = "0.1.0-beta.2"
+edition = "2021"
 readme = "README.md"
 license = "MIT"
 homepage = "https://github.com/awolverp/xmarkup"
 repository = "https://github.com/awolverp/xmarkup.git"
+authors = [
+    "awolverp"
+]
 
 [lib]
 name = "xmarkup"
 crate-type = ["cdylib"]
+
+[workspace]
+members = [ "unitree" ]
 
 [profile.release]
 codegen-units = 1
@@ -22,15 +37,7 @@ strip = "symbols"
 
 [dependencies]
 pyo3 = { version = "0.23.3", default-features = false, features=["macros", "extension-module"] }
-markup5ever = { version = "^0.14" }
-html5ever = { version = "^0.29" }
-xml5ever = { version = "^0.20" }
-tendril = { version = "^0.4" }
-selectors = { version = "^0.26" }
-cssparser = { version = "^0.34" }
-precomputed-hash = { version = "^0.1" }
-parking_lot = { version = "^0.12" }
-smallvec = { version = "1.13.2" }
+unitree = { path = "unitree" }
 
 [build-dependencies]
 pyo3-build-config = { version = "0.23.3", features = ["resolve-config"] }
