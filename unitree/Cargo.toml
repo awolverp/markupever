@@ -1,0 +1,12 @@
+[package]
+name = "unitree"
+description = "(Un)safe (I)d Tree - An ID-tree Vec-backed that uses NonNull to avoid lifetimes."
+version.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
