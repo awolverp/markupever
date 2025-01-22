@@ -10,3 +10,6 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
+
+[lib]
+path = "lib.rs"
