@@ -1,13 +1,18 @@
-//! (Un)safe (I)d Tree - An ID-tree [`Vec`]-backed that uses [`std::ptr::NonNull`] to avoid lifetimes.
+//! (Un)safe (I)d Tree - An ID-tree [`Vec`]-backed that uses [`core::ptr::NonNull`] to avoid lifetimes.
 //!
 //! Be very careful while using this crate. we thought that you're master in Rust, and know how to
-//! use threads and tasks. we use [`std::ptr::NonNull`] rather than lifetimes; By this way you can do everything you want.
+//! use threads and tasks. we use [`core::ptr::NonNull`] rather than lifetimes; By this way you can do everything you want.
 
-use std::ptr::NonNull;
+#![cfg_attr(not(test), no_std)]
+
+extern crate alloc;
+
+use core::ptr::NonNull;
+use smallvec::SmallVec;
 
 /// Index of items in [`UNITree`]-internal vector.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Index(std::num::NonZeroUsize);
+pub struct Index(core::num::NonZeroUsize);
 
 impl Index {
     /// Creates a new [`Index`]
@@ -15,15 +20,11 @@ impl Index {
     /// # Safety
     /// The value must not be [`usize::MAX`].
     unsafe fn new(n: usize) -> Self {
-        Self(std::num::NonZeroUsize::new_unchecked(n + 1))
-    }
-
-    pub fn into_nonzero(self) -> std::num::NonZeroUsize {
-        self.0
+        Self(core::num::NonZeroUsize::new_unchecked(n + 1))
     }
 
     pub fn into_usize(self) -> usize {
-        self.0.get()
+        self.0.get() - 1
     }
 }
 
@@ -63,7 +64,7 @@ impl<T> Item<T> {
     /// # Safety
     /// Don't forgot to deallocate the pointer using [`Box::from_raw`].
     unsafe fn into_nonnull(x: Self) -> NonNull<Self> {
-        let ptr = Box::into_raw(Box::new(x));
+        let ptr = alloc::boxed::Box::into_raw(alloc::boxed::Box::new(x));
         NonNull::new_unchecked(ptr)
     }
 
@@ -111,9 +112,9 @@ impl<T: PartialEq> PartialEq for Item<T> {
 }
 impl<T: Eq> Eq for Item<T> {}
 
-impl<T: std::hash::Hash> std::hash::Hash for Item<T> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        std::hash::Hash::hash(&self.value, state);
+impl<T: core::hash::Hash> core::hash::Hash for Item<T> {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        core::hash::Hash::hash(&self.value, state);
     }
 }
 
@@ -129,8 +130,8 @@ impl<T: Clone> Clone for Item<T> {
     }
 }
 
-impl<T: std::fmt::Debug> std::fmt::Debug for Item<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<T: core::fmt::Debug> core::fmt::Debug for Item<T> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("Item")
             .field("parent", &self.parent)
             .field("prev_sibling", &self.prev_sibling)
@@ -141,26 +142,21 @@ impl<T: std::fmt::Debug> std::fmt::Debug for Item<T> {
     }
 }
 
+#[derive(Debug)]
 pub struct UNITree<T> {
-    vec: Vec<NonNull<Item<T>>>,
+    vec: SmallVec<[NonNull<Item<T>>; 4]>,
 }
 
 impl<T> UNITree<T> {
     #[inline]
     pub fn new(root: T) -> Self {
-        unsafe {
-            Self {
-                vec: vec![Item::into_nonnull(Item::new(root))],
-            }
-        }
-    }
+        let mut vec = SmallVec::new();
 
-    pub fn with_capacity(root: T, capacity: usize) -> Self {
-        let mut vec = Vec::with_capacity(capacity);
         unsafe {
             vec.push(Item::into_nonnull(Item::new(root)));
         }
-        UNITree { vec }
+
+        Self { vec }
     }
 
     /// Returns a pointer to an item, without doing bounds checking.
@@ -402,7 +398,120 @@ impl<T> Drop for UNITree<T> {
     fn drop(&mut self) {
         // drop the pointers ...
         for i in self.vec.drain(..) {
-            let _ = unsafe { Box::from_raw(i.as_ptr()) };
+            let _ = unsafe { alloc::boxed::Box::from_raw(i.as_ptr()) };
+        }
+    }
+}
+
+pub mod iter {
+    use crate::{Index, Item, UNITree};
+    use core::ptr::NonNull;
+
+    #[derive(PartialEq, Eq)]
+    pub enum Edge<T> {
+        Open(NonNull<Item<T>>),
+        Close(NonNull<Item<T>>),
+    }
+
+    impl<T> Copy for Edge<T> {}
+    impl<T> Clone for Edge<T> {
+        fn clone(&self) -> Self {
+            *self
+        }
+    }
+
+    impl<T: core::fmt::Debug> core::fmt::Debug for Edge<T> {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            match self {
+                Edge::Open(x) => {
+                    write!(f, "Edge::Open({:?})", unsafe { x.as_ref() })?;
+                }
+                Edge::Close(x) => {
+                    write!(f, "Edge::Close({:?})", unsafe { x.as_ref() })?;
+                }
+            }
+
+            Ok(())
+        }
+    }
+
+    #[derive(Clone)]
+    pub struct Traverse<'a, T> {
+        tree: &'a UNITree<T>,
+        root: Option<NonNull<Item<T>>>,
+        edge: Option<Edge<T>>,
+    }
+
+    impl<'a, T> Traverse<'a, T> {
+        pub fn new(tree: &'a UNITree<T>, index: Index) -> Self {
+            Self {
+                tree,
+                root: Some(tree.get(index).unwrap()),
+                edge: None,
+            }
+        }
+    }
+
+    impl<'a, T> Iterator for Traverse<'a, T> {
+        type Item = Edge<T>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            match self.edge {
+                None => {
+                    if let Some(root) = self.root {
+                        self.edge = Some(Edge::Open(root));
+                    }
+                }
+                Some(Edge::Open(node)) => {
+                    if let Some(first_child) = unsafe { node.as_ref().first_children() } {
+                        self.edge = Some(Edge::Open(self.tree.get(first_child).unwrap()));
+                    } else {
+                        self.edge = Some(Edge::Close(node));
+                    }
+                }
+                Some(Edge::Close(node)) => {
+                    if node == self.root.unwrap() {
+                        self.root = None;
+                        self.edge = None;
+                    } else if let Some(next_sibling) = unsafe { node.as_ref().next_sibling() } {
+                        self.edge = Some(Edge::Open(self.tree.get(next_sibling).unwrap()));
+                    } else {
+                        self.edge = unsafe {
+                            node.as_ref()
+                                .parent()
+                                .map(|x| Edge::Close(self.tree.get(x).unwrap()))
+                        };
+                    }
+                }
+            }
+
+            self.edge
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn traverse() {
+        let mut tree = UNITree::new("root");
+
+        let (child1_i, child1) = tree.orphan("child1");
+        let (child2_i, child2) = tree.orphan("child2");
+        let (child3_i, child3) = tree.orphan("child3");
+
+        tree.append(tree.root_index(), child1_i);
+        tree.append(tree.root_index(), child2_i);
+        tree.append(child1_i, child3_i);
+
+        println!("{:?}", unsafe { child1.as_ref() });
+        println!("{:?}", unsafe { child2.as_ref() });
+        println!("{:?}", unsafe { child3.as_ref() });
+
+        for edge in iter::Traverse::new(&tree, child1_i) {
+            println!("{edge:?}");
         }
     }
 }
