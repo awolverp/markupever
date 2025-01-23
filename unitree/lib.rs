@@ -142,7 +142,6 @@ impl<T: core::fmt::Debug> core::fmt::Debug for Item<T> {
     }
 }
 
-#[derive(Debug)]
 pub struct UNITree<T> {
     vec: SmallVec<[NonNull<Item<T>>; 4]>,
 }
@@ -490,28 +489,119 @@ pub mod iter {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+struct DisplayChar {
+    siblings: bool,
+    children: bool,
+}
 
-    #[test]
-    fn traverse() {
-        let mut tree = UNITree::new("root");
-
-        let (child1_i, child1) = tree.orphan("child1");
-        let (child2_i, child2) = tree.orphan("child2");
-        let (child3_i, child3) = tree.orphan("child3");
-
-        tree.append(tree.root_index(), child1_i);
-        tree.append(tree.root_index(), child2_i);
-        tree.append(child1_i, child3_i);
-
-        println!("{:?}", unsafe { child1.as_ref() });
-        println!("{:?}", unsafe { child2.as_ref() });
-        println!("{:?}", unsafe { child3.as_ref() });
-
-        for edge in iter::Traverse::new(&tree, child1_i) {
-            println!("{edge:?}");
+impl DisplayChar {
+    fn char(&self) -> &str {
+        match (self.siblings, self.children) {
+            (true, true) => "│   ",
+            (true, false) => "├── ",
+            (false, true) => "    ",
+            (false, false) => "└── ",
         }
+    }
+}
+
+struct Indentation {
+    tokens: alloc::vec::Vec<DisplayChar>,
+    ignore_root: bool,
+}
+
+impl core::fmt::Display for Indentation {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        let first: usize = if self.ignore_root { 1 } else { 0 };
+
+        for token in &self.tokens[first..] {
+            write!(f, "{}", token.char())?;
+        }
+
+        Ok(())
+    }
+}
+
+impl Indentation {
+    fn new(ignore_root: bool) -> Self {
+        Indentation {
+            tokens: alloc::vec::Vec::new(),
+            ignore_root,
+        }
+    }
+
+    fn indent(&mut self, siblings: bool) -> &mut Self {
+        let len = self.tokens.len();
+        if len > 0 {
+            self.tokens[len - 1].children = true;
+        }
+
+        self.tokens.push(DisplayChar {
+            siblings,
+            children: false,
+        });
+        self
+    }
+
+    fn deindent(&mut self) -> &mut Self {
+        self.tokens.pop();
+        self
+    }
+}
+
+impl<T: core::fmt::Debug> core::fmt::Debug for UNITree<T> {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        if f.alternate() {
+            write!(f, "UNITree [")?;
+            for edge in iter::Traverse::new(self, Index::default()) {
+                match edge {
+                    iter::Edge::Open(item) if unsafe { item.as_ref().children.is_some() } => {
+                        write!(f, " {:?} => [[", unsafe { &item.as_ref().value })?;
+                    }
+                    iter::Edge::Open(item) if unsafe { item.as_ref().next_sibling.is_some() } => {
+                        write!(f, " {:?},", unsafe { &item.as_ref().value })?;
+                    }
+                    iter::Edge::Open(item) => {
+                        write!(f, " {:?}", unsafe { &item.as_ref().value })?;
+                    }
+                    iter::Edge::Close(item) if unsafe { item.as_ref().children.is_some() } => {
+                        if unsafe { item.as_ref().next_sibling.is_some() } {
+                            write!(f, " ]],")?;
+                        } else {
+                            write!(f, " ]]")?;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            write!(f, " ]")
+        } else {
+            f.debug_struct("Tree").field("vec", &self.vec).finish()
+        }
+    }
+}
+
+impl<T: core::fmt::Display> core::fmt::Display for UNITree<T> {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        let mut indent: Indentation = Indentation::new(true);
+
+        for edge in iter::Traverse::new(self, Index::default()) {
+            match edge {
+                iter::Edge::Open(item) if unsafe { item.as_ref().children.is_some() } => {
+                    indent.indent(unsafe { item.as_ref().next_sibling.is_some() });
+                    writeln!(f, "{indent}{}", unsafe { &item.as_ref().value })?;
+                }
+                iter::Edge::Open(item) => {
+                    indent.indent(unsafe { item.as_ref().next_sibling.is_some() });
+                    writeln!(f, "{indent}{}", unsafe { &item.as_ref().value })?;
+                    indent.deindent();
+                }
+                iter::Edge::Close(item) if unsafe { item.as_ref().children.is_some() } => {
+                    indent.deindent();
+                }
+                _ => {}
+            }
+        }
+        Ok(())
     }
 }
