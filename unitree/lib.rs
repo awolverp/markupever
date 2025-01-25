@@ -8,7 +8,6 @@
 extern crate alloc;
 
 use core::ptr::NonNull;
-use smallvec::SmallVec;
 
 /// Index of items in [`UNITree`]-internal vector.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -143,13 +142,13 @@ impl<T: core::fmt::Debug> core::fmt::Debug for Item<T> {
 }
 
 pub struct UNITree<T> {
-    vec: SmallVec<[NonNull<Item<T>>; 4]>,
+    vec: alloc::vec::Vec<NonNull<Item<T>>>,
 }
 
 impl<T> UNITree<T> {
     #[inline]
     pub fn new(root: T) -> Self {
-        let mut vec = SmallVec::new();
+        let mut vec = alloc::vec::Vec::new();
 
         unsafe {
             vec.push(Item::into_nonnull(Item::new(root)));

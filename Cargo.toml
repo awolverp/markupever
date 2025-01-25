@@ -36,11 +36,15 @@ panic = "abort"
 strip = "symbols"
 
 [dependencies]
-pyo3 = { version = "0.23.3", default-features = false, features=["macros", "extension-module"] }
+hashbrown = { version = "0.15", default-features = false, features = ["default-hasher", "inline-more"]}
+markup5ever = { version = "0.14" }
+parking_lot = { version = "0.12" }
+pyo3 = { version = "0.23", default-features = false, features = ["macros", "extension-module"] }
+tendril = { version = "^0.4" }
 unitree = { path = "unitree" }
 
 [build-dependencies]
-pyo3-build-config = { version = "0.23.3", features = ["resolve-config"] }
+pyo3-build-config = { version = "0.23", features = ["resolve-config"] }
 
 [lints.clippy]
 dbg_macro = "warn"
