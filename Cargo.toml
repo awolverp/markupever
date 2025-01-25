@@ -37,11 +37,13 @@ strip = "symbols"
 
 [dependencies]
 hashbrown = { version = "0.15", default-features = false, features = ["default-hasher", "inline-more"]}
+html5ever = "0.29.0"
 markup5ever = { version = "0.14" }
 parking_lot = { version = "0.12" }
 pyo3 = { version = "0.23", default-features = false, features = ["macros", "extension-module"] }
 tendril = { version = "^0.4" }
 unitree = { path = "unitree" }
+xml5ever = "0.20.0"
 
 [build-dependencies]
 pyo3-build-config = { version = "0.23", features = ["resolve-config"] }

@@ -344,3 +344,16 @@ impl NodeData {
 
 
 }
+
+impl std::fmt::Display for NodeData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Comment(x) => write!(f, "{x:?}"),
+            Self::Text(x) => write!(f, "{x:?}"),
+            Self::Element(x) => write!(f, "{x:?}"),
+            Self::ProcessingInstruction(x) => write!(f, "{x:?}"),
+            Self::Doctype(x) => write!(f, "{x:?}"),
+            Self::Document(x) => write!(f, "{x:?}"),
+        }
+    }
+}

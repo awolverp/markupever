@@ -157,7 +157,7 @@ impl<T> UNITree<T> {
         Self { vec }
     }
 
-    /// Returns a pointer to an item, without doing bounds checking.
+    /// Returns a pointer to an item as position `index`.
     #[inline]
     pub fn get(&self, index: Index) -> Option<NonNull<Item<T>>> {
         self.vec.get(index.into_usize()).cloned()
@@ -388,6 +388,44 @@ impl<T> UNITree<T> {
             if l_index == index {
                 parent.as_mut().children = Some((f_index, x));
             }
+        }
+    }
+
+    /// Remove all the children from `index` and append them to `new_parent`.
+    ///
+    /// # Panics
+    /// Panics if `new_parent` == `index`
+    pub fn reparent_append(&mut self, new_parent: Index, index: Index) {
+        assert_ne!(
+            new_parent, index,
+            "Cannot reparent node's children to itself"
+        );
+
+        let child_ids = {
+            let item = self.get(index).unwrap();
+            match unsafe { (*item.as_ptr()).children.take() } {
+                Some(ids) => ids,
+                None => return,
+            }
+        };
+
+        unsafe {
+            self.get(child_ids.0).unwrap().as_mut().parent = Some(new_parent);
+            self.get(child_ids.1).unwrap().as_mut().parent = Some(new_parent);
+
+            let mut parent = self.get(new_parent).unwrap();
+
+            if parent.as_ref().children.is_none() {
+                parent.as_mut().children = Some(child_ids);
+                return;
+            }
+
+            let old_child_ids = parent.as_ref().children.unwrap();
+
+            self.get(old_child_ids.1).unwrap().as_mut().next_sibling = Some(child_ids.0);
+            self.get(child_ids.0).unwrap().as_mut().prev_sibling = Some(old_child_ids.1);
+
+            parent.as_mut().children = Some((old_child_ids.0, child_ids.1));
         }
     }
 }
