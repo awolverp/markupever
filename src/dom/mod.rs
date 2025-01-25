@@ -1,6 +1,6 @@
 pub mod data;
 mod parser;
-mod dom;
+mod treedom;
 
-pub use dom::TreeDom;
+pub use treedom::TreeDom;
 pub use parser::Parser;

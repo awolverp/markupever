@@ -1,5 +1,5 @@
 use super::data;
-use super::dom::TreeDom;
+use super::treedom::TreeDom;
 use std::cell::{Cell, UnsafeCell};
 
 pub struct Parser {
