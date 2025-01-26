@@ -437,6 +437,44 @@ impl<T> UNITree<T> {
             parent.as_mut().children = Some((old_child_ids.0, child_ids.1));
         }
     }
+
+    /// Remove all the children from `index` and prepend them to `new_parent`.
+    ///
+    /// # Panics
+    /// Panics if `new_parent` == `index`
+    pub fn reparent_prepend(&mut self, new_parent: Index, index: Index) {
+        assert_ne!(
+            new_parent, index,
+            "Cannot reparent node's children to itself"
+        );
+
+        let child_ids = {
+            let item = self.get(index).unwrap();
+            match unsafe { (*item.as_ptr()).children.take() } {
+                Some(ids) => ids,
+                None => return,
+            }
+        };
+
+        unsafe {
+            self.get(child_ids.0).unwrap().as_mut().parent = Some(new_parent);
+            self.get(child_ids.1).unwrap().as_mut().parent = Some(new_parent);
+
+            let mut parent = self.get(new_parent).unwrap();
+
+            if parent.as_ref().children.is_none() {
+                parent.as_mut().children = Some(child_ids);
+                return;
+            }
+
+            let old_child_ids = parent.as_ref().children.unwrap();
+
+            self.get(old_child_ids.1).unwrap().as_mut().prev_sibling = Some(child_ids.1);
+            self.get(child_ids.0).unwrap().as_mut().next_sibling = Some(old_child_ids.0);
+
+            parent.as_mut().children = Some((child_ids.0, old_child_ids.1));
+        }
+    }
 }
 
 impl<T> Drop for UNITree<T> {

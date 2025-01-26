@@ -193,6 +193,24 @@ impl TreeDom {
         let mut tree = self.tree.lock();
         tree.prepend(parent.index, child.index);
     }
+
+    /// Sets the item `node` as next sibling of the `sibling`
+    pub fn insert_after(&self, sibling: &Node, node: &Node) {
+        let mut tree = self.tree.lock();
+        tree.insert_after(sibling.index, node.index);
+    }
+
+    /// Sets the item `node` as previous sibling of the `sibling`
+    pub fn insert_before(&self, sibling: &Node, node: &Node) {
+        let mut tree = self.tree.lock();
+        tree.insert_before(sibling.index, node.index);
+    }
+
+    /// Detaches the `node`. In other words, makes it orphan item.
+    pub fn detach(&self, node: &Node) {
+        let mut tree = self.tree.lock();
+        tree.detach(node.index);
+    }
 }
 
 impl std::fmt::Display for TreeDom {
