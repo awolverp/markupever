@@ -10,6 +10,12 @@ pub struct Parser {
     lineno: UnsafeCell<u64>,
 }
 
+impl Default for Parser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Parser {
     /// Creates a new [`Parser`]
     pub fn new() -> Self {
@@ -22,21 +28,10 @@ impl Parser {
         }
     }
 
+    #[allow(clippy::mut_from_ref)]
     fn tree_mut(&self) -> &mut unitree::UNITree<data::NodeData> {
         // SAFETY: Parser is not Send/Sync so cannot be used in multi threads.
         unsafe { &mut *self.tree.get() }
-    }
-
-    fn errors_mut(&self) -> &mut Vec<std::borrow::Cow<'static, str>> {
-        // SAFETY: Parser is not Send/Sync so cannot be used in multi threads.
-        unsafe { &mut *self.errors.get() }
-    }
-
-    fn namespaces_mut(
-        &self,
-    ) -> &mut hashbrown::HashMap<markup5ever::Prefix, markup5ever::Namespace> {
-        // SAFETY: Parser is not Send/Sync so cannot be used in multi threads.
-        unsafe { &mut *self.namespaces.get() }
     }
 
     pub fn parse_html(
@@ -95,7 +90,7 @@ impl markup5ever::interface::TreeSink for Parser {
 
     // Signal a parse error.
     fn parse_error(&self, msg: std::borrow::Cow<'static, str>) {
-        self.errors_mut().push(msg);
+        unsafe { &mut *self.errors.get() }.push(msg);
     }
 
     // Called whenever the line number changes.
@@ -166,8 +161,9 @@ impl markup5ever::interface::TreeSink for Parser {
     ) -> Self::Handle {
         // Keep all the namespaces in a hashmap, we need them for css selectors
         if let Some(ref prefix) = name.prefix {
-            self.namespaces_mut()
-                .insert(prefix.clone(), name.ns.clone());
+            unsafe {
+                (*self.namespaces.get()).insert(prefix.clone(), name.ns.clone());
+            }
         }
 
         let mut element = data::Element::from_non_atomic(

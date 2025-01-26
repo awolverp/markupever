@@ -3,6 +3,7 @@
 //! Be very careful while using this crate. we thought that you're master in Rust, and know how to
 //! use threads and tasks. we use [`core::ptr::NonNull`] rather than lifetimes; By this way you can do everything you want.
 
+#![allow(clippy::len_without_is_empty)]
 #![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
@@ -157,7 +158,15 @@ impl<T> UNITree<T> {
         Self { vec }
     }
 
+    /// Returns the number of items in the tree, also referred to as its 'length'.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.vec.len()
+    }
+
     /// Returns a pointer to an item as position `index`.
+    ///
+    /// Returns [`None`] if the `index` is out of bounds
     #[inline]
     pub fn get(&self, index: Index) -> Option<NonNull<Item<T>>> {
         self.vec.get(index.into_usize()).cloned()
@@ -642,3 +651,5 @@ impl<T: core::fmt::Display> core::fmt::Display for UNITree<T> {
         Ok(())
     }
 }
+
+unsafe impl<T: Send> Send for UNITree<T> {}
