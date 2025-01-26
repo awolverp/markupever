@@ -1,9 +1,7 @@
 use pyo3::prelude::*;
 
+extern crate treedom;
 extern crate unitree;
-
-pub mod dom;
-pub mod send;
 
 #[pymodule(gil_used = false)]
 #[cold]

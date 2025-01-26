@@ -1,6 +1,6 @@
 [package]
 name = "unitree"
-description = "(Un)safe (I)d Tree - An ID-tree Vec-backed that uses NonNull to avoid lifetimes."
+description = "(Un)safe (I)d Tree - An ID-tree Vec-backed that uses NonNull to avoid lifetimes (optimized for xmarkup library)."
 version.workspace = true
 edition.workspace = true
 readme.workspace = true

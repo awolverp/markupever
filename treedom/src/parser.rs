@@ -2,11 +2,17 @@ use super::data;
 use super::treedom::TreeDom;
 use std::cell::{Cell, UnsafeCell};
 
+#[cfg(feature = "hashbrown")]
+use hashbrown::HashMap;
+#[cfg(not(feature = "hashbrown"))]
+use std::collections::HashMap;
+
+/// Markup parser that implemented [`markup5ever::interface::TreeSink`]
 pub struct Parser {
     tree: UnsafeCell<unitree::UNITree<data::NodeData>>,
     errors: UnsafeCell<Vec<std::borrow::Cow<'static, str>>>,
     quirks_mode: Cell<markup5ever::interface::QuirksMode>,
-    namespaces: UnsafeCell<hashbrown::HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
+    namespaces: UnsafeCell<HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
     lineno: UnsafeCell<u64>,
 }
 
@@ -23,7 +29,7 @@ impl Parser {
             tree: UnsafeCell::new(unitree::UNITree::new(data::NodeData::new(data::Document))),
             errors: UnsafeCell::new(Vec::new()),
             quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
-            namespaces: UnsafeCell::new(hashbrown::HashMap::new()),
+            namespaces: UnsafeCell::new(HashMap::new()),
             lineno: UnsafeCell::new(0),
         }
     }
@@ -34,6 +40,8 @@ impl Parser {
         unsafe { &mut *self.tree.get() }
     }
 
+    /// Returns a [`html5ever::driver::Parser<Self>`] that ready for parsing
+    #[cfg(feature = "html5ever")]
     pub fn parse_html(
         full_document: bool,
         tokenizer: html5ever::tokenizer::TokenizerOpts,
@@ -60,6 +68,8 @@ impl Parser {
         }
     }
 
+    /// Returns a [`xml5ever::driver::XmlParser<Self>`] that ready for parsing
+    #[cfg(feature = "xml5ever")]
     pub fn parse_xml(
         tokenizer: xml5ever::tokenizer::XmlTokenizerOpts,
     ) -> xml5ever::driver::XmlParser<Self> {
@@ -312,7 +322,7 @@ impl markup5ever::interface::TreeSink for Parser {
             element.attrs.extend(
                 attrs
                     .into_iter()
-                    .map(|x| (x.name, crate::send::make_atomic_tendril(x.value))),
+                    .map(|x| (x.name, crate::atomic::make_atomic_tendril(x.value))),
             );
             element.attrs.sort_unstable_by(|a, b| a.0.cmp(&b.0));
             element.attrs.dedup();

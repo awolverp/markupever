@@ -9,6 +9,13 @@ homepage.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+[lib]
+name = "xmarkup"
+crate-type = ["cdylib"]
+
+[workspace]
+members = ["unitree", "treedom"]
+
 [workspace.package]
 version = "0.1.0-beta.2"
 edition = "2021"
@@ -16,16 +23,7 @@ readme = "README.md"
 license = "MIT"
 homepage = "https://github.com/awolverp/xmarkup"
 repository = "https://github.com/awolverp/xmarkup.git"
-authors = [
-    "awolverp"
-]
-
-[lib]
-name = "xmarkup"
-crate-type = ["cdylib"]
-
-[workspace]
-members = [ "unitree" ]
+authors = ["awolverp"]
 
 [profile.release]
 codegen-units = 1
@@ -36,14 +34,12 @@ panic = "abort"
 strip = "symbols"
 
 [dependencies]
-hashbrown = { version = "0.15", default-features = false, features = ["default-hasher", "inline-more"]}
-html5ever = "0.29.0"
-markup5ever = { version = "0.14" }
-parking_lot = { version = "0.12" }
-pyo3 = { version = "0.23", default-features = false, features = ["macros", "extension-module"] }
-tendril = { version = "^0.4" }
+pyo3 = { version = "0.23", default-features = false, features = [
+    "macros",
+    "extension-module",
+] }
 unitree = { path = "unitree" }
-xml5ever = "0.20.0"
+treedom = { path = "treedom" }
 
 [build-dependencies]
 pyo3-build-config = { version = "0.23", features = ["resolve-config"] }

@@ -1,4 +1,4 @@
-use crate::send::{make_atomic_tendril, AtomicTendril, OnceLock};
+use crate::atomic::{make_atomic_tendril, AtomicTendril, OnceLock};
 use tendril::StrTendril;
 
 /// The root of HTML document
@@ -329,6 +329,7 @@ macro_rules! declare_nodedata_methods {
 }
 
 impl NodeData {
+    /// Creates a new [`NodeData`].
     pub fn new<T: Into<NodeData>>(val: T) -> Self {
         val.into()
     }
@@ -341,8 +342,6 @@ impl NodeData {
         element element_mut (NodeData::Element(x) => x) -> Element
         processing_instruction processing_instruction_mut (NodeData::ProcessingInstruction(x) => x) -> ProcessingInstruction
     );
-
-
 }
 
 impl std::fmt::Display for NodeData {

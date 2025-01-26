@@ -1,6 +1,11 @@
 use super::data;
 use std::sync::Arc;
 
+#[cfg(feature = "hashbrown")]
+use hashbrown::HashMap;
+#[cfg(not(feature = "hashbrown"))]
+use std::collections::HashMap;
+
 macro_rules! declare_node_getters {
     (
         $(
@@ -36,6 +41,10 @@ macro_rules! declare_node_getters {
     };
 }
 
+/// A node that keeps a `Arc<parking_lot::Mutex<unitree::UNITree<data::NodeData>>>`, and an item's index
+/// for having access to that item.
+///
+/// By this way, we don't have any issues about memory allocations and [`Send`]/[`Sync`] topics.
 #[derive(Clone)]
 pub struct Node {
     tree: Arc<parking_lot::Mutex<unitree::UNITree<data::NodeData>>>,
@@ -96,18 +105,26 @@ impl Node {
     }
 }
 
+// TODO: impl PartialEq, Eq, and Hash for Node
+
 impl std::fmt::Debug for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Node({})", *self.value())
     }
 }
 
+/// A DOM based on [`unitree::UNITree`]
+///
+/// This is thread-safe and you are free to use everywhere:
+/// - Don't worry about unsafe codes.
+/// - Don't worry about memory leaks.
+/// - And don't worry about [`Send`] and [`Sync`] issues.
 #[derive(Debug)]
 pub struct TreeDom {
     tree: Arc<parking_lot::Mutex<unitree::UNITree<data::NodeData>>>,
     errors: Vec<std::borrow::Cow<'static, str>>,
     quirks_mode: markup5ever::interface::QuirksMode,
-    namespaces: parking_lot::Mutex<hashbrown::HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
+    namespaces: parking_lot::Mutex<HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
     lineno: u64,
 }
 
@@ -126,11 +143,14 @@ macro_rules! declare_treedom_getters {
 }
 
 impl TreeDom {
-    pub(super) fn new(
+    /// Creates a new [`TreeDom`].
+    ///
+    /// Use [`TreeDom::default`] if you don't want to specify this parameters.
+    pub fn new(
         tree: unitree::UNITree<data::NodeData>,
         errors: Vec<std::borrow::Cow<'static, str>>,
         quirks_mode: markup5ever::interface::QuirksMode,
-        namespaces: hashbrown::HashMap<markup5ever::Prefix, markup5ever::Namespace>,
+        namespaces: HashMap<markup5ever::Prefix, markup5ever::Namespace>,
         lineno: u64,
     ) -> Self {
         Self {
@@ -150,10 +170,8 @@ impl TreeDom {
 
     pub fn namespaces(
         &self,
-    ) -> parking_lot::MappedMutexGuard<
-        '_,
-        hashbrown::HashMap<markup5ever::Prefix, markup5ever::Namespace>,
-    > {
+    ) -> parking_lot::MappedMutexGuard<'_, HashMap<markup5ever::Prefix, markup5ever::Namespace>>
+    {
         parking_lot::MutexGuard::map(self.namespaces.lock(), |x| x)
     }
 
@@ -222,6 +240,18 @@ impl TreeDom {
     pub fn reparent_prepend(&self, new_parent: &Node, node: &Node) {
         let mut tree = self.tree.lock();
         tree.reparent_prepend(new_parent.index, node.index);
+    }
+}
+
+impl Default for TreeDom {
+    fn default() -> Self {
+        Self::new(
+            unitree::UNITree::new(data::NodeData::new(data::Document)),
+            vec![],
+            markup5ever::interface::QuirksMode::NoQuirks,
+            HashMap::new(),
+            0,
+        )
     }
 }
 

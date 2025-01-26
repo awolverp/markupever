@@ -23,6 +23,7 @@ impl Index {
         Self(core::num::NonZeroUsize::new_unchecked(n + 1))
     }
 
+    /// Consumes self and returns usize to use it as index
     pub fn into_usize(self) -> usize {
         self.0.get() - 1
     }
@@ -68,34 +69,42 @@ impl<T> Item<T> {
         NonNull::new_unchecked(ptr)
     }
 
+    /// Returns the parent index
     pub fn parent(&self) -> Option<Index> {
         self.parent
     }
 
+    /// Returns the previous sibling index
     pub fn prev_sibling(&self) -> Option<Index> {
         self.prev_sibling
     }
 
+    /// Returns the next sibling index
     pub fn next_sibling(&self) -> Option<Index> {
         self.next_sibling
     }
 
+    /// Returns the children indexes (first, last)
     pub fn children(&self) -> Option<(Index, Index)> {
         self.children
     }
 
+    /// Returns the first children index
     pub fn first_children(&self) -> Option<Index> {
         self.children.map(|(i, _)| i)
     }
 
+    /// Returns the last children index
     pub fn last_children(&self) -> Option<Index> {
         self.children.map(|(_, i)| i)
     }
 
+    /// Returns a immutable reference to the item value
     pub fn value(&self) -> &T {
         &self.value
     }
 
+    /// Returns a mutable reference to the item value
     pub fn value_mut(&mut self) -> &mut T {
         &mut self.value
     }
@@ -147,6 +156,7 @@ pub struct UNITree<T> {
 }
 
 impl<T> UNITree<T> {
+    /// Creates a new [`UNITree`] with `root` as root item.
     #[inline]
     pub fn new(root: T) -> Self {
         let mut vec = alloc::vec::Vec::new();
@@ -526,6 +536,7 @@ pub mod iter {
     }
 
     impl<'a, T> Traverse<'a, T> {
+        /// Creates a new [`Traverse`] for a [`UNITree`]
         pub fn new(tree: &'a UNITree<T>, index: Index) -> Self {
             Self {
                 tree,
