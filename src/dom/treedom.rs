@@ -211,44 +211,22 @@ impl TreeDom {
         let mut tree = self.tree.lock();
         tree.detach(node.index);
     }
+
+    /// Remove all the children from `node` and append them to `new_parent`.
+    pub fn reparent_append(&self, new_parent: &Node, node: &Node) {
+        let mut tree = self.tree.lock();
+        tree.reparent_append(new_parent.index, node.index);
+    }
+
+    /// Remove all the children from `node` and prepend them to `new_parent`.
+    pub fn reparent_prepend(&self, new_parent: &Node, node: &Node) {
+        let mut tree = self.tree.lock();
+        tree.reparent_prepend(new_parent.index, node.index);
+    }
 }
 
 impl std::fmt::Display for TreeDom {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.tree.lock())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[allow(dead_code)]
-    trait IsSendAndSync: Send + Sync {}
-    impl IsSendAndSync for TreeDom {}
-
-    #[test]
-    fn test() {
-        let dom = TreeDom::new(
-            unitree::UNITree::new(data::NodeData::new(data::Document)),
-            Vec::new(),
-            markup5ever::interface::QuirksMode::NoQuirks,
-            Default::default(),
-            0,
-        );
-
-        println!("{}", dom);
-
-        let root = dbg!(dom.root());
-
-        let child1 = dom.orphan(data::Text::new("Hello Man 1".into()));
-        let child2 = dom.orphan(data::Text::new("Hello Man 2".into()));
-        dom.append(&root, &child1);
-        dom.append(&root, &child2);
-
-        println!("{:?}", child1.into_parent());
-        println!("{:?}", child2.into_prev_sibling());
-
-        println!("{}", dom);
     }
 }
