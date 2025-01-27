@@ -69,6 +69,15 @@ impl<T> Item<T> {
         NonNull::new_unchecked(ptr)
     }
 
+    /// Calls the destructor of [`NonNull<Self>`] and free the allocated memory.
+    ///
+    /// # Safety
+    /// This function is unsafe because improper use may lead to memory problems.
+    /// For example, a double-free may occur if the function is called twice on the same raw pointer.
+    unsafe fn drop_nonnull(x: NonNull<Self>) {
+        core::mem::drop(alloc::boxed::Box::from_raw(x.as_ptr()));
+    }
+
     /// Returns the parent index
     pub fn parent(&self) -> Option<Index> {
         self.parent
@@ -207,14 +216,12 @@ impl<T> UNITree<T> {
     ///
     /// In simple terms, Returns an item that has no parent and children;
     /// In other words, an item which is only inserted to the [`UNITree`]-internal vector.
-    pub fn orphan(&mut self, value: T) -> (Index, NonNull<Item<T>>) {
+    pub fn orphan(&mut self, value: T) -> Index {
         let index = unsafe { Index::new(self.vec.len()) };
 
         unsafe {
-            let ptr = Item::into_nonnull(Item::new(value));
-            self.vec.push(ptr);
-
-            (index, ptr)
+            self.vec.push(Item::into_nonnull(Item::new(value)));
+            index
         }
     }
 
@@ -491,7 +498,7 @@ impl<T> Drop for UNITree<T> {
     fn drop(&mut self) {
         // drop the pointers ...
         for i in self.vec.drain(..) {
-            let _ = unsafe { alloc::boxed::Box::from_raw(i.as_ptr()) };
+            unsafe { Item::drop_nonnull(i) };
         }
     }
 }
@@ -702,3 +709,335 @@ impl<T: core::fmt::Display> core::fmt::Display for UNITree<T> {
 }
 
 unsafe impl<T: Send> Send for UNITree<T> {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_index() {
+        let i = unsafe { Index::new(0) };
+        assert_eq!(i, Index::default());
+        assert_eq!(i.into_usize(), 0);
+    }
+
+    // used for test_item
+    static mut IS_DROPPED: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+    #[test]
+    fn test_item() {
+        let item = Item::new("test");
+
+        assert_eq!(*item.value(), "test");
+        assert_ne!(item, Item::new("test2"));
+        assert_eq!(item, Item::new("test"));
+
+        struct CheckDrop;
+
+        impl Drop for CheckDrop {
+            fn drop(&mut self) {
+                unsafe {
+                    IS_DROPPED.store(true, core::sync::atomic::Ordering::Relaxed);
+                }
+            }
+        }
+
+        let item = unsafe { Item::into_nonnull(
+            Item::new(CheckDrop)
+        ) };
+
+        unsafe {
+            assert_eq!(IS_DROPPED.load(core::sync::atomic::Ordering::Relaxed), false);
+            Item::drop_nonnull(item);
+            assert_eq!(IS_DROPPED.load(core::sync::atomic::Ordering::Relaxed), true);
+        }
+    }
+
+    #[test]
+    fn new() {
+        let tree = UNITree::new('a');
+        assert_eq!(tree.len(), 1);
+        assert_eq!(tree.root_index(), Index::default());
+
+        let root = tree.root();
+        unsafe {
+            assert_eq!(root.as_ref().parent(), None);
+            assert_eq!(root.as_ref().prev_sibling(), None);
+            assert_eq!(root.as_ref().next_sibling(), None);
+            assert_eq!(root.as_ref().first_children(), None);
+            assert_eq!(root.as_ref().last_children(), None);
+            assert_eq!(root.as_ref().children(), None);
+            assert_eq!(*root.as_ref().value(), 'a');
+        }
+    }
+
+    #[test]
+    fn orphan() {
+        let mut tree = UNITree::new('a');
+        let index = tree.orphan('b');
+
+        let ptr = tree.get(index).unwrap();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'b');
+            assert_eq!(ptr.as_ref().parent, None);
+        }
+    }
+
+    #[test]
+    fn append() {
+        let mut tree = UNITree::new('a');
+        let first_child_index = tree.orphan('b');
+        let ptr = tree.get(first_child_index).unwrap();
+        
+        tree.append(tree.root_index(), first_child_index);
+
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'b');
+            assert_eq!(ptr.as_ref().parent, Some(tree.root_index()));
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, None);
+        }
+
+        let ptr = tree.root();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'a');
+            assert_eq!(ptr.as_ref().parent, None);
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, Some((first_child_index, first_child_index)));
+        }
+
+        let last_child_index = tree.orphan('c');
+        let ptr = tree.get(last_child_index).unwrap();
+
+        tree.append(tree.root_index(), last_child_index);
+
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'c');
+            assert_eq!(ptr.as_ref().parent, Some(tree.root_index()));
+            assert_eq!(ptr.as_ref().prev_sibling, Some(first_child_index));
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, None);
+        }
+
+        let ptr = tree.root();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'a');
+            assert_eq!(ptr.as_ref().parent, None);
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, Some((first_child_index, last_child_index)));
+        }
+
+        let ptr = tree.get(first_child_index).unwrap();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'b');
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, Some(last_child_index));
+            assert_eq!(ptr.as_ref().children, None);
+        }
+    }
+
+    #[test]
+    fn prepend() {
+        let mut tree = UNITree::new('a');
+        let child_1 = tree.orphan('b');
+        let ptr = tree.get(child_1).unwrap();
+        
+        tree.prepend(tree.root_index(), child_1);
+
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'b');
+            assert_eq!(ptr.as_ref().parent, Some(tree.root_index()));
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, None);
+        }
+
+        let ptr = tree.root();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'a');
+            assert_eq!(ptr.as_ref().parent, None);
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, Some((child_1, child_1)));
+        }
+
+        let child_2 = tree.orphan('c');
+        let ptr = tree.get(child_2).unwrap();
+
+        tree.prepend(tree.root_index(), child_2);
+
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'c');
+            assert_eq!(ptr.as_ref().parent, Some(tree.root_index()));
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, Some(child_1));
+            assert_eq!(ptr.as_ref().children, None);
+        }
+
+        let ptr = tree.root();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'a');
+            assert_eq!(ptr.as_ref().parent, None);
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, Some((child_2, child_1)));
+        }
+
+        let ptr = tree.get(child_1).unwrap();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'b');
+            assert_eq!(ptr.as_ref().prev_sibling, Some(child_2));
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, None);
+        }
+    }
+
+    #[test]
+    fn insert_after() {
+        let mut tree = UNITree::new('a');
+        let first_child_index = tree.orphan('b');
+        let ptr = tree.get(first_child_index).unwrap();
+        
+        tree.append(tree.root_index(), first_child_index);
+
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'b');
+            assert_eq!(ptr.as_ref().parent, Some(tree.root_index()));
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, None);
+        }
+
+        let ptr = tree.root();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'a');
+            assert_eq!(ptr.as_ref().parent, None);
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, Some((first_child_index, first_child_index)));
+        }
+
+        let last_child_index = tree.orphan('c');
+        let ptr = tree.get(last_child_index).unwrap();
+
+        tree.insert_after(first_child_index, last_child_index);
+
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'c');
+            assert_eq!(ptr.as_ref().parent, Some(tree.root_index()));
+            assert_eq!(ptr.as_ref().prev_sibling, Some(first_child_index));
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, None);
+        }
+
+        let ptr = tree.root();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'a');
+            assert_eq!(ptr.as_ref().parent, None);
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, Some((first_child_index, last_child_index)));
+        }
+
+        let ptr = tree.get(first_child_index).unwrap();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'b');
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, Some(last_child_index));
+            assert_eq!(ptr.as_ref().children, None);
+        }
+    }
+
+    #[test]
+    fn insert_before() {
+        let mut tree = UNITree::new('a');
+        let child_1 = tree.orphan('b');
+        let ptr = tree.get(child_1).unwrap();
+        
+        tree.append(tree.root_index(), child_1);
+
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'b');
+            assert_eq!(ptr.as_ref().parent, Some(tree.root_index()));
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, None);
+        }
+
+        let ptr = tree.root();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'a');
+            assert_eq!(ptr.as_ref().parent, None);
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, Some((child_1, child_1)));
+        }
+
+        let child_2 = tree.orphan('c');
+        let ptr = tree.get(child_2).unwrap();
+
+        tree.insert_before(child_1, child_2);
+
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'c');
+            assert_eq!(ptr.as_ref().parent, Some(tree.root_index()));
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, Some(child_1));
+            assert_eq!(ptr.as_ref().children, None);
+        }
+
+        let ptr = tree.root();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'a');
+            assert_eq!(ptr.as_ref().parent, None);
+            assert_eq!(ptr.as_ref().prev_sibling, None);
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, Some((child_2, child_1)));
+        }
+
+        let ptr = tree.get(child_1).unwrap();
+        unsafe {
+            assert_eq!(ptr.as_ref().value, 'b');
+            assert_eq!(ptr.as_ref().prev_sibling, Some(child_2));
+            assert_eq!(ptr.as_ref().next_sibling, None);
+            assert_eq!(ptr.as_ref().children, None);
+        }
+    }
+
+    #[test]
+    fn reparent_append() {
+        let mut tree = UNITree::new('a');
+        let item_1 = tree.orphan('b');
+        let item_2 = tree.orphan('c');
+
+        tree.append(tree.root_index(), item_1);
+        tree.append(tree.root_index(), item_2);
+
+        // append some child to item_1
+        let item_1_1 = tree.orphan('d');
+        let item_1_2 = tree.orphan('e');
+
+        tree.append(item_1, item_1_1);
+        tree.append(item_1, item_1_2);
+
+        let ptr = tree.get(item_1).unwrap();
+        unsafe {
+            assert_eq!(ptr.as_ref().children, Some((item_1_1, item_1_2)));
+        }
+
+        // reparent to item_2
+        tree.reparent_append(item_2, item_1);
+
+        unsafe {
+            assert_eq!(ptr.as_ref().children, None);
+        }
+
+        let ptr = tree.get(item_2).unwrap();
+        unsafe {
+            assert_eq!(ptr.as_ref().children, Some((item_1_1, item_1_2)));
+        }
+    }
+}
