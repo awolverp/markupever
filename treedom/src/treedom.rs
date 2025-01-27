@@ -194,7 +194,7 @@ impl TreeDom {
     /// In other words, an item which is only inserted to the UNITree-internal vector.
     pub fn orphan<D: Into<data::NodeData>>(&self, value: D) -> Node {
         let mut tree = self.tree.lock();
-        let (index, _) = tree.orphan(value.into());
+        let index = tree.orphan(value.into());
 
         std::mem::drop(tree);
         unsafe { Node::new_unchecked(self.tree.clone(), index) }

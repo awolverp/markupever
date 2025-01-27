@@ -186,13 +186,13 @@ impl markup5ever::interface::TreeSink for Parser {
         element.attrs.sort_unstable_by(|a, b| a.0.cmp(&b.0));
         element.attrs.dedup();
 
-        let (index, _) = self.tree_mut().orphan(data::NodeData::new(element));
+        let index = self.tree_mut().orphan(data::NodeData::new(element));
         index
     }
 
     // Create a comment node.
     fn create_comment(&self, text: tendril::StrTendril) -> Self::Handle {
-        let (index, _) = self
+        let index = self
             .tree_mut()
             .orphan(data::NodeData::new(data::Comment::from_non_atomic(text)));
 
@@ -201,7 +201,7 @@ impl markup5ever::interface::TreeSink for Parser {
 
     // Create a Processing Instruction node.
     fn create_pi(&self, target: tendril::StrTendril, data: tendril::StrTendril) -> Self::Handle {
-        let (index, _) = self.tree_mut().orphan(data::NodeData::new(
+        let index = self.tree_mut().orphan(data::NodeData::new(
             data::ProcessingInstruction::from_non_atomic(data, target),
         ));
 
@@ -217,7 +217,7 @@ impl markup5ever::interface::TreeSink for Parser {
     ) {
         let doctype =
             data::NodeData::new(data::Doctype::from_non_atomic(name, public_id, system_id));
-        let (index, _) = self.tree_mut().orphan(doctype);
+        let index = self.tree_mut().orphan(doctype);
         self.tree_mut().prepend(unitree::Index::default(), index);
     }
 
@@ -245,7 +245,7 @@ impl markup5ever::interface::TreeSink for Parser {
                     }
                 }
 
-                let (text_index, _) = self
+                let text_index = self
                     .tree_mut()
                     .orphan(data::NodeData::new(data::Text::from_non_atomic(text)));
 
@@ -269,7 +269,7 @@ impl markup5ever::interface::TreeSink for Parser {
         match (new_item, unsafe { sibling_item.as_ref().prev_sibling() }) {
             (markup5ever::interface::NodeOrText::AppendText(text), None) => {
                 // There's no previous item, so we have to create a Text node data
-                let (text_index, _) = self
+                let text_index = self
                     .tree_mut()
                     .orphan(data::NodeData::new(data::Text::from_non_atomic(text)));
 
@@ -282,7 +282,7 @@ impl markup5ever::interface::TreeSink for Parser {
                 if let Some(textdata) = unsafe { prev_item.as_mut().value_mut().text_mut() } {
                     textdata.push_non_atomic(text);
                 } else {
-                    let (text_index, _) = self
+                    let text_index = self
                         .tree_mut()
                         .orphan(data::NodeData::new(data::Text::from_non_atomic(text)));
 
