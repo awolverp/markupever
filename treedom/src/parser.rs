@@ -420,7 +420,7 @@ mod tests {
             children.push(child.clone().unwrap());
             child = child.unwrap().into_next_sibling();
         }
-        
+
         children[0].value().processing_instruction().unwrap();
         children[1].value().doctype().unwrap();
         assert_eq!(
@@ -442,9 +442,43 @@ mod tests {
             children[0].value().element().unwrap().name.local.as_ref(),
             "test",
         );
-        // assert_eq!(
-        //     children[1].value().element().unwrap().name.local.as_ref(),
-        //     "body",
-        // );
+    }
+
+    #[cfg(feature = "html5ever")]
+    #[test]
+    fn html_serializer() {
+        use crate::DomSerializer;
+
+        let parser = Parser::parse_html(true, Default::default(), Default::default());
+        let dom = parser.one(HTML);
+
+        let mut buf: Vec<u8> = Vec::new();
+        html5ever::serialize::serialize(
+            &mut buf,
+            &DomSerializer::new(&dom, &dom.root()),
+            Default::default(),
+        )
+        .unwrap();
+
+        println!("{}", String::from_utf8_lossy(&buf))
+    }
+
+    #[cfg(feature = "xml5ever")]
+    #[test]
+    fn xml_serializer() {
+        use crate::DomSerializer;
+
+        let parser = Parser::parse_xml(Default::default());
+        let dom = parser.one(XML);
+
+        let mut buf: Vec<u8> = Vec::new();
+        xml5ever::serialize::serialize(
+            &mut buf,
+            &DomSerializer::new(&dom, &dom.root()),
+            Default::default(),
+        )
+        .unwrap();
+
+        println!("{}", String::from_utf8_lossy(&buf))
     }
 }

@@ -6,3 +6,4 @@ mod treedom;
 pub use parser::Parser;
 pub use treedom::Node;
 pub use treedom::TreeDom;
+pub use treedom::DomSerializer;

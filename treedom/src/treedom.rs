@@ -392,6 +392,72 @@ impl std::fmt::Display for TreeDom {
     }
 }
 
+pub struct DomSerializer<'a> {
+    dom: &'a TreeDom,
+    index: unitree::Index,
+}
+
+impl<'a> DomSerializer<'a> {
+    pub fn new(dom: &'a TreeDom, node: &Node) -> Self {
+        Self { dom, index: node.index() }
+    }
+}
+
+impl<'a> markup5ever::serialize::Serialize for DomSerializer<'a> {
+    fn serialize<S>(
+        &self,
+        serializer: &mut S,
+        traversal_scope: markup5ever::serialize::TraversalScope,
+    ) -> std::io::Result<()>
+    where
+        S: markup5ever::serialize::Serializer,
+    {
+        let tree = self.dom.tree.lock();
+        let traverse = unitree::iter::Traverse::new(&*tree, self.index);
+
+        let mut skipped = false;
+
+        for edge in traverse {
+            match edge {
+                unitree::iter::Edge::Close(x) => unsafe {
+                    if let Some(element) = x.as_ref().value().element() {
+                        serializer.end_elem(element.name.clone())?;
+                    }
+                },
+                unitree::iter::Edge::Open(x) => unsafe {
+                    if let markup5ever::serialize::TraversalScope::ChildrenOnly(_) = traversal_scope
+                    {
+                        if !skipped {
+                            skipped = true;
+                            continue;
+                        }
+                    }
+
+                    match x.as_ref().value() {
+                        data::NodeData::Comment(comment) => {
+                            serializer.write_comment(&comment.contents)?
+                        }
+                        data::NodeData::Doctype(doctype) => {
+                            serializer.write_doctype(&doctype.name)?
+                        }
+                        data::NodeData::Element(element) => serializer.start_elem(
+                            element.name.clone(),
+                            element.attrs.iter().map(|at| (&at.0, &at.1[..])),
+                        )?,
+                        data::NodeData::ProcessingInstruction(pi) => {
+                            serializer.write_processing_instruction(&pi.target, &pi.data)?
+                        }
+                        data::NodeData::Text(text) => serializer.write_text(&text.contents)?,
+                        data::NodeData::Document(_) => (),
+                    }
+                },
+            }
+        }
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
