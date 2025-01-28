@@ -438,7 +438,19 @@ impl<'a> markup5ever::serialize::Serialize for DomSerializer<'a> {
                             serializer.write_comment(&comment.contents)?
                         }
                         data::NodeData::Doctype(doctype) => {
-                            serializer.write_doctype(&doctype.name)?
+                            let mut docname = String::from(&doctype.name);
+                            if !doctype.public_id.is_empty() {
+                                docname.push_str(" PUBLIC \"");
+                                docname.push_str(&doctype.public_id);
+                                docname.push('"');
+                            }
+                            if !doctype.system_id.is_empty() {
+                                docname.push_str(" SYSTEM \"");
+                                docname.push_str(&doctype.system_id);
+                                docname.push('"');
+                            }
+
+                            serializer.write_doctype(&docname)?
                         }
                         data::NodeData::Element(element) => serializer.start_elem(
                             element.name.clone(),

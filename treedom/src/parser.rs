@@ -460,7 +460,7 @@ mod tests {
         )
         .unwrap();
 
-        println!("{}", String::from_utf8_lossy(&buf))
+        assert_eq!(HTML, String::from_utf8_lossy(&buf),);
     }
 
     #[cfg(feature = "xml5ever")]
@@ -479,6 +479,9 @@ mod tests {
         )
         .unwrap();
 
-        println!("{}", String::from_utf8_lossy(&buf))
+        assert_eq!(
+            r#"<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd"><suite name="TestSuite"><test name="TestProject"><classes><class name="package.firstClassName"></class><class name="package.secondClassName"></class></classes></test></suite>"#,
+            String::from_utf8_lossy(&buf)
+        );
     }
 }
