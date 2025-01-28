@@ -2,7 +2,7 @@ use crate::atomic::{make_atomic_tendril, AtomicTendril, OnceLock};
 use tendril::StrTendril;
 
 /// The root of HTML document
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Hash)]
 pub struct Document;
 
 /// the doctype is the required <!doctype html> preamble found at the top of all documents.
@@ -10,7 +10,7 @@ pub struct Document;
 /// when rendering a document; that is, the <!doctype html> doctype ensures that the browser makes
 /// a best-effort attempt at following the relevant specifications, rather than using a different
 /// rendering mode that is incompatible with some specifications.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Doctype {
     pub name: AtomicTendril,
     pub public_id: AtomicTendril,
@@ -44,7 +44,7 @@ impl Doctype {
 ///
 /// Comments are represented in HTML and XML as content between <!-- and -->. In XML,
 /// like inside SVG or MathML markup, the character sequence -- cannot be used within a comment.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Comment {
     pub contents: AtomicTendril,
 }
@@ -64,7 +64,7 @@ impl Comment {
 }
 
 /// A text
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Text {
     pub contents: AtomicTendril,
 }
@@ -251,7 +251,7 @@ impl std::fmt::Debug for Element {
 /// The ProcessingInstruction interface represents a processing instruction; that is,
 /// a Node which embeds an instruction targeting a specific application but that can
 /// be ignored by any other applications which don't recognize the instruction.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ProcessingInstruction {
     pub data: AtomicTendril,
     pub target: AtomicTendril,
@@ -342,6 +342,19 @@ impl NodeData {
         element element_mut (NodeData::Element(x) => x) -> Element
         processing_instruction processing_instruction_mut (NodeData::ProcessingInstruction(x) => x) -> ProcessingInstruction
     );
+}
+
+impl std::hash::Hash for NodeData {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Comment(x) => std::hash::Hash::hash(x, state),
+            Self::Text(x) => std::hash::Hash::hash(x, state),
+            Self::Element(_) => panic!("element does not implement hash"),
+            Self::ProcessingInstruction(x) => std::hash::Hash::hash(x, state),
+            Self::Doctype(x) => std::hash::Hash::hash(x, state),
+            Self::Document(x) => std::hash::Hash::hash(x, state),
+        }
+    }
 }
 
 impl std::fmt::Display for NodeData {

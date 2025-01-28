@@ -218,7 +218,7 @@ impl markup5ever::interface::TreeSink for Parser {
         let doctype =
             data::NodeData::new(data::Doctype::from_non_atomic(name, public_id, system_id));
         let index = self.tree_mut().orphan(doctype);
-        self.tree_mut().prepend(unitree::Index::default(), index);
+        self.tree_mut().append(unitree::Index::default(), index);
     }
 
     // Append a node as the last child of the given node. If this would produce adjacent sibling text nodes, it should concatenate the text instead.
@@ -350,5 +350,101 @@ impl markup5ever::interface::TreeSink for Parser {
         } else {
             unreachable!("target is not a element");
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::treedom;
+
+    use super::*;
+    use tendril::TendrilSink;
+
+    const HTML: &'static str = r#"<!DOCTYPE html><html lang="en"><head><title>Document</title></head><body><template>TEST</template></body></html>"#;
+    const XML: &'static str = r#"<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd"><suite name="TestSuite"><test name="TestProject"><classes><class name="package.firstClassName" /><class name="package.secondClassName" /></classes></test></suite>"#;
+
+    #[test]
+    fn html_parsing() {
+        let parser = Parser::parse_html(true, Default::default(), Default::default());
+        let dom = parser.one(HTML);
+
+        let root = dom.root();
+        assert_eq!(*root.value(), data::NodeData::new(data::Document));
+
+        let mut children: Vec<treedom::Node> = Vec::new();
+
+        let mut child = root.into_first_children();
+        while child.is_some() {
+            children.push(child.clone().unwrap());
+            child = child.unwrap().into_next_sibling();
+        }
+
+        children[0].value().doctype().unwrap();
+        assert_eq!(
+            children[1].value().element().unwrap().name.local.as_ref(),
+            "html",
+        );
+
+        let html = children[1].clone();
+
+        let mut children: Vec<treedom::Node> = Vec::new();
+
+        let mut child = html.into_first_children();
+        while child.is_some() {
+            children.push(child.clone().unwrap());
+            child = child.unwrap().into_next_sibling();
+        }
+
+        assert_eq!(
+            children[0].value().element().unwrap().name.local.as_ref(),
+            "head",
+        );
+        assert_eq!(
+            children[1].value().element().unwrap().name.local.as_ref(),
+            "body",
+        );
+    }
+
+    #[test]
+    fn xml_parsing() {
+        let parser = Parser::parse_xml(Default::default());
+        let dom = parser.one(XML);
+
+        let root = dom.root();
+        assert_eq!(*root.value(), data::NodeData::new(data::Document));
+
+        let mut children: Vec<treedom::Node> = Vec::new();
+
+        let mut child = root.into_first_children();
+        while child.is_some() {
+            children.push(child.clone().unwrap());
+            child = child.unwrap().into_next_sibling();
+        }
+        
+        children[0].value().processing_instruction().unwrap();
+        children[1].value().doctype().unwrap();
+        assert_eq!(
+            children[2].value().element().unwrap().name.local.as_ref(),
+            "suite",
+        );
+
+        let suite = children[2].clone();
+
+        let mut children: Vec<treedom::Node> = Vec::new();
+
+        let mut child = suite.into_first_children();
+        while child.is_some() {
+            children.push(child.clone().unwrap());
+            child = child.unwrap().into_next_sibling();
+        }
+
+        assert_eq!(
+            children[0].value().element().unwrap().name.local.as_ref(),
+            "test",
+        );
+        // assert_eq!(
+        //     children[1].value().element().unwrap().name.local.as_ref(),
+        //     "body",
+        // );
     }
 }
