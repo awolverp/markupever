@@ -1,25 +1,29 @@
 use treedom::markup5ever::{namespace_url, ns};
 
 #[derive(Debug, Clone)]
-pub struct SelectableNode(treedom::Node);
+pub struct SelectableNodeRef<'a>(treedom::ego_tree::NodeRef<'a, treedom::data::NodeData>);
 
-impl From<treedom::Node> for SelectableNode {
-    fn from(value: treedom::Node) -> Self {
-        Self(value)
-    }
-}
-
-impl SelectableNode {
-    pub fn new(node: treedom::Node) -> Self {
-        node.into()
+impl<'a> SelectableNodeRef<'a> {
+    pub fn new(node: treedom::ego_tree::NodeRef<'a, treedom::data::NodeData>) -> Option<Self> {
+        if node.value().is_element() {
+            Some(Self(node))
+        } else {
+            None
+        }
     }
 
-    pub fn into_node(self) -> treedom::Node {
+    pub unsafe fn new_unchecked(
+        node: treedom::ego_tree::NodeRef<'a, treedom::data::NodeData>,
+    ) -> Self {
+        Self(node)
+    }
+
+    pub fn into_node(self) -> treedom::ego_tree::NodeRef<'a, treedom::data::NodeData> {
         self.0
     }
 }
 
-impl selectors::Element for SelectableNode {
+impl<'a> selectors::Element for SelectableNodeRef<'a> {
     type Impl = crate::_impl::ParserImplementation;
 
     fn opaque(&self) -> selectors::OpaqueElement {
@@ -27,12 +31,10 @@ impl selectors::Element for SelectableNode {
     }
 
     fn parent_element(&self) -> Option<Self> {
-        let mut parent = self.0.parent()?;
-        while parent.value().element().is_none() {
-            parent = parent.into_parent()?;
-        }
-
-        Some(parent.into())
+        self.0
+            .ancestors()
+            .find(|x| x.value().is_element())
+            .map(|x| unsafe { SelectableNodeRef::new_unchecked(x) })
     }
 
     fn parent_node_is_shadow_root(&self) -> bool {
@@ -52,9 +54,7 @@ impl selectors::Element for SelectableNode {
     }
 
     fn is_same_type(&self, other: &Self) -> bool {
-        self.0.eq_by(&other.0, |x, y| {
-            x.element().unwrap().name == y.element().unwrap().name
-        })
+        self.0.value().element().unwrap().name == other.0.value().element().unwrap().name
     }
 
     fn imported_part(
@@ -65,38 +65,24 @@ impl selectors::Element for SelectableNode {
     }
 
     fn prev_sibling_element(&self) -> Option<Self> {
-        let mut prev_sibling = self.0.prev_sibling()?;
-        while prev_sibling.value().element().is_none() {
-            prev_sibling = prev_sibling.into_prev_sibling()?;
-        }
-
-        Some(prev_sibling.into())
+        self.0
+            .prev_siblings()
+            .find(|sibling| sibling.value().is_element())
+            .map(|x| unsafe { Self::new_unchecked(x) })
     }
 
     fn next_sibling_element(&self) -> Option<Self> {
-        let mut next_sibling = self.0.next_sibling()?;
-        while next_sibling.value().element().is_none() {
-            next_sibling = next_sibling.into_next_sibling()?;
-        }
-
-        Some(next_sibling.into())
+        self.0
+            .next_siblings()
+            .find(|sibling| sibling.value().is_element())
+            .map(|x| unsafe { Self::new_unchecked(x) })
     }
 
     fn first_element_child(&self) -> Option<Self> {
-        let mut front = self.0.first_children()?;
-        if front.value().element().is_some() {
-            return Some(front.into());
-        }
-
-        if Some(front.index()) == self.0.last_children_index() {
-            return None;
-        }
-
-        while front.value().element().is_none() {
-            front = front.into_next_sibling()?;
-        }
-
-        Some(front.into())
+        self.0
+            .children()
+            .find(|sibling| sibling.value().is_element())
+            .map(|x| unsafe { Self::new_unchecked(x) })
     }
 
     fn is_html_element_in_html_document(&self) -> bool {
@@ -194,20 +180,14 @@ impl selectors::Element for SelectableNode {
     }
 
     fn is_empty(&self) -> bool {
-        let tree = unsafe { self.0.tree() };
-        let lock = tree.lock();
-
-        for item in lock.vec_iter() {
-            if unsafe { item.as_ref().value().text().is_some() } {
-                return false;
-            }
-        }
-
-        true
+        !self.0.children().any(|x| {
+            let v = x.value();
+            v.is_element() || v.is_text()
+        })
     }
 
     fn is_root(&self) -> bool {
-        self.0.value().document().is_some()
+        self.0.value().is_document()
     }
 
     fn apply_selector_flags(&self, _flags: selectors::matching::ElementSelectorFlags) {}

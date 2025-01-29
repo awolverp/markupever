@@ -5,12 +5,14 @@ use hashbrown::HashMap;
 #[cfg(not(feature = "hashbrown"))]
 use std::collections::HashMap;
 
+pub type NamespaceMap = HashMap<markup5ever::Prefix, markup5ever::Namespace>;
+
 /// A DOM based on [`ego_tree::Tree`]
 pub struct TreeDom {
     tree: ego_tree::Tree<data::NodeData>,
     errors: Vec<std::borrow::Cow<'static, str>>,
     quirks_mode: markup5ever::interface::QuirksMode,
-    namespaces: HashMap<markup5ever::Prefix, markup5ever::Namespace>,
+    namespaces: NamespaceMap,
     lineno: u64,
 }
 
@@ -40,7 +42,7 @@ impl TreeDom {
         tree: ego_tree::Tree<data::NodeData>,
         errors: Vec<std::borrow::Cow<'static, str>>,
         quirks_mode: markup5ever::interface::QuirksMode,
-        namespaces: HashMap<markup5ever::Prefix, markup5ever::Namespace>,
+        namespaces: NamespaceMap,
         lineno: u64,
     ) -> Self {
         Self {
@@ -56,7 +58,7 @@ impl TreeDom {
         errors errors_mut Vec<std::borrow::Cow<'static, str>>
         quirks_mode quirks_mode_mut markup5ever::interface::QuirksMode
         lineno lineno_mut u64
-        namespaces namespaces_mut HashMap<markup5ever::Prefix, markup5ever::Namespace>
+        namespaces namespaces_mut NamespaceMap
     );
 
     /// Returns a reference to the root node.
@@ -172,70 +174,3 @@ impl<'a> markup5ever::serialize::Serialize for Serializer<'a> {
         Ok(())
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-//     fn node() {
-//         let tree = TreeDom::default();
-//         let root = tree.root();
-
-//         assert_eq!(root.index(), unitree::Index::default());
-//         assert_eq!(root.first_children(), None);
-//         assert_eq!(root.last_children(), None);
-//         assert_eq!(root.parent(), None);
-//         assert_eq!(root.next_sibling(), None);
-//         assert_eq!(root.prev_sibling(), None);
-//         assert_ne!(root.value().document(), None);
-
-//         assert_eq!(root, tree.root());
-
-//         let tree2 = TreeDom::default();
-//         assert_ne!(root, tree2.root());
-//     }
-
-//     #[test]
-//     fn get_by_index() {
-//         let tree = TreeDom::default();
-//         let text = tree.orphan(data::Text::new("html5".into()));
-
-//         assert_eq!(
-//             tree.root(),
-//             tree.get_by_index(unitree::Index::default()).unwrap()
-//         );
-//         assert_eq!(text, tree.get_by_index(text.index()).unwrap());
-//     }
-
-//     #[test]
-//     fn namespaces() {
-//         let tree = TreeDom::default();
-//         let element = data::Element::new(
-//             markup5ever::QualName::new(Some("ns1".into()), "namespace1".into(), "p".into()),
-//             [].into_iter(),
-//             false,
-//             false,
-//         );
-
-//         assert_eq!(tree.namespaces.lock().len(), 0);
-
-//         let node1 = tree.orphan(element);
-//         tree.append(&tree.root(), &node1);
-//         assert_eq!(tree.namespaces.lock().len(), 1);
-
-//         let element = data::Element::new(
-//             markup5ever::QualName::new(None, "".into(), "p".into()),
-//             [].into_iter(),
-//             false,
-//             false,
-//         );
-
-//         let node2 = tree.orphan(element);
-//         tree.append(&tree.root(), &node2);
-//         assert_eq!(tree.namespaces.lock().len(), 1);
-
-//         tree.detach(&node1);
-//         assert_eq!(tree.namespaces.lock().len(), 0);
-//     }
-// }

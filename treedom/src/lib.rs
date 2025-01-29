@@ -6,6 +6,7 @@ mod treedom;
 pub use parser::Parser;
 pub use treedom::TreeDom;
 pub use treedom::Serializer;
+pub use treedom::NamespaceMap;
 
 pub use ego_tree;
 pub use markup5ever;

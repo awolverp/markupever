@@ -14,6 +14,13 @@ cssparser = { version = "0.34.0" }
 precomputed-hash = { version = "0.1.1" }
 selectors = { version = "0.26.0" }
 tendril = { version = "0.4" }
-treedom = { path = "../treedom" }
+treedom = { path = "../treedom", default-features = false, features = ["html5ever", "xml5ever"]}
+hashbrown = { version = "0.15", optional = true, default-features = false, features = [
+    "default-hasher",
+    "inline-more",
+] }
 
 [features]
+default = ["hashbrown"]
+
+hashbrown = ["treedom/hashbrown", "dep:hashbrown"]
