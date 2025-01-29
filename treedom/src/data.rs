@@ -307,10 +307,14 @@ impl_nodedata_from_trait!(
 macro_rules! declare_nodedata_methods {
     (
         $(
-            $name:ident $mutname:ident ($pattern:pat_param => $param:expr) -> $ret:ty
+            $isname:ident $name:ident $mutname:ident ($pattern:pat_param => $param:expr) -> $ret:ty
         )+
     ) => {
         $(
+            pub fn $isname(&self) -> bool {
+                matches!(self, $pattern)
+            }
+
             pub fn $name(&self) -> Option<&$ret> {
                 match self {
                     $pattern => Some($param),
@@ -335,12 +339,12 @@ impl NodeData {
     }
 
     declare_nodedata_methods!(
-        document document_mut (NodeData::Document(x) => x) -> Document
-        doctype doctype_mut (NodeData::Doctype(x) => x) -> Doctype
-        comment comment_mut (NodeData::Comment(x) => x) -> Comment
-        text text_mut (NodeData::Text(x) => x) -> Text
-        element element_mut (NodeData::Element(x) => x) -> Element
-        processing_instruction processing_instruction_mut (NodeData::ProcessingInstruction(x) => x) -> ProcessingInstruction
+        is_document document document_mut (NodeData::Document(_x) => _x) -> Document
+        is_doctype doctype doctype_mut (NodeData::Doctype(_x) => _x) -> Doctype
+        is_comment comment comment_mut (NodeData::Comment(_x) => _x) -> Comment
+        is_text text text_mut (NodeData::Text(_x) => _x) -> Text
+        is_element element element_mut (NodeData::Element(_x) => _x) -> Element
+        is_processing_instruction processing_instruction processing_instruction_mut (NodeData::ProcessingInstruction(_x) => _x) -> ProcessingInstruction
     );
 }
 

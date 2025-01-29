@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 /// Markup parser that implemented [`markup5ever::interface::TreeSink`]
 pub struct Parser {
-    tree: UnsafeCell<unitree::UNITree<data::NodeData>>,
+    tree: UnsafeCell<ego_tree::Tree<data::NodeData>>,
     errors: UnsafeCell<Vec<std::borrow::Cow<'static, str>>>,
     quirks_mode: Cell<markup5ever::interface::QuirksMode>,
     namespaces: UnsafeCell<HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
@@ -26,7 +26,7 @@ impl Parser {
     /// Creates a new [`Parser`]
     pub fn new() -> Self {
         Self {
-            tree: UnsafeCell::new(unitree::UNITree::new(data::NodeData::new(data::Document))),
+            tree: UnsafeCell::new(ego_tree::Tree::new(data::NodeData::new(data::Document))),
             errors: UnsafeCell::new(Vec::new()),
             quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
             namespaces: UnsafeCell::new(HashMap::new()),
@@ -35,7 +35,7 @@ impl Parser {
     }
 
     #[allow(clippy::mut_from_ref)]
-    fn tree_mut(&self) -> &mut unitree::UNITree<data::NodeData> {
+    fn tree_mut(&self) -> &mut ego_tree::Tree<data::NodeData> {
         // SAFETY: Parser is not Send/Sync so cannot be used in multi threads.
         unsafe { &mut *self.tree.get() }
     }
@@ -84,7 +84,7 @@ impl Parser {
 
 impl markup5ever::interface::TreeSink for Parser {
     type Output = TreeDom;
-    type Handle = unitree::Index;
+    type Handle = ego_tree::NodeId;
     type ElemName<'a> = markup5ever::ExpandedName<'a>;
 
     // Consume this sink and return the overall result of parsing.
@@ -117,7 +117,7 @@ impl markup5ever::interface::TreeSink for Parser {
 
     // Get a handle to the `Document` node.
     fn get_document(&self) -> Self::Handle {
-        unitree::Index::default()
+        self.tree_mut().root().id()
     }
 
     // Get a handle to a template's template contents.
@@ -125,7 +125,7 @@ impl markup5ever::interface::TreeSink for Parser {
     fn get_template_contents(&self, target: &Self::Handle) -> Self::Handle {
         let item = self.tree_mut().get(*target).unwrap();
 
-        if let Some(x) = unsafe { item.as_ref().value().element() } {
+        if let Some(x) = item.value().element() {
             if x.template {
                 return *target;
             }
@@ -138,10 +138,7 @@ impl markup5ever::interface::TreeSink for Parser {
 
     // Do two handles refer to the same node?
     fn same_node(&self, x: &Self::Handle, y: &Self::Handle) -> bool {
-        let x = self.tree_mut().get(*x).unwrap();
-        let y = self.tree_mut().get(*y).unwrap();
-
-        std::ptr::addr_eq(x.as_ptr(), y.as_ptr())
+        x == y
     }
 
     // What is the name of this element?
@@ -150,7 +147,7 @@ impl markup5ever::interface::TreeSink for Parser {
     fn elem_name<'a>(&'a self, target: &'a Self::Handle) -> Self::ElemName<'a> {
         let item = self.tree_mut().get(*target).unwrap();
 
-        if let Some(x) = unsafe { item.as_ref().value().element() } {
+        if let Some(x) = item.value().element() {
             x.name.expanded()
         } else {
             unreachable!("target is not a element");
@@ -186,26 +183,26 @@ impl markup5ever::interface::TreeSink for Parser {
         element.attrs.sort_unstable_by(|a, b| a.0.cmp(&b.0));
         element.attrs.dedup();
 
-        let index = self.tree_mut().orphan(data::NodeData::new(element));
-        index
+        let node = self.tree_mut().orphan(data::NodeData::new(element));
+        node.id()
     }
 
     // Create a comment node.
     fn create_comment(&self, text: tendril::StrTendril) -> Self::Handle {
-        let index = self
+        let node = self
             .tree_mut()
             .orphan(data::NodeData::new(data::Comment::from_non_atomic(text)));
 
-        index
+        node.id()
     }
 
     // Create a Processing Instruction node.
     fn create_pi(&self, target: tendril::StrTendril, data: tendril::StrTendril) -> Self::Handle {
-        let index = self.tree_mut().orphan(data::NodeData::new(
+        let node = self.tree_mut().orphan(data::NodeData::new(
             data::ProcessingInstruction::from_non_atomic(data, target),
         ));
 
-        index
+        node.id()
     }
 
     // Append a DOCTYPE element to the Document node.
@@ -215,10 +212,11 @@ impl markup5ever::interface::TreeSink for Parser {
         public_id: tendril::StrTendril,
         system_id: tendril::StrTendril,
     ) {
-        let doctype =
-            data::NodeData::new(data::Doctype::from_non_atomic(name, public_id, system_id));
-        let index = self.tree_mut().orphan(doctype);
-        self.tree_mut().append(unitree::Index::default(), index);
+        self.tree_mut()
+            .root_mut()
+            .append(data::NodeData::new(data::Doctype::from_non_atomic(
+                name, public_id, system_id,
+            )));
     }
 
     // Append a node as the last child of the given node. If this would produce adjacent sibling text nodes, it should concatenate the text instead.
@@ -229,27 +227,21 @@ impl markup5ever::interface::TreeSink for Parser {
         parent: &Self::Handle,
         child: markup5ever::interface::NodeOrText<Self::Handle>,
     ) {
+        let mut parent = self.tree_mut().get_mut(*parent).unwrap();
+
         match child {
             markup5ever::interface::NodeOrText::AppendNode(handle) => {
-                self.tree_mut().append(*parent, handle);
+                parent.append_id(handle);
             }
             markup5ever::interface::NodeOrText::AppendText(text) => {
-                let parent_item = self.tree_mut().get(*parent).unwrap();
-
-                if let Some(last_index) = unsafe { parent_item.as_ref().last_children() } {
-                    let mut last_child = self.tree_mut().get(last_index).unwrap();
-
-                    if let Some(textdata) = unsafe { last_child.as_mut().value_mut().text_mut() } {
-                        textdata.push_non_atomic(text);
+                if let Some(mut last_index) = parent.last_child() {
+                    if let Some(textval) = last_index.value().text_mut() {
+                        textval.push_non_atomic(text);
                         return;
                     }
                 }
 
-                let text_index = self
-                    .tree_mut()
-                    .orphan(data::NodeData::new(data::Text::from_non_atomic(text)));
-
-                self.tree_mut().append(*parent, text_index);
+                parent.append(data::NodeData::new(data::Text::from_non_atomic(text)));
             }
         }
     }
@@ -261,36 +253,26 @@ impl markup5ever::interface::TreeSink for Parser {
     // NB: new_item may have an old parent, from which it should be removed.
     fn append_before_sibling(
         &self,
-        sibling: &Self::Handle,
-        new_item: markup5ever::interface::NodeOrText<Self::Handle>,
+        sibling_id: &Self::Handle,
+        new_node_id: markup5ever::interface::NodeOrText<Self::Handle>,
     ) {
-        let sibling_item = self.tree_mut().get(*sibling).unwrap();
+        let mut sibling = self.tree_mut().get_mut(*sibling_id).unwrap();
 
-        match (new_item, unsafe { sibling_item.as_ref().prev_sibling() }) {
+        match (new_node_id, sibling.prev_sibling()) {
             (markup5ever::interface::NodeOrText::AppendText(text), None) => {
                 // There's no previous item, so we have to create a Text node data
-                let text_index = self
-                    .tree_mut()
-                    .orphan(data::NodeData::new(data::Text::from_non_atomic(text)));
-
-                self.tree_mut().insert_before(*sibling, text_index);
+                sibling.insert_before(data::NodeData::new(data::Text::from_non_atomic(text)));
             }
-            (markup5ever::interface::NodeOrText::AppendText(text), Some(prev_index)) => {
-                // There's a previous item, so may it's a Text node data? we have to check
-                let mut prev_item = self.tree_mut().get(prev_index).unwrap();
-
-                if let Some(textdata) = unsafe { prev_item.as_mut().value_mut().text_mut() } {
-                    textdata.push_non_atomic(text);
+            (markup5ever::interface::NodeOrText::AppendText(text), Some(mut prev)) => {
+                // // There's a previous item, so may it's a Text node data? we have to check
+                if let Some(textval) = prev.value().text_mut() {
+                    textval.push_non_atomic(text);
                 } else {
-                    let text_index = self
-                        .tree_mut()
-                        .orphan(data::NodeData::new(data::Text::from_non_atomic(text)));
-
-                    self.tree_mut().insert_before(*sibling, text_index);
+                    sibling.insert_before(data::NodeData::new(data::Text::from_non_atomic(text)));
                 }
             }
-            (markup5ever::interface::NodeOrText::AppendNode(item_index), _) => {
-                self.tree_mut().insert_before(*sibling, item_index);
+            (markup5ever::interface::NodeOrText::AppendNode(node_id), _) => {
+                sibling.insert_id_before(node_id);
             }
         }
     }
@@ -306,7 +288,7 @@ impl markup5ever::interface::TreeSink for Parser {
     ) {
         let item = self.tree_mut().get(*item_index).unwrap();
 
-        if unsafe { item.as_ref().parent().is_some() } {
+        if item.parent().is_some() {
             self.append_before_sibling(item_index, child);
         } else {
             self.append(prev_item_index, child);
@@ -316,9 +298,9 @@ impl markup5ever::interface::TreeSink for Parser {
     // Add each attribute to the given element, if no attribute with that name already exists.
     // The tree builder promises this will never be called with something else than an element.
     fn add_attrs_if_missing(&self, target: &Self::Handle, attrs: Vec<markup5ever::Attribute>) {
-        let mut item = self.tree_mut().get(*target).unwrap();
+        let mut node = self.tree_mut().get_mut(*target).unwrap();
 
-        if let Some(element) = unsafe { item.as_mut().value_mut().element_mut() } {
+        if let Some(element) = node.value().element_mut() {
             element.attrs.extend(
                 attrs
                     .into_iter()
@@ -333,19 +315,22 @@ impl markup5ever::interface::TreeSink for Parser {
 
     // Detach the given node from its parent.
     fn remove_from_parent(&self, target: &Self::Handle) {
-        self.tree_mut().detach(*target);
+        self.tree_mut().get_mut(*target).unwrap().detach();
     }
 
     // Remove all the children from node and append them to new_parent.
     fn reparent_children(&self, node: &Self::Handle, new_parent: &Self::Handle) {
-        self.tree_mut().reparent_append(*new_parent, *node);
+        self.tree_mut()
+            .get_mut(*new_parent)
+            .unwrap()
+            .reparent_from_id_append(*node);
     }
 
     // Returns true if the adjusted current node is an HTML integration point and the token is a start tag.
     fn is_mathml_annotation_xml_integration_point(&self, target: &Self::Handle) -> bool {
         let item = self.tree_mut().get(*target).unwrap();
 
-        if let Some(x) = unsafe { item.as_ref().value().element() } {
+        if let Some(x) = item.value().element() {
             x.mathml_annotation_xml_integration_point
         } else {
             unreachable!("target is not a element");
@@ -355,8 +340,6 @@ impl markup5ever::interface::TreeSink for Parser {
 
 #[cfg(test)]
 mod tests {
-    use crate::treedom;
-
     use super::*;
     use tendril::TendrilSink;
 
@@ -371,29 +354,17 @@ mod tests {
         let root = dom.root();
         assert_eq!(*root.value(), data::NodeData::new(data::Document));
 
-        let mut children: Vec<treedom::Node> = Vec::new();
+        let children: Vec<_> = root.children().collect();
 
-        let mut child = root.into_first_children();
-        while child.is_some() {
-            children.push(child.clone().unwrap());
-            child = child.unwrap().into_next_sibling();
-        }
-
-        children[0].value().doctype().unwrap();
+        assert!(children[0].value().is_doctype());
         assert_eq!(
             children[1].value().element().unwrap().name.local.as_ref(),
             "html",
         );
 
-        let html = children[1].clone();
+        let html = children[1];
 
-        let mut children: Vec<treedom::Node> = Vec::new();
-
-        let mut child = html.into_first_children();
-        while child.is_some() {
-            children.push(child.clone().unwrap());
-            child = child.unwrap().into_next_sibling();
-        }
+        let children: Vec<_> = html.children().collect();
 
         assert_eq!(
             children[0].value().element().unwrap().name.local.as_ref(),
@@ -413,30 +384,18 @@ mod tests {
         let root = dom.root();
         assert_eq!(*root.value(), data::NodeData::new(data::Document));
 
-        let mut children: Vec<treedom::Node> = Vec::new();
+        let children: Vec<_> = root.children().collect();
 
-        let mut child = root.into_first_children();
-        while child.is_some() {
-            children.push(child.clone().unwrap());
-            child = child.unwrap().into_next_sibling();
-        }
-
-        children[0].value().processing_instruction().unwrap();
-        children[1].value().doctype().unwrap();
+        assert!(children[0].value().is_processing_instruction());
+        assert!(children[1].value().is_doctype());
         assert_eq!(
             children[2].value().element().unwrap().name.local.as_ref(),
             "suite",
         );
 
-        let suite = children[2].clone();
+        let suite = children[2];
 
-        let mut children: Vec<treedom::Node> = Vec::new();
-
-        let mut child = suite.into_first_children();
-        while child.is_some() {
-            children.push(child.clone().unwrap());
-            child = child.unwrap().into_next_sibling();
-        }
+        let children: Vec<_> = suite.children().collect();
 
         assert_eq!(
             children[0].value().element().unwrap().name.local.as_ref(),
@@ -447,7 +406,7 @@ mod tests {
     #[cfg(feature = "html5ever")]
     #[test]
     fn html_serializer() {
-        use crate::DomSerializer;
+        use crate::Serializer;
 
         let parser = Parser::parse_html(true, Default::default(), Default::default());
         let dom = parser.one(HTML);
@@ -455,18 +414,18 @@ mod tests {
         let mut buf: Vec<u8> = Vec::new();
         html5ever::serialize::serialize(
             &mut buf,
-            &DomSerializer::new(&dom, &dom.root()),
+            &Serializer::new(&dom, dom.root().id()),
             Default::default(),
         )
         .unwrap();
 
-        assert_eq!(HTML, String::from_utf8_lossy(&buf),);
+        assert_eq!(HTML, String::from_utf8_lossy(&buf));
     }
 
     #[cfg(feature = "xml5ever")]
     #[test]
     fn xml_serializer() {
-        use crate::DomSerializer;
+        use crate::Serializer;
 
         let parser = Parser::parse_xml(Default::default());
         let dom = parser.one(XML);
@@ -474,7 +433,7 @@ mod tests {
         let mut buf: Vec<u8> = Vec::new();
         xml5ever::serialize::serialize(
             &mut buf,
-            &DomSerializer::new(&dom, &dom.root()),
+            &Serializer::new(&dom, dom.root().id()),
             Default::default(),
         )
         .unwrap();

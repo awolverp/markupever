@@ -14,7 +14,7 @@ name = "xmarkup"
 crate-type = ["cdylib"]
 
 [workspace]
-members = ["unitree", "treedom"]
+members = ["treedom", "matching"]
 
 [workspace.package]
 version = "0.1.0-beta.2"
@@ -38,8 +38,8 @@ pyo3 = { version = "0.23", default-features = false, features = [
     "macros",
     "extension-module",
 ] }
-unitree = { path = "unitree" }
 treedom = { path = "treedom" }
+matching = { path = "matching" }
 
 [build-dependencies]
 pyo3-build-config = { version = "0.23", features = ["resolve-config"] }
