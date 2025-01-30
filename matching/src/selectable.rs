@@ -1,5 +1,6 @@
 use treedom::markup5ever::{namespace_url, ns};
 
+/// A selectable [`treedom::ego_tree::NodeRef`]
 #[derive(Debug, Clone)]
 pub struct SelectableNodeRef<'a>(treedom::ego_tree::NodeRef<'a, treedom::data::NodeData>);
 

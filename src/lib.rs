@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 
 extern crate treedom;
-extern crate unitree;
+extern crate matching;
 
 #[pymodule(gil_used = false)]
 #[cold]

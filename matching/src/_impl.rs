@@ -2,6 +2,7 @@ use std::hash::Hasher;
 
 use precomputed_hash::PrecomputedHash;
 
+/// A StrTendril which implemented [`cssparser::ToCss`] and [`precomputed_hash::PrecomputedHash`]
 #[derive(Clone, PartialEq, Eq)]
 pub struct CssTendril {
     pub content: tendril::StrTendril,
@@ -46,6 +47,7 @@ impl AsRef<str> for CssTendril {
     }
 }
 
+/// A [`treedom::markup5ever::LocalName`] which implemented [`cssparser::ToCss`]
 #[derive(Clone, PartialEq, Eq)]
 pub struct CssLocalName(pub treedom::markup5ever::LocalName);
 
@@ -76,6 +78,7 @@ impl std::borrow::Borrow<treedom::markup5ever::LocalName> for CssLocalName {
     }
 }
 
+/// A [`treedom::markup5ever::Prefix`] which implemented [`cssparser::ToCss`]
 #[derive(Default, Clone, PartialEq, Eq)]
 pub struct CssNamespacePrefix(pub treedom::markup5ever::Prefix);
 
@@ -94,6 +97,7 @@ impl<'a> From<&'a str> for CssNamespacePrefix {
     }
 }
 
+/// A NonTSPseudoClass which implemented [`cssparser::ToCss`]
 #[derive(PartialEq, Eq, Clone)]
 pub struct NonTSPseudoClass;
 
@@ -118,6 +122,7 @@ impl cssparser::ToCss for NonTSPseudoClass {
     }
 }
 
+/// A PseudoElement which implemented [`cssparser::ToCss`]
 #[derive(Clone, PartialEq, Eq)]
 pub struct PseudoElement;
 
@@ -134,6 +139,7 @@ impl cssparser::ToCss for PseudoElement {
     }
 }
 
+/// This struct defined the parser implementation in regards of pseudo-classes/elements
 #[derive(Debug, Clone)]
 pub struct ParserImplementation;
 
