@@ -4,7 +4,7 @@
 ```python
 import xmarkup
 
-dom = xmarkup.dom.DOMTree()
+dom = xmarkup.dom.TreeDom()
 
 body: xmarkup.dom.Element = dom.create_element("body", {"class": "main"})
 text: xmarkup.dom.Text = body.create_text("Body Text")
