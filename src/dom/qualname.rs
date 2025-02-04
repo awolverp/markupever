@@ -149,7 +149,7 @@ impl PyQualName {
 
                 Ok(self_.name != other.name)
             }
-            pyo3::basic::CompareOp::Ge => {
+            pyo3::basic::CompareOp::Gt => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(qual) => qual,
                     Err(_) => return create_error!('>', self_, other),
@@ -157,7 +157,7 @@ impl PyQualName {
 
                 Ok(self_.name > other.name)
             }
-            pyo3::basic::CompareOp::Le => {
+            pyo3::basic::CompareOp::Lt => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(qual) => qual,
                     Err(_) => return create_error!('<', self_, other),
@@ -165,7 +165,7 @@ impl PyQualName {
 
                 Ok(self_.name < other.name)
             }
-            pyo3::basic::CompareOp::Lt => {
+            pyo3::basic::CompareOp::Le => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(qual) => qual,
                     Err(_) => return create_error!("<=", self_, other),
@@ -173,7 +173,7 @@ impl PyQualName {
 
                 Ok(self_.name <= other.name)
             }
-            pyo3::basic::CompareOp::Gt => {
+            pyo3::basic::CompareOp::Ge => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(qual) => qual,
                     Err(_) => return create_error!(">=", self_, other),
