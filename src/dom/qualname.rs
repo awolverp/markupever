@@ -1,10 +1,3 @@
-//! **QualName**:
-//! - new
-//! - local
-//! - namespace
-//! - prefix
-//! - copy
-//! 
 use std::hash::Hasher;
 
 /// A fully qualified name (with a namespace), used to depict names of tags and attributes.
