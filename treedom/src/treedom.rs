@@ -8,6 +8,7 @@ use std::collections::HashMap;
 pub type NamespaceMap = HashMap<markup5ever::Prefix, markup5ever::Namespace>;
 
 /// A DOM based on [`ego_tree::Tree`]
+#[derive(Debug)]
 pub struct TreeDom {
     tree: ego_tree::Tree<data::NodeData>,
     errors: Vec<std::borrow::Cow<'static, str>>,

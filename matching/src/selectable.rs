@@ -13,6 +13,8 @@ impl<'a> SelectableNodeRef<'a> {
         }
     }
 
+    /// # SAFETY
+    /// `node` value must be element
     pub unsafe fn new_unchecked(
         node: treedom::ego_tree::NodeRef<'a, treedom::data::NodeData>,
     ) -> Self {

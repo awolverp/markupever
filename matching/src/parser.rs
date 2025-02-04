@@ -46,7 +46,7 @@ impl<'i> selectors::parser::Parser<'i> for Parser<'i> {
             self.0
                 .unwrap_unchecked()
                 .get(&prefix.0)
-                .map(|x| treedom::markup5ever::Namespace::from(x))
+                .map(treedom::markup5ever::Namespace::from)
         }
     }
 }
@@ -130,7 +130,7 @@ impl<'a> Iterator for Select<'a> {
                     &mut self.caches,
                 )
             {
-                result = Some(node.clone());
+                result = Some(node);
                 break;
             }
         }
