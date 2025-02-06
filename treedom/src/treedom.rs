@@ -8,7 +8,6 @@ use std::collections::HashMap;
 pub type NamespaceMap = HashMap<markup5ever::Prefix, markup5ever::Namespace>;
 
 /// A DOM based on [`ego_tree::Tree`]
-#[derive(Debug)]
 pub struct TreeDom {
     tree: ego_tree::Tree<data::NodeData>,
     errors: Vec<std::borrow::Cow<'static, str>>,
@@ -95,6 +94,24 @@ impl Default for TreeDom {
             HashMap::new(),
             0,
         )
+    }
+}
+
+impl std::fmt::Debug for TreeDom {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if f.alternate() {
+            write!(f, "{:#?}", self.tree)?;
+        } else {
+            f.debug_struct("TreeDom")
+                .field("tree", &self.tree)
+                .field("errors", &self.errors)
+                .field("quirks_mode", &self.quirks_mode)
+                .field("namespaces", &self.namespaces)
+                .field("lineno", &self.lineno)
+                .finish()?;
+        }
+
+        Ok(())
     }
 }
 

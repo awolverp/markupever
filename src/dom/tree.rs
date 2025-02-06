@@ -143,7 +143,13 @@ impl PyTreeDom {
         Ok(dict.into_any())
     }
 
+    fn __str__(&self) -> String {
+        let dom = self.dom.lock();
+        format!("{}", dom)
+    }
+
     fn __repr__(&self) -> String {
-        format!("{:?}", &self.dom)
+        let dom = self.dom.lock();
+        format!("{:#?}", dom)
     }
 }

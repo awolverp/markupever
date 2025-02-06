@@ -185,7 +185,7 @@ impl PyQualName {
 
     fn __repr__(&self) -> String {
         format!(
-            "<xmarkup._rustlib.QualName local={:?} ns={:?} prefix={:?}>",
+            "xmarkup._rustlib.QualName(local={:?}, ns={:?}, prefix={:?})",
             self.name.local.as_ref(),
             self.name.ns.as_ref(),
             self.name.prefix.as_ref().map(|x| x.as_ref())
