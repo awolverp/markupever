@@ -28,7 +28,26 @@ parser = xmarkup.parse("... content ...", xmarkup.HTMLOptions(...)) # or xmarkup
 parser.errors # errors in content
 parser.lineno # number of lines
 
-dom: xmarkup.dom.DOMTree = parser.dom
+dom: xmarkup.dom.DOMTree = parser.into_dom()
+
+dom.select_one("h1.title")
+```
+
+**"Streaming" Target:**
+```python
+import xmarkup
+
+def read_file():
+    with open("content.html", "rb") as fd:
+        for line in iter(fd.readline, b""):
+            yield line
+
+parser = xmarkup.stream(read_file, xmarkup.HTMLOptions(...))
+
+parser.errors # errors in content
+parser.lineno # number of lines
+
+dom: xmarkup.dom.DOMTree = parser.into_dom()
 
 dom.select_one("h1.title")
 ```

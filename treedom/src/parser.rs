@@ -8,6 +8,7 @@ use hashbrown::HashMap;
 use std::collections::HashMap;
 
 /// Markup parser that implemented [`markup5ever::interface::TreeSink`]
+#[derive(Debug)]
 pub struct MarkupParser {
     tree: UnsafeCell<ego_tree::Tree<data::NodeData>>,
     errors: UnsafeCell<Vec<std::borrow::Cow<'static, str>>>,

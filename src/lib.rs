@@ -16,6 +16,7 @@ fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<dom::PyQualName>()?;
     m.add_class::<dom::PyHtmlOptions>()?;
     m.add_class::<dom::PyXmlOptions>()?;
+    m.add_class::<dom::PyParser>()?;
     m.add_class::<dom::PyTreeDom>()?;
 
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
