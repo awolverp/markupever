@@ -119,13 +119,7 @@ impl PyTreeDom {
         };
 
         Ok(Self {
-            dom: Arc::new(parking_lot::Mutex::new(treedom::TreeDom::new(
-                dom,
-                Vec::new(),
-                treedom::markup5ever::interface::QuirksMode::NoQuirks,
-                ns,
-                0,
-            ))),
+            dom: Arc::new(parking_lot::Mutex::new(treedom::TreeDom::new(dom, ns))),
         })
     }
 

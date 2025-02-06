@@ -8,7 +8,7 @@ use hashbrown::HashMap;
 use std::collections::HashMap;
 
 /// Markup parser that implemented [`markup5ever::interface::TreeSink`]
-pub struct Parser {
+pub struct MarkupParser {
     tree: UnsafeCell<ego_tree::Tree<data::NodeData>>,
     errors: UnsafeCell<Vec<std::borrow::Cow<'static, str>>>,
     quirks_mode: Cell<markup5ever::interface::QuirksMode>,
@@ -16,14 +16,14 @@ pub struct Parser {
     lineno: UnsafeCell<u64>,
 }
 
-impl Default for Parser {
+impl Default for MarkupParser {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Parser {
-    /// Creates a new [`Parser`]
+impl MarkupParser {
+    /// Creates a new [`MarkupParser`]
     pub fn new() -> Self {
         Self {
             tree: UnsafeCell::new(ego_tree::Tree::new(data::NodeData::new(data::Document))),
@@ -38,6 +38,22 @@ impl Parser {
     fn tree_mut(&self) -> &mut ego_tree::Tree<data::NodeData> {
         // SAFETY: Parser is not Send/Sync so cannot be used in multi threads.
         unsafe { &mut *self.tree.get() }
+    }
+
+    pub fn errors(&self) -> &Vec<std::borrow::Cow<'static, str>> {
+        unsafe { &*self.errors.get() }
+    }
+
+    pub fn quirks_mode(&self) -> markup5ever::interface::QuirksMode {
+        self.quirks_mode.get()
+    }
+
+    pub fn lineno(&self) -> u64 {
+        unsafe { *self.lineno.get() }
+    }
+
+    pub fn into_dom(self) -> TreeDom {
+        TreeDom::new(self.tree.into_inner(), self.namespaces.into_inner())
     }
 
     /// Returns a [`html5ever::driver::Parser<Self>`] that ready for parsing
@@ -82,20 +98,14 @@ impl Parser {
     }
 }
 
-impl markup5ever::interface::TreeSink for Parser {
-    type Output = TreeDom;
+impl markup5ever::interface::TreeSink for MarkupParser {
+    type Output = Self;
     type Handle = ego_tree::NodeId;
     type ElemName<'a> = markup5ever::ExpandedName<'a>;
 
     // Consume this sink and return the overall result of parsing.
     fn finish(self) -> Self::Output {
-        TreeDom::new(
-            self.tree.into_inner(),
-            self.errors.into_inner(),
-            self.quirks_mode.into_inner(),
-            self.namespaces.into_inner(),
-            self.lineno.into_inner(),
-        )
+        self
     }
 
     // Signal a parse error.
@@ -348,8 +358,8 @@ mod tests {
 
     #[test]
     fn html_parsing() {
-        let parser = Parser::parse_html(true, Default::default(), Default::default());
-        let dom = parser.one(HTML);
+        let parser = MarkupParser::parse_html(true, Default::default(), Default::default());
+        let dom = parser.one(HTML).into_dom();
 
         let root = dom.root();
         assert_eq!(*root.value(), data::NodeData::new(data::Document));
@@ -378,8 +388,8 @@ mod tests {
 
     #[test]
     fn xml_parsing() {
-        let parser = Parser::parse_xml(Default::default());
-        let dom = parser.one(XML);
+        let parser = MarkupParser::parse_xml(Default::default());
+        let dom = parser.one(XML).into_dom();
 
         let root = dom.root();
         assert_eq!(*root.value(), data::NodeData::new(data::Document));
@@ -408,8 +418,8 @@ mod tests {
     fn html_serializer() {
         use crate::Serializer;
 
-        let parser = Parser::parse_html(true, Default::default(), Default::default());
-        let dom = parser.one(HTML);
+        let parser = MarkupParser::parse_html(true, Default::default(), Default::default());
+        let dom = parser.one(HTML).into_dom();
 
         let mut buf: Vec<u8> = Vec::new();
         html5ever::serialize::serialize(
@@ -427,8 +437,8 @@ mod tests {
     fn xml_serializer() {
         use crate::Serializer;
 
-        let parser = Parser::parse_xml(Default::default());
-        let dom = parser.one(XML);
+        let parser = MarkupParser::parse_xml(Default::default());
+        let dom = parser.one(XML).into_dom();
 
         let mut buf: Vec<u8> = Vec::new();
         xml5ever::serialize::serialize(

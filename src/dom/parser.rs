@@ -1,14 +1,10 @@
-//! **Parser**:
-//! - new
-//! - errors
-//! - quirks_mode
-//! - namespaces
-//! - lineno
-//! - dom
-//!
-//! **HtmlOptions**
-//!
-//! **XmlOptions**
+// **Parser**:
+// - new
+// - errors
+// - quirks_mode
+// - namespaces
+// - lineno
+// - dom
 use std::sync::Arc;
 
 /// These are options for HTML parsing
@@ -166,9 +162,41 @@ impl PyXmlOptions {
     fn __repr__(&self) -> String {
         format!(
             "xmarkup._rustlib.XmlOptions(exact_errors={}, discard_bom={}, profile={})",
-            self.exact_errors,
-            self.discard_bom,
-            self.profile,
+            self.exact_errors, self.discard_bom, self.profile,
         )
     }
 }
+
+#[pyo3::pyclass(name = "Parser", module = "xmarkup._rustlib", frozen)]
+pub struct PyParser {
+    dom: Arc<parking_lot::Mutex<treedom::TreeDom>>,
+}
+
+// #[pyo3::pymethods]
+// impl PyParser {
+//     #[new]
+//     fn new(
+//         py: pyo3::Python<'_>,
+//         content: pyo3::PyObject,
+//         options: pyo3::PyObject,
+//     ) -> pyo3::PyResult<Self> {
+//         use pyo3::types::PyAnyMethods;
+//         use treedom::tendril::TendrilSink;
+
+//         let content = unsafe {
+//             if pyo3::ffi::PyBytes_Check(content.as_ptr()) == 1 {
+//                 content.bind(py).extract::<Vec<u8>>().unwrap()
+//             } else if pyo3::ffi::PyUnicode_Check(content.as_ptr()) == 1 {
+//                 let s = content.bind(py).extract::<String>().unwrap();
+//                 s.into_bytes()
+//             } else {
+//                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+//                     format!(
+//                         "expected bytes or str for content, got {}",
+//                         crate::tools::get_type_name(py, content.as_ptr())
+//                     ),
+//                 ));
+//             }
+//         };
+//     }
+// }

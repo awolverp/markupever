@@ -10,10 +10,7 @@ pub type NamespaceMap = HashMap<markup5ever::Prefix, markup5ever::Namespace>;
 /// A DOM based on [`ego_tree::Tree`]
 pub struct TreeDom {
     tree: ego_tree::Tree<data::NodeData>,
-    errors: Vec<std::borrow::Cow<'static, str>>,
-    quirks_mode: markup5ever::interface::QuirksMode,
     namespaces: NamespaceMap,
-    lineno: u64,
 }
 
 macro_rules! declare_treedom_getters {
@@ -40,24 +37,15 @@ impl TreeDom {
     /// Use [`TreeDom::default`] if you don't want to specify this parameters.
     pub fn new(
         tree: ego_tree::Tree<data::NodeData>,
-        errors: Vec<std::borrow::Cow<'static, str>>,
-        quirks_mode: markup5ever::interface::QuirksMode,
         namespaces: NamespaceMap,
-        lineno: u64,
     ) -> Self {
         Self {
             tree,
-            errors,
-            quirks_mode,
             namespaces,
-            lineno,
         }
     }
 
     declare_treedom_getters!(
-        errors errors_mut Vec<std::borrow::Cow<'static, str>>
-        quirks_mode quirks_mode_mut markup5ever::interface::QuirksMode
-        lineno lineno_mut u64
         namespaces namespaces_mut NamespaceMap
     );
 
@@ -89,10 +77,7 @@ impl Default for TreeDom {
     fn default() -> Self {
         Self::new(
             ego_tree::Tree::new(data::Document.into()),
-            vec![],
-            markup5ever::interface::QuirksMode::NoQuirks,
-            HashMap::new(),
-            0,
+            NamespaceMap::new(),
         )
     }
 }
@@ -104,10 +89,7 @@ impl std::fmt::Debug for TreeDom {
         } else {
             f.debug_struct("TreeDom")
                 .field("tree", &self.tree)
-                .field("errors", &self.errors)
-                .field("quirks_mode", &self.quirks_mode)
                 .field("namespaces", &self.namespaces)
-                .field("lineno", &self.lineno)
                 .finish()?;
         }
 

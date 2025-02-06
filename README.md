@@ -24,7 +24,7 @@ dom.serialize("html")
 ```python
 import xmarkup
 
-parser = xmarkup.XMarkup("... content ...", xmarkup.HTMLOptions(...)) # or xmarkup.XMLOptions(...)
+parser = xmarkup.parse("... content ...", xmarkup.HTMLOptions(...)) # or xmarkup.XMLOptions(...)
 parser.errors # errors in content
 parser.lineno # number of lines
 

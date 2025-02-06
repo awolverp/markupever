@@ -173,8 +173,8 @@ mod tests {
 
     #[test]
     fn test_select() {
-        let tree = treedom::Parser::parse_html(true, Default::default(), Default::default());
-        let dom = tree.one(HTML);
+        let tree = treedom::MarkupParser::parse_html(true, Default::default(), Default::default());
+        let dom = tree.one(HTML).into_dom();
 
         for res in Select::new(dom.root().descendants(), "div.title", None).unwrap() {
             let elem = res.value().element().unwrap();
