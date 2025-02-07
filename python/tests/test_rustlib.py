@@ -1,5 +1,6 @@
-from xmarkup._rustlib import QualName
+from xmarkup._rustlib import QualName, HtmlOptions, XmlOptions, Parser
 import pytest
+
 
 def test_qualname():
     q = QualName("div")
@@ -31,3 +32,45 @@ def test_qualname():
 
     with pytest.raises(TypeError):
         q1 >= 1
+
+
+def test_options():
+    _ = HtmlOptions()
+    _ = XmlOptions()
+
+
+def test_parser_generator_and_methods():
+    def _yield(contents: tuple):
+        for i in contents:
+            yield i
+
+    _ = Parser(_yield((b"<html><p>Ali</p></html>",)), HtmlOptions())
+    _ = Parser(_yield("<html><p>Ali</p></html>"), HtmlOptions())
+    _ = Parser(_yield(("<html>", b"Ali", b"</html>")), XmlOptions())
+
+    with pytest.raises(TypeError):
+        _ = Parser(_yield(("Ali", 3, b"A")), XmlOptions())
+
+    with pytest.raises(TypeError):
+        _ = Parser(_yield, XmlOptions())
+
+    with pytest.raises(TypeError):
+        _ = Parser(("Ali", 3, b"A"), XmlOptions())
+
+    with pytest.raises(TypeError):
+        _ = Parser(b"<html><p>Ali</p></html>", HtmlOptions())
+
+    parser = Parser(_yield((b"<html><p>Ali</p></html>",)), HtmlOptions(full_document=False))
+    assert isinstance(parser.errors(), list)
+    assert parser.lineno() == 1
+    assert parser.quirks_mode() == 2
+
+    parser = Parser(
+        _yield((b"<html><p>Ali</p>", "\n", "</html>")), HtmlOptions(full_document=False)
+    )
+    assert parser.lineno() == 2
+
+    _ = parser.into_dom()
+
+    with pytest.raises(RuntimeError):
+        parser.errors()

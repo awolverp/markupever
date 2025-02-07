@@ -1,8 +1,7 @@
-
 pub mod _impl;
-mod selectable;
 mod parser;
+mod selectable;
 
-pub use selectable::SelectableNodeRef;
 pub use parser::CssParserKindError;
 pub use parser::Select;
+pub use selectable::SelectableNodeRef;

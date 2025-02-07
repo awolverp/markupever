@@ -35,14 +35,8 @@ impl TreeDom {
     /// Creates a new [`TreeDom`].
     ///
     /// Use [`TreeDom::default`] if you don't want to specify this parameters.
-    pub fn new(
-        tree: ego_tree::Tree<data::NodeData>,
-        namespaces: NamespaceMap,
-    ) -> Self {
-        Self {
-            tree,
-            namespaces,
-        }
+    pub fn new(tree: ego_tree::Tree<data::NodeData>, namespaces: NamespaceMap) -> Self {
+        Self { tree, namespaces }
     }
 
     declare_treedom_getters!(

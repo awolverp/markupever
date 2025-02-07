@@ -31,7 +31,7 @@ impl MarkupParser {
             errors: UnsafeCell::new(Vec::new()),
             quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
             namespaces: UnsafeCell::new(HashMap::new()),
-            lineno: UnsafeCell::new(0),
+            lineno: UnsafeCell::new(1),
         }
     }
 

@@ -1,10 +1,3 @@
-// **Parser**:
-// - new
-// - into_dom
-// - errors
-// - quirks_mode
-// - lineno
-
 /// These are options for HTML parsing
 #[pyo3::pyclass(name = "HtmlOptions", module = "markupselect._rustlib", frozen)]
 pub struct PyHtmlOptions {
@@ -302,6 +295,57 @@ impl PyParser {
         Ok(Self {
             state: parking_lot::Mutex::new(state),
         })
+    }
+
+    #[allow(clippy::wrong_self_convention)]
+    fn into_dom(&self) -> pyo3::PyResult<super::tree::PyTreeDom> {
+        let mut state = self.state.lock();
+
+        let markup = std::mem::replace(&mut *state, ParserState::Dropped);
+
+        match markup {
+            ParserState::Finished(p) => Ok(super::tree::PyTreeDom::from_treedom(p.into_dom())),
+            ParserState::Dropped => Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "The parser is already converted into dom and dropped",
+            )),
+        }
+    }
+
+    fn errors(&self) -> pyo3::PyResult<Vec<String>> {
+        let state = self.state.lock();
+
+        match &*state {
+            ParserState::Finished(p) => {
+                Ok(p.errors().iter().map(|x| x.clone().into_owned()).collect())
+            }
+            ParserState::Dropped => Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "The parser has converted into dom and dropped",
+            )),
+        }
+    }
+
+    fn quirks_mode(&self) -> pyo3::PyResult<u8> {
+        let state = self.state.lock();
+
+        match &*state {
+            ParserState::Finished(p) => {
+                Ok(crate::tools::convert_quirks_mode_to_u8(p.quirks_mode()))
+            }
+            ParserState::Dropped => Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "The parser has converted into dom and dropped",
+            )),
+        }
+    }
+
+    fn lineno(&self) -> pyo3::PyResult<u64> {
+        let state = self.state.lock();
+
+        match &*state {
+            ParserState::Finished(p) => Ok(p.lineno()),
+            ParserState::Dropped => Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "The parser has converted into dom and dropped",
+            )),
+        }
     }
 }
 

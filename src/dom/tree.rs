@@ -56,7 +56,15 @@ use std::sync::Arc;
 
 #[pyo3::pyclass(name = "TreeDom", module = "xmarkup._rustlib", frozen)]
 pub struct PyTreeDom {
-    dom: Arc<parking_lot::Mutex<treedom::TreeDom>>,
+    pub(super) dom: Arc<parking_lot::Mutex<treedom::TreeDom>>,
+}
+
+impl PyTreeDom {
+    pub fn from_treedom(dom: treedom::TreeDom) -> Self {
+        Self {
+            dom: Arc::new(parking_lot::Mutex::new(dom)),
+        }
+    }
 }
 
 #[pyo3::pymethods]
@@ -118,9 +126,7 @@ impl PyTreeDom {
             treedom::ego_tree::Tree::with_capacity(treedom::data::Document.into(), capacity)
         };
 
-        Ok(Self {
-            dom: Arc::new(parking_lot::Mutex::new(treedom::TreeDom::new(dom, ns))),
-        })
+        Ok(Self::from_treedom(treedom::TreeDom::new(dom, ns)))
     }
 
     fn namespaces<'a>(&self, py: pyo3::Python<'a>) -> pyo3::PyResult<pyo3::Bound<'a, pyo3::PyAny>> {

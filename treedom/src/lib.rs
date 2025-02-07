@@ -4,9 +4,9 @@ mod parser;
 mod treedom;
 
 pub use parser::MarkupParser;
-pub use treedom::TreeDom;
-pub use treedom::Serializer;
 pub use treedom::NamespaceMap;
+pub use treedom::Serializer;
+pub use treedom::TreeDom;
 
 pub use ego_tree;
 pub use markup5ever;
