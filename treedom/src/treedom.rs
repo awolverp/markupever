@@ -13,24 +13,6 @@ pub struct TreeDom {
     namespaces: NamespaceMap,
 }
 
-macro_rules! declare_treedom_getters {
-    (
-        $(
-            $name:ident $mutname:ident $ret:ty
-        )+
-    ) => {
-        $(
-            pub fn $name(&self) -> &$ret {
-                &self.$name
-            }
-
-            pub fn $mutname(&mut self) -> &mut $ret {
-                &mut self.$name
-            }
-        )+
-    };
-}
-
 impl TreeDom {
     /// Creates a new [`TreeDom`].
     ///
@@ -39,9 +21,13 @@ impl TreeDom {
         Self { tree, namespaces }
     }
 
-    declare_treedom_getters!(
-        namespaces namespaces_mut NamespaceMap
-    );
+    pub fn namespaces(&self) -> &NamespaceMap {
+        &self.namespaces
+    }
+
+    pub fn namespaces_mut(&mut self) -> &mut NamespaceMap {
+        &mut self.namespaces
+    }
 
     /// Returns a reference to the root node.
     pub fn root(&self) -> ego_tree::NodeRef<'_, data::NodeData> {
