@@ -21,6 +21,14 @@ impl TreeDom {
         Self { tree, namespaces }
     }
 
+    pub fn tree(&self) -> &ego_tree::Tree<data::NodeData> {
+        &self.tree
+    }
+
+    pub fn tree_mut(&mut self) -> &mut ego_tree::Tree<data::NodeData> {
+        &mut self.tree
+    }
+
     pub fn namespaces(&self) -> &NamespaceMap {
         &self.namespaces
     }

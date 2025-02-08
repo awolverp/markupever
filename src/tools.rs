@@ -12,33 +12,6 @@ pub unsafe fn get_type_name(py: pyo3::Python<'_>, obj: *mut pyo3::ffi::PyObject)
     }
 }
 
-pub fn qualname_from_pyobject(
-    py: pyo3::Python<'_>,
-    object: &pyo3::PyObject,
-) -> pyo3::PyResult<treedom::markup5ever::QualName> {
-    use pyo3::types::PyAnyMethods;
-
-    unsafe {
-        if pyo3::ffi::PyUnicode_Check(object.as_ptr()) == 1 {
-            Ok(treedom::markup5ever::QualName::new(
-                None,
-                treedom::markup5ever::namespace_url!(""),
-                object
-                    .bind(py)
-                    .extract::<String>()
-                    .unwrap_unchecked()
-                    .into(),
-            ))
-        } else {
-            let pyqual: pyo3::PyRef<'_, crate::dom::PyQualName> = object
-                .bind(py)
-                .extract::<pyo3::PyRef<'_, crate::dom::PyQualName>>()?;
-
-            Ok(pyqual.name.clone())
-        }
-    }
-}
-
 pub const QUIRKS_MODE_FULL: u8 = 0;
 pub const QUIRKS_MODE_LIMITED: u8 = 1;
 pub const QUIRKS_MODE_OFF: u8 = 2;

@@ -19,6 +19,13 @@ fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<dom::PyParser>()?;
     m.add_class::<dom::PyTreeDom>()?;
 
+    m.add_class::<dom::PyComment>()?;
+    m.add_class::<dom::PyDoctype>()?;
+    m.add_class::<dom::PyDocument>()?;
+    m.add_class::<dom::PyElement>()?;
+    m.add_class::<dom::PyProcessingInstruction>()?;
+    m.add_class::<dom::PyText>()?;
+
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add("__author__", "awolverp")?;
     Ok(())

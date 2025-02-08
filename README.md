@@ -51,3 +51,18 @@ dom: xmarkup.dom.DOMTree = parser.into_dom()
 
 dom.select_one("h1.title")
 ```
+
+**"\_rustlib" Target:**
+```python
+import xmarkup._rustlib as rl
+
+dom = rl.TreeDom()
+
+dom.root() # is rl.Document
+
+element = rl.Element(dom, rl.QualName("body"), {"id": "hello"}) # orphan element on dom
+dom.append(dom.root(), element) # append element as child of root
+
+text = rl.Text(dom, "Hello World") # orphan text on dom
+dom.append(element, text) # append text as child of element
+```
