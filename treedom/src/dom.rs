@@ -1,4 +1,4 @@
-use super::data;
+use super::interface;
 
 #[cfg(feature = "hashbrown")]
 use hashbrown::HashMap;
@@ -8,25 +8,31 @@ use std::collections::HashMap;
 pub type NamespaceMap = HashMap<markup5ever::Prefix, markup5ever::Namespace>;
 
 /// A DOM based on [`ego_tree::Tree`]
-pub struct TreeDom {
-    tree: ego_tree::Tree<data::NodeData>,
-    namespaces: NamespaceMap,
+pub struct IDTreeDOM {
+    pub(super) tree: ego_tree::Tree<interface::Interface>,
+    pub(super) namespaces: NamespaceMap,
 }
 
-impl TreeDom {
-    /// Creates a new [`TreeDom`].
+impl IDTreeDOM {
+    /// Creates a new [`IDTreeDOM`].
     ///
-    /// Use [`TreeDom::default`] if you don't want to specify this parameters.
-    pub fn new(tree: ego_tree::Tree<data::NodeData>, namespaces: NamespaceMap) -> Self {
-        Self { tree, namespaces }
+    /// Use [`IDTreeDOM::default`] if you don't want to specify this parameters.
+    pub fn new<T: Into<interface::Interface>>(root: T, namespaces: NamespaceMap) -> Self {
+        Self {
+            tree: ego_tree::Tree::new(root.into()),
+            namespaces,
+        }
     }
 
-    pub fn tree(&self) -> &ego_tree::Tree<data::NodeData> {
-        &self.tree
-    }
-
-    pub fn tree_mut(&mut self) -> &mut ego_tree::Tree<data::NodeData> {
-        &mut self.tree
+    pub fn with_capacity<T: Into<interface::Interface>>(
+        root: T,
+        namespaces: NamespaceMap,
+        capacity: usize,
+    ) -> Self {
+        Self {
+            tree: ego_tree::Tree::with_capacity(root.into(), capacity),
+            namespaces,
+        }
     }
 
     pub fn namespaces(&self) -> &NamespaceMap {
@@ -36,46 +42,34 @@ impl TreeDom {
     pub fn namespaces_mut(&mut self) -> &mut NamespaceMap {
         &mut self.namespaces
     }
+}
 
-    /// Returns a reference to the root node.
-    pub fn root(&self) -> ego_tree::NodeRef<'_, data::NodeData> {
-        self.tree.root()
-    }
+impl std::ops::Deref for IDTreeDOM {
+    type Target = ego_tree::Tree<interface::Interface>;
 
-    /// Returns a mutable reference to the root node.
-    pub fn root_mut(&mut self) -> ego_tree::NodeMut<'_, data::NodeData> {
-        self.tree.root_mut()
-    }
-
-    /// Returns a reference to the specified node.
-    pub fn get(&self, id: ego_tree::NodeId) -> Option<ego_tree::NodeRef<'_, data::NodeData>> {
-        self.tree.get(id)
-    }
-
-    /// Returns a mutator of the specified node.
-    pub fn get_mut(
-        &mut self,
-        id: ego_tree::NodeId,
-    ) -> Option<ego_tree::NodeMut<'_, data::NodeData>> {
-        self.tree.get_mut(id)
+    fn deref(&self) -> &Self::Target {
+        &self.tree
     }
 }
 
-impl Default for TreeDom {
+impl std::ops::DerefMut for IDTreeDOM {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.tree
+    }
+}
+
+impl Default for IDTreeDOM {
     fn default() -> Self {
-        Self::new(
-            ego_tree::Tree::new(data::Document.into()),
-            NamespaceMap::new(),
-        )
+        Self::new(interface::DocumentInterface, NamespaceMap::new())
     }
 }
 
-impl std::fmt::Debug for TreeDom {
+impl std::fmt::Debug for IDTreeDOM {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if f.alternate() {
             write!(f, "{:#?}", self.tree)?;
         } else {
-            f.debug_struct("TreeDom")
+            f.debug_struct("IDTreeDOM")
                 .field("tree", &self.tree)
                 .field("namespaces", &self.namespaces)
                 .finish()?;
@@ -85,19 +79,20 @@ impl std::fmt::Debug for TreeDom {
     }
 }
 
-impl std::fmt::Display for TreeDom {
+impl std::fmt::Display for IDTreeDOM {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.tree)
     }
 }
 
+/// A serializer for [`IDTreeDOM`]
 pub struct Serializer<'a> {
-    dom: &'a TreeDom,
+    dom: &'a IDTreeDOM,
     id: ego_tree::NodeId,
 }
 
 impl<'a> Serializer<'a> {
-    pub fn new(dom: &'a TreeDom, id: ego_tree::NodeId) -> Self {
+    pub fn new(dom: &'a IDTreeDOM, id: ego_tree::NodeId) -> Self {
         Self { dom, id }
     }
 }
@@ -128,10 +123,10 @@ impl<'a> markup5ever::serialize::Serialize for Serializer<'a> {
                     }
                 }
                 ego_tree::iter::Edge::Open(x) => match x.value() {
-                    data::NodeData::Comment(comment) => {
+                    interface::Interface::Comment(comment) => {
                         serializer.write_comment(&comment.contents)?
                     }
-                    data::NodeData::Doctype(doctype) => {
+                    interface::Interface::Doctype(doctype) => {
                         let mut docname = String::from(&doctype.name);
                         if !doctype.public_id.is_empty() {
                             docname.push_str(" PUBLIC \"");
@@ -146,15 +141,15 @@ impl<'a> markup5ever::serialize::Serialize for Serializer<'a> {
 
                         serializer.write_doctype(&docname)?
                     }
-                    data::NodeData::Element(element) => serializer.start_elem(
+                    interface::Interface::Element(element) => serializer.start_elem(
                         element.name.clone(),
                         element.attrs.iter().map(|at| (&at.0, &at.1[..])),
                     )?,
-                    data::NodeData::ProcessingInstruction(pi) => {
+                    interface::Interface::ProcessingInstruction(pi) => {
                         serializer.write_processing_instruction(&pi.target, &pi.data)?
                     }
-                    data::NodeData::Text(text) => serializer.write_text(&text.contents)?,
-                    data::NodeData::Document(_) => (),
+                    interface::Interface::Text(text) => serializer.write_text(&text.contents)?,
+                    interface::Interface::Document(_) => (),
                 },
             }
         }

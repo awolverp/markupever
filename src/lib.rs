@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 extern crate matching;
 extern crate treedom;
 
-mod dom;
+mod core;
 mod tools;
 
 #[pymodule(gil_used = false)]
@@ -13,18 +13,18 @@ fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("QUIRKS_MODE_LIMITED", tools::QUIRKS_MODE_LIMITED)?;
     m.add("QUIRKS_MODE_OFF", tools::QUIRKS_MODE_OFF)?;
 
-    m.add_class::<dom::PyQualName>()?;
-    m.add_class::<dom::PyHtmlOptions>()?;
-    m.add_class::<dom::PyXmlOptions>()?;
-    m.add_class::<dom::PyParser>()?;
-    m.add_class::<dom::PyTreeDom>()?;
+    m.add_class::<core::PyQualName>()?;
+    m.add_class::<core::PyHtmlOptions>()?;
+    m.add_class::<core::PyXmlOptions>()?;
+    m.add_class::<core::PyParser>()?;
+    m.add_class::<core::PyTreeDom>()?;
 
-    m.add_class::<dom::PyComment>()?;
-    m.add_class::<dom::PyDoctype>()?;
-    m.add_class::<dom::PyDocument>()?;
-    m.add_class::<dom::PyElement>()?;
-    m.add_class::<dom::PyProcessingInstruction>()?;
-    m.add_class::<dom::PyText>()?;
+    m.add_class::<core::PyComment>()?;
+    m.add_class::<core::PyDoctype>()?;
+    m.add_class::<core::PyDocument>()?;
+    m.add_class::<core::PyElement>()?;
+    m.add_class::<core::PyProcessingInstruction>()?;
+    m.add_class::<core::PyText>()?;
 
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add("__author__", "awolverp")?;

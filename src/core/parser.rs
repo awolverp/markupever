@@ -127,7 +127,7 @@ pub struct PyXmlOptions {
 impl PyXmlOptions {
     #[new]
     #[pyo3(signature=(exact_errors=false, discard_bom=true, profile=false))]
-    pub(super) fn new(exact_errors: bool, discard_bom: bool, profile: bool) -> Self {
+    fn new(exact_errors: bool, discard_bom: bool, profile: bool) -> Self {
         Self {
             exact_errors,
             discard_bom,
@@ -161,22 +161,22 @@ impl PyXmlOptions {
 enum StreamWrapper {
     Html(
         treedom::tendril::stream::Utf8LossyDecoder<
-            treedom::html5ever::driver::Parser<treedom::MarkupParser>,
+            treedom::html5ever::driver::Parser<treedom::ParserSink>,
         >,
     ),
     Xml(
         treedom::tendril::stream::Utf8LossyDecoder<
-            treedom::xml5ever::driver::XmlParser<treedom::MarkupParser>,
+            treedom::xml5ever::driver::XmlParser<treedom::ParserSink>,
         >,
     ),
 }
 
 impl StreamWrapper {
-    fn as_html(val: treedom::html5ever::driver::Parser<treedom::MarkupParser>) -> Self {
+    fn as_html(val: treedom::html5ever::driver::Parser<treedom::ParserSink>) -> Self {
         Self::Html(treedom::tendril::stream::Utf8LossyDecoder::new(val))
     }
 
-    fn as_xml(val: treedom::xml5ever::driver::XmlParser<treedom::MarkupParser>) -> Self {
+    fn as_xml(val: treedom::xml5ever::driver::XmlParser<treedom::ParserSink>) -> Self {
         Self::Xml(treedom::tendril::stream::Utf8LossyDecoder::new(val))
     }
 
@@ -189,7 +189,7 @@ impl StreamWrapper {
         }
     }
 
-    fn finish(self) -> treedom::MarkupParser {
+    fn finish(self) -> treedom::ParserSink {
         use treedom::tendril::TendrilSink;
 
         match self {
@@ -202,7 +202,7 @@ impl StreamWrapper {
 #[derive(Debug)]
 enum ParserState {
     /// Means [`PyParser`] has completed the parsing process
-    Finished(Box<treedom::MarkupParser>),
+    Finished(Box<treedom::ParserSink>),
 
     /// Means [`PyParser`] has converted into [`PyTreeDom`](struct@crate::dom::PyTreeDom)
     /// and it is un-usable now
@@ -233,7 +233,7 @@ impl PyParser {
 
         let mut stream = {
             if let Ok(options) = options.extract::<pyo3::PyRef<'_, PyHtmlOptions>>() {
-                StreamWrapper::as_html(treedom::MarkupParser::parse_html(
+                StreamWrapper::as_html(treedom::ParserSink::parse_html(
                     options.full_document,
                     treedom::html5ever::tokenizer::TokenizerOpts {
                         exact_errors: options.exact_errors,
@@ -250,7 +250,7 @@ impl PyParser {
                     },
                 ))
             } else if let Ok(options) = options.extract::<pyo3::PyRef<'_, PyXmlOptions>>() {
-                StreamWrapper::as_xml(treedom::MarkupParser::parse_xml(
+                StreamWrapper::as_xml(treedom::ParserSink::parse_xml(
                     treedom::xml5ever::tokenizer::XmlTokenizerOpts {
                         exact_errors: options.exact_errors,
                         discard_bom: options.discard_bom,

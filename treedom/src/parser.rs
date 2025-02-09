@@ -1,5 +1,5 @@
-use super::data;
-use super::treedom::TreeDom;
+use super::dom::IDTreeDOM;
+use super::interface;
 use std::cell::{Cell, UnsafeCell};
 
 #[cfg(feature = "hashbrown")]
@@ -9,25 +9,27 @@ use std::collections::HashMap;
 
 /// Markup parser that implemented [`markup5ever::interface::TreeSink`]
 #[derive(Debug)]
-pub struct MarkupParser {
-    tree: UnsafeCell<ego_tree::Tree<data::NodeData>>,
+pub struct ParserSink {
+    tree: UnsafeCell<ego_tree::Tree<interface::Interface>>,
     errors: UnsafeCell<Vec<std::borrow::Cow<'static, str>>>,
     quirks_mode: Cell<markup5ever::interface::QuirksMode>,
     namespaces: UnsafeCell<HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
     lineno: UnsafeCell<u64>,
 }
 
-impl Default for MarkupParser {
+impl Default for ParserSink {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl MarkupParser {
-    /// Creates a new [`MarkupParser`]
+impl ParserSink {
+    /// Creates a new [`ParserSink`]
     pub fn new() -> Self {
         Self {
-            tree: UnsafeCell::new(ego_tree::Tree::new(data::NodeData::new(data::Document))),
+            tree: UnsafeCell::new(ego_tree::Tree::new(interface::Interface::new(
+                interface::DocumentInterface,
+            ))),
             errors: UnsafeCell::new(Vec::new()),
             quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
             namespaces: UnsafeCell::new(HashMap::new()),
@@ -36,7 +38,7 @@ impl MarkupParser {
     }
 
     #[allow(clippy::mut_from_ref)]
-    fn tree_mut(&self) -> &mut ego_tree::Tree<data::NodeData> {
+    fn tree_mut(&self) -> &mut ego_tree::Tree<interface::Interface> {
         // SAFETY: Parser is not Send/Sync so cannot be used in multi threads.
         unsafe { &mut *self.tree.get() }
     }
@@ -53,8 +55,11 @@ impl MarkupParser {
         unsafe { *self.lineno.get() }
     }
 
-    pub fn into_dom(self) -> TreeDom {
-        TreeDom::new(self.tree.into_inner(), self.namespaces.into_inner())
+    pub fn into_dom(self) -> IDTreeDOM {
+        IDTreeDOM {
+            tree: self.tree.into_inner(),
+            namespaces: self.namespaces.into_inner(),
+        }
     }
 
     /// Returns a [`html5ever::driver::Parser<Self>`] that ready for parsing
@@ -99,7 +104,7 @@ impl MarkupParser {
     }
 }
 
-impl markup5ever::interface::TreeSink for MarkupParser {
+impl markup5ever::interface::TreeSink for ParserSink {
     type Output = Self;
     type Handle = ego_tree::NodeId;
     type ElemName<'a> = markup5ever::ExpandedName<'a>;
@@ -184,7 +189,7 @@ impl markup5ever::interface::TreeSink for MarkupParser {
             }
         }
 
-        let mut element = data::Element::from_non_atomic(
+        let mut element = interface::ElementInterface::from_non_atomic(
             name,
             attrs.into_iter().map(|x| (x.name, x.value)),
             flags.template,
@@ -194,23 +199,23 @@ impl markup5ever::interface::TreeSink for MarkupParser {
         element.attrs.sort_unstable_by(|a, b| a.0.cmp(&b.0));
         element.attrs.dedup();
 
-        let node = self.tree_mut().orphan(data::NodeData::new(element));
+        let node = self.tree_mut().orphan(interface::Interface::new(element));
         node.id()
     }
 
     // Create a comment node.
     fn create_comment(&self, text: tendril::StrTendril) -> Self::Handle {
-        let node = self
-            .tree_mut()
-            .orphan(data::NodeData::new(data::Comment::from_non_atomic(text)));
+        let node = self.tree_mut().orphan(interface::Interface::new(
+            interface::CommentInterface::from_non_atomic(text),
+        ));
 
         node.id()
     }
 
     // Create a Processing Instruction node.
     fn create_pi(&self, target: tendril::StrTendril, data: tendril::StrTendril) -> Self::Handle {
-        let node = self.tree_mut().orphan(data::NodeData::new(
-            data::ProcessingInstruction::from_non_atomic(data, target),
+        let node = self.tree_mut().orphan(interface::Interface::new(
+            interface::ProcessingInstructionInterface::from_non_atomic(data, target),
         ));
 
         node.id()
@@ -223,11 +228,9 @@ impl markup5ever::interface::TreeSink for MarkupParser {
         public_id: tendril::StrTendril,
         system_id: tendril::StrTendril,
     ) {
-        self.tree_mut()
-            .root_mut()
-            .append(data::NodeData::new(data::Doctype::from_non_atomic(
-                name, public_id, system_id,
-            )));
+        self.tree_mut().root_mut().append(interface::Interface::new(
+            interface::DoctypeInterface::from_non_atomic(name, public_id, system_id),
+        ));
     }
 
     // Append a node as the last child of the given node. If this would produce adjacent sibling text nodes, it should concatenate the text instead.
@@ -252,7 +255,9 @@ impl markup5ever::interface::TreeSink for MarkupParser {
                     }
                 }
 
-                parent.append(data::NodeData::new(data::Text::from_non_atomic(text)));
+                parent.append(interface::Interface::new(
+                    interface::TextInterface::from_non_atomic(text),
+                ));
             }
         }
     }
@@ -272,14 +277,18 @@ impl markup5ever::interface::TreeSink for MarkupParser {
         match (new_node_id, sibling.prev_sibling()) {
             (markup5ever::interface::NodeOrText::AppendText(text), None) => {
                 // There's no previous item, so we have to create a Text node data
-                sibling.insert_before(data::NodeData::new(data::Text::from_non_atomic(text)));
+                sibling.insert_before(interface::Interface::new(
+                    interface::TextInterface::from_non_atomic(text),
+                ));
             }
             (markup5ever::interface::NodeOrText::AppendText(text), Some(mut prev)) => {
                 // // There's a previous item, so may it's a Text node data? we have to check
                 if let Some(textval) = prev.value().text_mut() {
                     textval.push_non_atomic(text);
                 } else {
-                    sibling.insert_before(data::NodeData::new(data::Text::from_non_atomic(text)));
+                    sibling.insert_before(interface::Interface::new(
+                        interface::TextInterface::from_non_atomic(text),
+                    ));
                 }
             }
             (markup5ever::interface::NodeOrText::AppendNode(node_id), _) => {
@@ -359,11 +368,14 @@ mod tests {
 
     #[test]
     fn html_parsing() {
-        let parser = MarkupParser::parse_html(true, Default::default(), Default::default());
+        let parser = ParserSink::parse_html(true, Default::default(), Default::default());
         let dom = parser.one(HTML).into_dom();
 
         let root = dom.root();
-        assert_eq!(*root.value(), data::NodeData::new(data::Document));
+        assert_eq!(
+            *root.value(),
+            interface::Interface::new(interface::DocumentInterface)
+        );
 
         let children: Vec<_> = root.children().collect();
 
@@ -389,11 +401,14 @@ mod tests {
 
     #[test]
     fn xml_parsing() {
-        let parser = MarkupParser::parse_xml(Default::default());
+        let parser = ParserSink::parse_xml(Default::default());
         let dom = parser.one(XML).into_dom();
 
         let root = dom.root();
-        assert_eq!(*root.value(), data::NodeData::new(data::Document));
+        assert_eq!(
+            *root.value(),
+            interface::Interface::new(interface::DocumentInterface)
+        );
 
         let children: Vec<_> = root.children().collect();
 
@@ -419,7 +434,7 @@ mod tests {
     fn html_serializer() {
         use crate::Serializer;
 
-        let parser = MarkupParser::parse_html(true, Default::default(), Default::default());
+        let parser = ParserSink::parse_html(true, Default::default(), Default::default());
         let dom = parser.one(HTML).into_dom();
 
         let mut buf: Vec<u8> = Vec::new();
@@ -438,7 +453,7 @@ mod tests {
     fn xml_serializer() {
         use crate::Serializer;
 
-        let parser = MarkupParser::parse_xml(Default::default());
+        let parser = ParserSink::parse_xml(Default::default());
         let dom = parser.one(XML).into_dom();
 
         let mut buf: Vec<u8> = Vec::new();

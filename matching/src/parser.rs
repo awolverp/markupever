@@ -1,4 +1,4 @@
-use super::SelectableNodeRef;
+use super::CssNodeRef;
 use super::_impl;
 
 #[derive(Debug, Clone)]
@@ -73,8 +73,8 @@ impl ExpressionGroup {
 
     fn matches<'a>(
         &self,
-        node: SelectableNodeRef<'a>,
-        scope: Option<SelectableNodeRef<'a>>,
+        node: CssNodeRef<'a>,
+        scope: Option<CssNodeRef<'a>>,
         caches: &mut selectors::context::SelectorCaches,
     ) -> bool {
         let mut ctx = selectors::matching::MatchingContext::new(
@@ -95,14 +95,14 @@ impl ExpressionGroup {
 }
 
 pub struct Select<'a> {
-    inner: treedom::ego_tree::iter::Descendants<'a, treedom::data::NodeData>,
+    inner: treedom::iter::Descendants<'a, treedom::interface::Interface>,
     expr: ExpressionGroup,
     caches: selectors::context::SelectorCaches,
 }
 
 impl<'a> Select<'a> {
     pub fn new<'b>(
-        desc: treedom::ego_tree::iter::Descendants<'a, treedom::data::NodeData>,
+        desc: treedom::iter::Descendants<'a, treedom::interface::Interface>,
         expr: &'b str,
         namespaces: Option<&'b treedom::NamespaceMap>,
     ) -> Result<Self, cssparser::ParseError<'b, CssParserKindError<'b>>> {
@@ -117,7 +117,7 @@ impl<'a> Select<'a> {
 }
 
 impl<'a> Iterator for Select<'a> {
-    type Item = treedom::ego_tree::NodeRef<'a, treedom::data::NodeData>;
+    type Item = treedom::NodeRef<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut result: Option<Self::Item> = None;
@@ -125,7 +125,7 @@ impl<'a> Iterator for Select<'a> {
         for node in &mut self.inner {
             if node.value().is_element()
                 && self.expr.matches(
-                    unsafe { SelectableNodeRef::new_unchecked(node) },
+                    unsafe { CssNodeRef::new_unchecked(node) },
                     None,
                     &mut self.caches,
                 )
@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     fn test_select() {
-        let tree = treedom::MarkupParser::parse_html(true, Default::default(), Default::default());
+        let tree = treedom::ParserSink::parse_html(true, Default::default(), Default::default());
         let dom = tree.one(HTML).into_dom();
 
         for res in Select::new(dom.root().descendants(), "div.title", None).unwrap() {

@@ -2,10 +2,10 @@ use treedom::markup5ever::{namespace_url, ns};
 
 /// A selectable [`treedom::ego_tree::NodeRef`]
 #[derive(Debug, Clone)]
-pub struct SelectableNodeRef<'a>(treedom::ego_tree::NodeRef<'a, treedom::data::NodeData>);
+pub struct CssNodeRef<'a>(treedom::NodeRef<'a>);
 
-impl<'a> SelectableNodeRef<'a> {
-    pub fn new(node: treedom::ego_tree::NodeRef<'a, treedom::data::NodeData>) -> Option<Self> {
+impl<'a> CssNodeRef<'a> {
+    pub fn new(node: treedom::NodeRef<'a>) -> Option<Self> {
         if node.value().is_element() {
             Some(Self(node))
         } else {
@@ -16,17 +16,17 @@ impl<'a> SelectableNodeRef<'a> {
     /// # Safety
     /// `node` value must be element
     pub unsafe fn new_unchecked(
-        node: treedom::ego_tree::NodeRef<'a, treedom::data::NodeData>,
+        node: treedom::NodeRef<'a>,
     ) -> Self {
         Self(node)
     }
 
-    pub fn into_node(self) -> treedom::ego_tree::NodeRef<'a, treedom::data::NodeData> {
+    pub fn into_node(self) -> treedom::NodeRef<'a> {
         self.0
     }
 }
 
-impl<'a> selectors::Element for SelectableNodeRef<'a> {
+impl<'a> selectors::Element for CssNodeRef<'a> {
     type Impl = crate::_impl::ParserImplementation;
 
     fn opaque(&self) -> selectors::OpaqueElement {
@@ -37,7 +37,7 @@ impl<'a> selectors::Element for SelectableNodeRef<'a> {
         self.0
             .ancestors()
             .find(|x| x.value().is_element())
-            .map(|x| unsafe { SelectableNodeRef::new_unchecked(x) })
+            .map(|x| unsafe { CssNodeRef::new_unchecked(x) })
     }
 
     fn parent_node_is_shadow_root(&self) -> bool {

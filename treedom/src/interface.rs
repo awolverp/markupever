@@ -1,9 +1,9 @@
 use crate::atomic::{make_atomic_tendril, AtomicTendril, OnceLock};
 use tendril::StrTendril;
 
-/// The root of HTML document
+/// The root of a document
 #[derive(Debug, Clone, PartialEq, Eq, Default, Hash)]
-pub struct Document;
+pub struct DocumentInterface;
 
 /// the doctype is the required <!doctype html> preamble found at the top of all documents.
 /// Its sole purpose is to prevent a browser from switching into so-called "quirks mode"
@@ -11,14 +11,14 @@ pub struct Document;
 /// a best-effort attempt at following the relevant specifications, rather than using a different
 /// rendering mode that is incompatible with some specifications.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Doctype {
+pub struct DoctypeInterface {
     pub name: AtomicTendril,
     pub public_id: AtomicTendril,
     pub system_id: AtomicTendril,
 }
 
-impl Doctype {
-    /// Create a new `Doctype`
+impl DoctypeInterface {
+    /// Create a new [`DoctypeInterface`]
     #[inline]
     pub fn new(name: AtomicTendril, public_id: AtomicTendril, system_id: AtomicTendril) -> Self {
         Self {
@@ -28,7 +28,7 @@ impl Doctype {
         }
     }
 
-    /// Create a new `Doctype` from non-atomic tendril
+    /// Create a new [`DoctypeInterface`] from non-atomic tendril
     #[inline]
     pub fn from_non_atomic(name: StrTendril, public_id: StrTendril, system_id: StrTendril) -> Self {
         Self::new(
@@ -45,18 +45,18 @@ impl Doctype {
 /// Comments are represented in HTML and XML as content between <!-- and -->. In XML,
 /// like inside SVG or MathML markup, the character sequence -- cannot be used within a comment.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Comment {
+pub struct CommentInterface {
     pub contents: AtomicTendril,
 }
 
-impl Comment {
-    /// Create a new `Comment`
+impl CommentInterface {
+    /// Create a new [`CommentInterface`]
     #[inline]
     pub fn new(contents: AtomicTendril) -> Self {
         Self { contents }
     }
 
-    /// Create a new `Comment` from non-atomic tendril
+    /// Create a new [`CommentInterface`] from non-atomic tendril
     #[inline]
     pub fn from_non_atomic(contents: StrTendril) -> Self {
         Self::new(make_atomic_tendril(contents))
@@ -65,18 +65,18 @@ impl Comment {
 
 /// A text
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Text {
+pub struct TextInterface {
     pub contents: AtomicTendril,
 }
 
-impl Text {
-    /// Create a new `Text`
+impl TextInterface {
+    /// Create a new [`TextInterface`]
     #[inline]
     pub fn new(contents: AtomicTendril) -> Self {
         Self { contents }
     }
 
-    /// Create a new `Text` from non-atomic tendril
+    /// Create a new [`TextInterface`] from non-atomic tendril
     #[inline]
     pub fn from_non_atomic(contents: StrTendril) -> Self {
         Self::new(make_atomic_tendril(contents))
@@ -92,14 +92,14 @@ impl Text {
 /// Element attributes that caches 'id' and 'class' attributes of element
 /// and also triggers update will removes caches when attributes updated
 #[derive(Clone)]
-pub struct ElementAttributeTrigger {
+pub struct CachedAttributes {
     item: Vec<(markup5ever::QualName, AtomicTendril)>,
     id: OnceLock<Option<AtomicTendril>>,
     classes: OnceLock<Vec<markup5ever::LocalName>>,
 }
 
-impl ElementAttributeTrigger {
-    /// Creates a new `ElementAttributeTrigger`
+impl CachedAttributes {
+    /// Creates a new [`CachedAttributes`]
     #[inline]
     pub fn new<I>(item: I) -> Self
     where
@@ -150,7 +150,7 @@ impl ElementAttributeTrigger {
     }
 }
 
-impl std::ops::Deref for ElementAttributeTrigger {
+impl std::ops::Deref for CachedAttributes {
     type Target = Vec<(markup5ever::QualName, AtomicTendril)>;
 
     fn deref(&self) -> &Self::Target {
@@ -158,7 +158,7 @@ impl std::ops::Deref for ElementAttributeTrigger {
     }
 }
 
-impl std::ops::DerefMut for ElementAttributeTrigger {
+impl std::ops::DerefMut for CachedAttributes {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.id.take();
         self.classes.take();
@@ -169,15 +169,15 @@ impl std::ops::DerefMut for ElementAttributeTrigger {
 
 /// An element
 #[derive(Clone)]
-pub struct Element {
+pub struct ElementInterface {
     pub name: markup5ever::QualName,
-    pub attrs: ElementAttributeTrigger,
+    pub attrs: CachedAttributes,
     pub template: bool,
     pub mathml_annotation_xml_integration_point: bool,
 }
 
-impl Element {
-    /// Creates a new `Element`
+impl ElementInterface {
+    /// Creates a new [`ElementInterface`]
     #[inline]
     pub fn new<I>(
         name: markup5ever::QualName,
@@ -190,13 +190,13 @@ impl Element {
     {
         Box::new(Self {
             name,
-            attrs: ElementAttributeTrigger::new(attrs),
+            attrs: CachedAttributes::new(attrs),
             template,
             mathml_annotation_xml_integration_point,
         })
     }
 
-    /// Creates a new `Element` from non-atomic tendril
+    /// Creates a new [`ElementInterface`] from non-atomic tendril
     #[inline]
     pub fn from_non_atomic<I>(
         name: markup5ever::QualName,
@@ -216,7 +216,7 @@ impl Element {
     }
 }
 
-impl PartialEq for Element {
+impl PartialEq for ElementInterface {
     fn eq(&self, other: &Self) -> bool {
         if self.name != other.name
             || self.template != other.template
@@ -232,9 +232,9 @@ impl PartialEq for Element {
     }
 }
 
-impl Eq for Element {}
+impl Eq for ElementInterface {}
 
-impl std::fmt::Debug for Element {
+impl std::fmt::Debug for ElementInterface {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Element")
             .field("name", &self.name)
@@ -252,19 +252,19 @@ impl std::fmt::Debug for Element {
 /// a Node which embeds an instruction targeting a specific application but that can
 /// be ignored by any other applications which don't recognize the instruction.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ProcessingInstruction {
+pub struct ProcessingInstructionInterface {
     pub data: AtomicTendril,
     pub target: AtomicTendril,
 }
 
-impl ProcessingInstruction {
-    /// Creates a new `ProcessingInstruction`
+impl ProcessingInstructionInterface {
+    /// Creates a new [`ProcessingInstructionInterface`]
     #[inline]
     pub fn new(data: AtomicTendril, target: AtomicTendril) -> Self {
         Self { data, target }
     }
 
-    /// Creates a new `ProcessingInstruction` from non-atomic tendril
+    /// Creates a new [`ProcessingInstructionInterface`] from non-atomic tendril
     #[inline]
     pub fn from_non_atomic(data: StrTendril, target: StrTendril) -> Self {
         Self::new(make_atomic_tendril(data), make_atomic_tendril(target))
@@ -272,13 +272,13 @@ impl ProcessingInstruction {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub enum NodeData {
-    Document(Document),
-    Doctype(Doctype),
-    Comment(Comment),
-    Text(Text),
-    Element(Box<Element>),
-    ProcessingInstruction(ProcessingInstruction),
+pub enum Interface {
+    Document(DocumentInterface),
+    Doctype(DoctypeInterface),
+    Comment(CommentInterface),
+    Text(TextInterface),
+    Element(Box<ElementInterface>),
+    ProcessingInstruction(ProcessingInstructionInterface),
 }
 
 macro_rules! impl_nodedata_from_trait {
@@ -286,9 +286,9 @@ macro_rules! impl_nodedata_from_trait {
         $($name:ident $from:ty)+
     ) => {
         $(
-            impl From<$from> for NodeData {
-                fn from(value: $from) -> NodeData {
-                    NodeData::$name(value)
+            impl From<$from> for Interface {
+                fn from(value: $from) -> Interface {
+                    Interface::$name(value)
                 }
             }
         )+
@@ -296,12 +296,12 @@ macro_rules! impl_nodedata_from_trait {
 }
 
 impl_nodedata_from_trait!(
-    Document Document
-    Doctype Doctype
-    Comment Comment
-    Text Text
-    Element Box<Element>
-    ProcessingInstruction ProcessingInstruction
+    Document DocumentInterface
+    Doctype DoctypeInterface
+    Comment CommentInterface
+    Text TextInterface
+    Element Box<ElementInterface>
+    ProcessingInstruction ProcessingInstructionInterface
 );
 
 macro_rules! declare_nodedata_methods {
@@ -332,23 +332,23 @@ macro_rules! declare_nodedata_methods {
     };
 }
 
-impl NodeData {
-    /// Creates a new [`NodeData`].
-    pub fn new<T: Into<NodeData>>(val: T) -> Self {
+impl Interface {
+    /// Creates a new [`Interface`].
+    pub fn new<T: Into<Interface>>(val: T) -> Self {
         val.into()
     }
 
     declare_nodedata_methods!(
-        is_document document document_mut (NodeData::Document(_x) => _x) -> Document
-        is_doctype doctype doctype_mut (NodeData::Doctype(_x) => _x) -> Doctype
-        is_comment comment comment_mut (NodeData::Comment(_x) => _x) -> Comment
-        is_text text text_mut (NodeData::Text(_x) => _x) -> Text
-        is_element element element_mut (NodeData::Element(_x) => _x) -> Element
-        is_processing_instruction processing_instruction processing_instruction_mut (NodeData::ProcessingInstruction(_x) => _x) -> ProcessingInstruction
+        is_document document document_mut (Interface::Document(_x) => _x) -> DocumentInterface
+        is_doctype doctype doctype_mut (Interface::Doctype(_x) => _x) -> DoctypeInterface
+        is_comment comment comment_mut (Interface::Comment(_x) => _x) -> CommentInterface
+        is_text text text_mut (Interface::Text(_x) => _x) -> TextInterface
+        is_element element element_mut (Interface::Element(_x) => _x) -> Box<ElementInterface>
+        is_processing_instruction processing_instruction processing_instruction_mut (Interface::ProcessingInstruction(_x) => _x) -> ProcessingInstructionInterface
     );
 }
 
-impl std::hash::Hash for NodeData {
+impl std::hash::Hash for Interface {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
             Self::Comment(x) => std::hash::Hash::hash(x, state),
@@ -361,7 +361,7 @@ impl std::hash::Hash for NodeData {
     }
 }
 
-impl std::fmt::Display for NodeData {
+impl std::fmt::Display for Interface {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Comment(x) => write!(f, "{x:?}"),
