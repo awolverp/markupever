@@ -247,6 +247,20 @@ impl PartialEq for NodeGuard {
 }
 impl Eq for NodeGuard {}
 
+macro_rules! _create_richcmp_notimplemented {
+    ($token:expr, $selfobj:expr) => {
+        unsafe {
+            Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                format!(
+                    "'{}' not implemented for '{}'",
+                    $token,
+                    crate::tools::get_type_name($selfobj.py(), $selfobj.as_ptr()),
+                ),
+            ))
+        }
+    };
+}
+
 #[pyo3::pyclass(name = "Document", module = "xmarkup._rustlib", frozen)]
 pub struct PyDocument(pub(super) NodeGuard);
 
@@ -308,20 +322,6 @@ impl PyDocument {
             return Ok(true);
         }
 
-        macro_rules! create_error {
-            ($token:expr, $selfobj:expr) => {
-                unsafe {
-                    Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "'{}' not implemented for '{}'",
-                            $token,
-                            crate::tools::get_type_name($selfobj.py(), $selfobj.as_ptr()),
-                        ),
-                    ))
-                }
-            };
-        }
-
         match cmp {
             pyo3::basic::CompareOp::Eq => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -340,18 +340,22 @@ impl PyDocument {
                 Ok(self_.0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
-                create_error!('>', self_)
+                _create_richcmp_notimplemented!('>', self_)
             }
             pyo3::basic::CompareOp::Lt => {
-                create_error!('<', self_)
+                _create_richcmp_notimplemented!('<', self_)
             }
             pyo3::basic::CompareOp::Le => {
-                create_error!("<=", self_)
+                _create_richcmp_notimplemented!("<=", self_)
             }
             pyo3::basic::CompareOp::Ge => {
-                create_error!(">=", self_)
+                _create_richcmp_notimplemented!(">=", self_)
             }
         }
+    }
+
+    fn __repr__(&self) -> String {
+        String::from("[document]")
     }
 }
 
@@ -477,20 +481,6 @@ impl PyDoctype {
             return Ok(true);
         }
 
-        macro_rules! create_error {
-            ($token:expr, $selfobj:expr) => {
-                unsafe {
-                    Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "'{}' not implemented for '{}'",
-                            $token,
-                            crate::tools::get_type_name($selfobj.py(), $selfobj.as_ptr()),
-                        ),
-                    ))
-                }
-            };
-        }
-
         match cmp {
             pyo3::basic::CompareOp::Eq => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -509,18 +499,29 @@ impl PyDoctype {
                 Ok(self_.0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
-                create_error!('>', self_)
+                _create_richcmp_notimplemented!('>', self_)
             }
             pyo3::basic::CompareOp::Lt => {
-                create_error!('<', self_)
+                _create_richcmp_notimplemented!('<', self_)
             }
             pyo3::basic::CompareOp::Le => {
-                create_error!("<=", self_)
+                _create_richcmp_notimplemented!("<=", self_)
             }
             pyo3::basic::CompareOp::Ge => {
-                create_error!(">=", self_)
+                _create_richcmp_notimplemented!(">=", self_)
             }
         }
+    }
+
+    fn __repr__(&self) -> String {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap();
+        let doctype = node.value().doctype().unwrap();
+
+        format!(
+            "Doctype(name={:?}, public_id={:?}, system_id={:?})",
+            &*doctype.name, &*doctype.public_id, &*doctype.system_id
+        )
     }
 }
 
@@ -609,20 +610,6 @@ impl PyComment {
             return Ok(true);
         }
 
-        macro_rules! create_error {
-            ($token:expr, $selfobj:expr) => {
-                unsafe {
-                    Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "'{}' not implemented for '{}'",
-                            $token,
-                            crate::tools::get_type_name($selfobj.py(), $selfobj.as_ptr()),
-                        ),
-                    ))
-                }
-            };
-        }
-
         match cmp {
             pyo3::basic::CompareOp::Eq => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -641,18 +628,26 @@ impl PyComment {
                 Ok(self_.0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
-                create_error!('>', self_)
+                _create_richcmp_notimplemented!('>', self_)
             }
             pyo3::basic::CompareOp::Lt => {
-                create_error!('<', self_)
+                _create_richcmp_notimplemented!('<', self_)
             }
             pyo3::basic::CompareOp::Le => {
-                create_error!("<=", self_)
+                _create_richcmp_notimplemented!("<=", self_)
             }
             pyo3::basic::CompareOp::Ge => {
-                create_error!(">=", self_)
+                _create_richcmp_notimplemented!(">=", self_)
             }
         }
+    }
+
+    fn __repr__(&self) -> String {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap();
+        let comment = node.value().comment().unwrap();
+
+        format!("Comment(contents={:?})", &*comment.contents)
     }
 }
 
@@ -741,20 +736,6 @@ impl PyText {
             return Ok(true);
         }
 
-        macro_rules! create_error {
-            ($token:expr, $selfobj:expr) => {
-                unsafe {
-                    Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "'{}' not implemented for '{}'",
-                            $token,
-                            crate::tools::get_type_name($selfobj.py(), $selfobj.as_ptr()),
-                        ),
-                    ))
-                }
-            };
-        }
-
         match cmp {
             pyo3::basic::CompareOp::Eq => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -773,18 +754,26 @@ impl PyText {
                 Ok(self_.0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
-                create_error!('>', self_)
+                _create_richcmp_notimplemented!('>', self_)
             }
             pyo3::basic::CompareOp::Lt => {
-                create_error!('<', self_)
+                _create_richcmp_notimplemented!('<', self_)
             }
             pyo3::basic::CompareOp::Le => {
-                create_error!("<=", self_)
+                _create_richcmp_notimplemented!("<=", self_)
             }
             pyo3::basic::CompareOp::Ge => {
-                create_error!(">=", self_)
+                _create_richcmp_notimplemented!(">=", self_)
             }
         }
+    }
+
+    fn __repr__(&self) -> String {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap();
+        let text = node.value().text().unwrap();
+
+        format!("Text(contents={:?})", &*text.contents)
     }
 }
 
@@ -903,20 +892,6 @@ impl PyProcessingInstruction {
             return Ok(true);
         }
 
-        macro_rules! create_error {
-            ($token:expr, $selfobj:expr) => {
-                unsafe {
-                    Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "'{}' not implemented for '{}'",
-                            $token,
-                            crate::tools::get_type_name($selfobj.py(), $selfobj.as_ptr()),
-                        ),
-                    ))
-                }
-            };
-        }
-
         match cmp {
             pyo3::basic::CompareOp::Eq => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -935,17 +910,28 @@ impl PyProcessingInstruction {
                 Ok(self_.0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
-                create_error!('>', self_)
+                _create_richcmp_notimplemented!('>', self_)
             }
             pyo3::basic::CompareOp::Lt => {
-                create_error!('<', self_)
+                _create_richcmp_notimplemented!('<', self_)
             }
             pyo3::basic::CompareOp::Le => {
-                create_error!("<=", self_)
+                _create_richcmp_notimplemented!("<=", self_)
             }
             pyo3::basic::CompareOp::Ge => {
-                create_error!(">=", self_)
+                _create_richcmp_notimplemented!(">=", self_)
             }
         }
+    }
+
+    fn __repr__(&self) -> String {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap();
+        let pi = node.value().processing_instruction().unwrap();
+
+        format!(
+            "ProcessingInstruction(data={:?}, target={:?})",
+            &*pi.data, &*pi.target
+        )
     }
 }

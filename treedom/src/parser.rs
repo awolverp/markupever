@@ -43,18 +43,22 @@ impl ParserSink {
         unsafe { &mut *self.tree.get() }
     }
 
+    /// Returns the errors which are detected while parsing
     pub fn errors(&self) -> &Vec<std::borrow::Cow<'static, str>> {
         unsafe { &*self.errors.get() }
     }
 
+    /// Returns the Quirks Mode
     pub fn quirks_mode(&self) -> markup5ever::interface::QuirksMode {
         self.quirks_mode.get()
     }
 
+    /// Returns the line count of the parsed content (does nothing for XML)
     pub fn lineno(&self) -> u64 {
         unsafe { *self.lineno.get() }
     }
 
+    /// Consumes the self and returns [`IDTreeDOM`]
     pub fn into_dom(self) -> IDTreeDOM {
         IDTreeDOM {
             tree: self.tree.into_inner(),

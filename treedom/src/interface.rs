@@ -63,6 +63,8 @@ impl CommentInterface {
     }
 }
 
+
+
 /// A text
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TextInterface {
@@ -271,7 +273,7 @@ impl ProcessingInstructionInterface {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub enum Interface {
     Document(DocumentInterface),
     Doctype(DoctypeInterface),
@@ -361,7 +363,7 @@ impl std::hash::Hash for Interface {
     }
 }
 
-impl std::fmt::Display for Interface {
+impl std::fmt::Debug for Interface {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Comment(x) => write!(f, "{x:?}"),
@@ -371,5 +373,11 @@ impl std::fmt::Display for Interface {
             Self::Doctype(x) => write!(f, "{x:?}"),
             Self::Document(x) => write!(f, "{x:?}"),
         }
+    }
+}
+
+impl std::fmt::Display for Interface {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }

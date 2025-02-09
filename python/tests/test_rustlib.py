@@ -39,7 +39,7 @@ def test_options():
     _ = XmlOptions()
 
 
-def test_parser_generator_and_methods():
+def test_parser():
     def _yield(contents: tuple):
         for i in contents:
             yield i
