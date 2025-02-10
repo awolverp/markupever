@@ -201,22 +201,6 @@ impl NodeGuard {
         node.has_children()
     }
 
-    pub fn hash(&self) -> Option<u64> {
-        use std::hash::{Hash, Hasher};
-
-        if matches!(self.type_, NodeGuardType::Element) {
-            None
-        } else {
-            let mut state = std::hash::DefaultHasher::default();
-
-            let tree = self.tree.lock();
-            let node = tree.get(self.id).unwrap();
-
-            node.value().hash(&mut state);
-            Some(state.finish())
-        }
-    }
-
     pub fn into_any(self, py: pyo3::Python<'_>) -> pyo3::PyObject {
         match &self.type_ {
             NodeGuardType::Document => pyo3::Py::new(py, PyDocument(self)).unwrap().into_any(),
@@ -233,7 +217,7 @@ impl NodeGuard {
 
 impl PartialEq for NodeGuard {
     fn eq(&self, other: &Self) -> bool {
-        if self.type_ != other.type_ || Arc::ptr_eq(&self.tree, &other.tree) {
+        if self.type_ != other.type_ || !Arc::ptr_eq(&self.tree, &other.tree) {
             return false;
         }
 
@@ -267,7 +251,8 @@ pub struct PyDocument(pub(super) NodeGuard);
 #[pyo3::pymethods]
 impl PyDocument {
     #[new]
-    fn new() -> pyo3::PyResult<Self> {
+    #[allow(unused_variables)]
+    fn new(treedom: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<Self> {
         Err(
             pyo3::PyErr::new::<pyo3::exceptions::PyNotImplementedError, _>(
                 "PyDocument does not have constructor",
@@ -305,10 +290,6 @@ impl PyDocument {
 
     fn has_siblings(&self) -> bool {
         self.0.has_siblings()
-    }
-
-    fn __hash__(&self) -> u64 {
-        self.0.hash().unwrap()
     }
 
     fn __richcmp__(
@@ -366,7 +347,7 @@ pub struct PyDoctype(pub(super) NodeGuard);
 impl PyDoctype {
     #[new]
     fn new(
-        treedom: pyo3::Bound<'_, pyo3::PyAny>,
+        treedom: &pyo3::Bound<'_, pyo3::PyAny>,
         name: String,
         public_id: String,
         system_id: String,
@@ -466,10 +447,6 @@ impl PyDoctype {
         self.0.has_siblings()
     }
 
-    fn __hash__(&self) -> u64 {
-        self.0.hash().unwrap()
-    }
-
     fn __richcmp__(
         self_: pyo3::PyRef<'_, Self>,
         other: pyo3::PyObject,
@@ -531,7 +508,7 @@ pub struct PyComment(pub(super) NodeGuard);
 #[pyo3::pymethods]
 impl PyComment {
     #[new]
-    fn new(treedom: pyo3::Bound<'_, pyo3::PyAny>, contents: String) -> pyo3::PyResult<Self> {
+    fn new(treedom: &pyo3::Bound<'_, pyo3::PyAny>, contents: String) -> pyo3::PyResult<Self> {
         let treedom = treedom
             .extract::<pyo3::PyRef<'_, super::tree::PyTreeDom>>()
             .map_err(|_| {
@@ -595,10 +572,6 @@ impl PyComment {
         self.0.has_siblings()
     }
 
-    fn __hash__(&self) -> u64 {
-        self.0.hash().unwrap()
-    }
-
     fn __richcmp__(
         self_: pyo3::PyRef<'_, Self>,
         other: pyo3::PyObject,
@@ -657,7 +630,7 @@ pub struct PyText(pub(super) NodeGuard);
 #[pyo3::pymethods]
 impl PyText {
     #[new]
-    fn new(treedom: pyo3::Bound<'_, pyo3::PyAny>, contents: String) -> pyo3::PyResult<Self> {
+    fn new(treedom: &pyo3::Bound<'_, pyo3::PyAny>, contents: String) -> pyo3::PyResult<Self> {
         let treedom = treedom
             .extract::<pyo3::PyRef<'_, super::tree::PyTreeDom>>()
             .map_err(|_| {
@@ -721,10 +694,6 @@ impl PyText {
         self.0.has_siblings()
     }
 
-    fn __hash__(&self) -> u64 {
-        self.0.hash().unwrap()
-    }
-
     fn __richcmp__(
         self_: pyo3::PyRef<'_, Self>,
         other: pyo3::PyObject,
@@ -777,6 +746,9 @@ impl PyText {
     }
 }
 
+#[pyo3::pyclass(name = "AttrsList", module = "xmarkup._rustlib", mapping, frozen)]
+pub struct PyAttrsList(pub(super) NodeGuard);
+
 #[pyo3::pyclass(name = "Element", module = "xmarkup._rustlib", frozen)]
 pub struct PyElement(pub(super) NodeGuard);
 
@@ -787,7 +759,7 @@ pub struct PyProcessingInstruction(pub(super) NodeGuard);
 impl PyProcessingInstruction {
     #[new]
     fn new(
-        treedom: pyo3::Bound<'_, pyo3::PyAny>,
+        treedom: &pyo3::Bound<'_, pyo3::PyAny>,
         data: String,
         target: String,
     ) -> pyo3::PyResult<Self> {
@@ -875,10 +847,6 @@ impl PyProcessingInstruction {
 
     fn has_siblings(&self) -> bool {
         self.0.has_siblings()
-    }
-
-    fn __hash__(&self) -> u64 {
-        self.0.hash().unwrap()
     }
 
     fn __richcmp__(

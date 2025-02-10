@@ -63,8 +63,6 @@ impl CommentInterface {
     }
 }
 
-
-
 /// A text
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TextInterface {

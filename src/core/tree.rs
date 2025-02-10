@@ -36,7 +36,7 @@ impl PyTreeDom {
     #[classmethod]
     #[pyo3(signature=(*, namespaces=None))]
     fn new(
-        cls: pyo3::Bound<'_, pyo3::types::PyType>,
+        cls: &pyo3::Bound<'_, pyo3::types::PyType>,
         namespaces: Option<pyo3::PyObject>,
     ) -> pyo3::PyResult<Self> {
         Self::with_capacity(cls, 0, namespaces)
@@ -45,7 +45,7 @@ impl PyTreeDom {
     #[classmethod]
     #[pyo3(signature=(capacity, *, namespaces=None))]
     fn with_capacity(
-        cls: pyo3::Bound<'_, pyo3::types::PyType>,
+        cls: &pyo3::Bound<'_, pyo3::types::PyType>,
         capacity: usize,
         namespaces: Option<pyo3::PyObject>,
     ) -> pyo3::PyResult<Self> {
@@ -84,10 +84,16 @@ impl PyTreeDom {
         let dom = if capacity == 0 {
             ::treedom::IDTreeDOM::new(::treedom::interface::DocumentInterface, ns)
         } else {
-            ::treedom::IDTreeDOM::with_capacity(::treedom::interface::DocumentInterface, ns, capacity)
+            ::treedom::IDTreeDOM::with_capacity(
+                ::treedom::interface::DocumentInterface,
+                ns,
+                capacity,
+            )
         };
 
-        Ok(Self { dom: Arc::new(parking_lot::Mutex::new(dom)) })
+        Ok(Self {
+            dom: Arc::new(parking_lot::Mutex::new(dom)),
+        })
     }
 
     fn namespaces<'a>(&self, py: pyo3::Python<'a>) -> pyo3::PyResult<pyo3::Bound<'a, pyo3::PyAny>> {

@@ -15,9 +15,7 @@ impl<'a> CssNodeRef<'a> {
 
     /// # Safety
     /// `node` value must be element
-    pub unsafe fn new_unchecked(
-        node: treedom::NodeRef<'a>,
-    ) -> Self {
+    pub unsafe fn new_unchecked(node: treedom::NodeRef<'a>) -> Self {
         Self(node)
     }
 

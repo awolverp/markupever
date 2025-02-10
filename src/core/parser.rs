@@ -1,3 +1,5 @@
+use pyo3::types::PyAnyMethods;
+
 /// These are options for HTML parsing
 #[pyo3::pyclass(name = "HtmlOptions", module = "markupselect._rustlib", frozen)]
 pub struct PyHtmlOptions {
@@ -158,55 +160,82 @@ impl PyXmlOptions {
     }
 }
 
-enum StreamWrapper {
-    Html(
-        treedom::tendril::stream::Utf8LossyDecoder<
-            treedom::html5ever::driver::Parser<treedom::ParserSink>,
+enum ParserState {
+    /// Means [`PyParser`] is parsing HTML
+    OnHtml(
+        Box<
+            treedom::tendril::stream::Utf8LossyDecoder<
+                treedom::html5ever::driver::Parser<treedom::ParserSink>,
+            >,
         >,
     ),
-    Xml(
-        treedom::tendril::stream::Utf8LossyDecoder<
-            treedom::xml5ever::driver::XmlParser<treedom::ParserSink>,
+
+    /// Means [`PyParser`] is parsing XML
+    OnXml(
+        Box<
+            treedom::tendril::stream::Utf8LossyDecoder<
+                treedom::xml5ever::driver::XmlParser<treedom::ParserSink>,
+            >,
         >,
     ),
+
+    /// Means [`PyParser`] has completed the parsing process
+    Finished(treedom::ParserSink),
+
+    /// Means [`PyParser`] has converted into [`PyTreeDom`](struct@crate::dom::PyTreeDom)
+    /// and it is un-usable now
+    Dropped,
 }
 
-impl StreamWrapper {
+impl ParserState {
     fn as_html(val: treedom::html5ever::driver::Parser<treedom::ParserSink>) -> Self {
-        Self::Html(treedom::tendril::stream::Utf8LossyDecoder::new(val))
+        Self::OnHtml(Box::new(treedom::tendril::stream::Utf8LossyDecoder::new(
+            val,
+        )))
     }
 
     fn as_xml(val: treedom::xml5ever::driver::XmlParser<treedom::ParserSink>) -> Self {
-        Self::Xml(treedom::tendril::stream::Utf8LossyDecoder::new(val))
+        Self::OnXml(Box::new(treedom::tendril::stream::Utf8LossyDecoder::new(
+            val,
+        )))
     }
 
-    fn process(&mut self, content: Vec<u8>) {
+    fn process(&mut self, content: Vec<u8>) -> pyo3::PyResult<()> {
         use treedom::tendril::TendrilSink;
 
         match self {
-            Self::Html(x) => x.process(treedom::tendril::ByteTendril::from_slice(&content)),
-            Self::Xml(x) => x.process(treedom::tendril::ByteTendril::from_slice(&content)),
+            Self::OnHtml(x) => x.process(treedom::tendril::ByteTendril::from_slice(&content)),
+            Self::OnXml(x) => x.process(treedom::tendril::ByteTendril::from_slice(&content)),
+            _ => {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                    "The parser is completed parsing",
+                ))
+            }
         }
+
+        Ok(())
     }
 
     fn finish(self) -> treedom::ParserSink {
         use treedom::tendril::TendrilSink;
 
         match self {
-            Self::Html(x) => x.finish(),
-            Self::Xml(x) => x.finish(),
+            Self::OnHtml(x) => x.finish(),
+            Self::OnXml(x) => x.finish(),
+            _ => panic!("The parser is completed parsing"),
         }
     }
 }
 
-#[derive(Debug)]
-enum ParserState {
-    /// Means [`PyParser`] has completed the parsing process
-    Finished(Box<treedom::ParserSink>),
-
-    /// Means [`PyParser`] has converted into [`PyTreeDom`](struct@crate::dom::PyTreeDom)
-    /// and it is un-usable now
-    Dropped,
+impl std::fmt::Debug for ParserState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::OnHtml(..) => write!(f, "ParserState::OnHtml(..)"),
+            Self::OnXml(..) => write!(f, "ParserState::OnXml(..)"),
+            Self::Finished(..) => write!(f, "ParserState::Finished(..)"),
+            Self::Dropped => write!(f, "ParserState::Dropped"),
+        }
+    }
 }
 
 #[pyo3::pyclass(name = "Parser", module = "xmarkup._rustlib", frozen)]
@@ -218,22 +247,11 @@ pub struct PyParser {
 impl PyParser {
     #[new]
     fn new(
-        content: pyo3::Bound<'_, pyo3::types::PyAny>,
-        options: pyo3::Bound<'_, pyo3::PyAny>,
+        options: &pyo3::Bound<'_, pyo3::PyAny>,
     ) -> pyo3::PyResult<Self> {
-        use pyo3::types::PyAnyMethods;
-
-        if unsafe { pyo3::ffi::PyGen_Check(content.as_ptr()) == 0 } {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                format!("expected generator for content, got {}", unsafe {
-                    crate::tools::get_type_name(content.py(), content.as_ptr())
-                }),
-            ));
-        }
-
-        let mut stream = {
+        let state = {
             if let Ok(options) = options.extract::<pyo3::PyRef<'_, PyHtmlOptions>>() {
-                StreamWrapper::as_html(treedom::ParserSink::parse_html(
+                ParserState::as_html(treedom::ParserSink::parse_html(
                     options.full_document,
                     treedom::html5ever::tokenizer::TokenizerOpts {
                         exact_errors: options.exact_errors,
@@ -250,7 +268,7 @@ impl PyParser {
                     },
                 ))
             } else if let Ok(options) = options.extract::<pyo3::PyRef<'_, PyXmlOptions>>() {
-                StreamWrapper::as_xml(treedom::ParserSink::parse_xml(
+                ParserState::as_xml(treedom::ParserSink::parse_xml(
                     treedom::xml5ever::tokenizer::XmlTokenizerOpts {
                         exact_errors: options.exact_errors,
                         discard_bom: options.discard_bom,
@@ -268,33 +286,45 @@ impl PyParser {
             }
         };
 
-        for result in unsafe { content.try_iter().unwrap_unchecked() } {
-            let result = result?;
-
-            let result = unsafe {
-                if pyo3::ffi::PyBytes_Check(result.as_ptr()) == 1 {
-                    result.extract::<Vec<u8>>().unwrap()
-                } else if pyo3::ffi::PyUnicode_Check(result.as_ptr()) == 1 {
-                    let s = result.extract::<String>().unwrap();
-                    s.into_bytes()
-                } else {
-                    return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "expected bytes or str for the content generator result, got {}",
-                            crate::tools::get_type_name(result.py(), result.as_ptr())
-                        ),
-                    ));
-                }
-            };
-
-            stream.process(result);
-        }
-
-        let state = ParserState::Finished(Box::new(stream.finish()));
-
         Ok(Self {
             state: parking_lot::Mutex::new(state),
         })
+    }
+
+    fn process(&self, content: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<()> {
+        let content = unsafe {
+            if pyo3::ffi::PyBytes_Check(content.as_ptr()) == 1 {
+                content.extract::<Vec<u8>>().unwrap()
+            } else if pyo3::ffi::PyUnicode_Check(content.as_ptr()) == 1 {
+                let s = content.extract::<String>().unwrap();
+                s.into_bytes()
+            } else {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    format!(
+                        "expected bytes or str for content, got {}",
+                        crate::tools::get_type_name(content.py(), content.as_ptr())
+                    ),
+                ));
+            }
+        };
+
+        let mut state = self.state.lock();
+        state.process(content)
+    }
+
+    fn finish(&self) -> pyo3::PyResult<()> {
+        let mut state = self.state.lock();
+
+        if matches!(&*state, ParserState::Finished(..) | ParserState::Dropped) {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "The parser is already finished",
+            ));
+        }
+
+        let dom = std::mem::replace(&mut *state, ParserState::Dropped);
+        let _ = std::mem::replace(&mut *state, ParserState::Finished(dom.finish()));
+
+        Ok(())
     }
 
     #[allow(clippy::wrong_self_convention)]
@@ -306,8 +336,15 @@ impl PyParser {
         match markup {
             ParserState::Finished(p) => Ok(super::tree::PyTreeDom::from_treedom(p.into_dom())),
             ParserState::Dropped => Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "The parser is already converted into dom and dropped",
+                "the parser is already converted into dom and dropped",
             )),
+            _ => {
+                let _ = std::mem::replace(&mut *state, markup);
+
+                Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                    "the parser is not finished yet",
+                ))
+            }
         }
     }
 
@@ -319,7 +356,10 @@ impl PyParser {
                 Ok(p.errors().iter().map(|x| x.clone().into_owned()).collect())
             }
             ParserState::Dropped => Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "The parser has converted into dom and dropped",
+                "the parser has converted into dom and dropped",
+            )),
+            _ => Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "the parser is not finished yet",
             )),
         }
     }
@@ -334,6 +374,9 @@ impl PyParser {
             ParserState::Dropped => Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "The parser has converted into dom and dropped",
             )),
+            _ => Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "the parser is not finished yet",
+            )),
         }
     }
 
@@ -344,6 +387,9 @@ impl PyParser {
             ParserState::Finished(p) => Ok(p.lineno()),
             ParserState::Dropped => Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "The parser has converted into dom and dropped",
+            )),
+            _ => Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "the parser is not finished yet",
             )),
         }
     }

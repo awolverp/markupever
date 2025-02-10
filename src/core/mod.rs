@@ -11,6 +11,7 @@ pub use parser::PyXmlOptions;
 
 pub use tree::PyTreeDom;
 
+pub use nodes::PyAttrsList;
 pub use nodes::PyComment;
 pub use nodes::PyDoctype;
 pub use nodes::PyDocument;

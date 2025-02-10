@@ -1,12 +1,12 @@
 pub mod atomic;
+mod dom;
 pub mod interface;
 mod parser;
-mod dom;
 
-pub use parser::ParserSink;
+pub use dom::IDTreeDOM;
 pub use dom::NamespaceMap;
 pub use dom::Serializer;
-pub use dom::IDTreeDOM;
+pub use parser::ParserSink;
 
 pub use markup5ever;
 pub use tendril;

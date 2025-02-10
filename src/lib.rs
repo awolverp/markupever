@@ -19,6 +19,7 @@ fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<core::PyParser>()?;
     m.add_class::<core::PyTreeDom>()?;
 
+    m.add_class::<core::PyAttrsList>()?;
     m.add_class::<core::PyComment>()?;
     m.add_class::<core::PyDoctype>()?;
     m.add_class::<core::PyDocument>()?;
