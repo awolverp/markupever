@@ -246,9 +246,7 @@ pub struct PyParser {
 #[pyo3::pymethods]
 impl PyParser {
     #[new]
-    fn new(
-        options: &pyo3::Bound<'_, pyo3::PyAny>,
-    ) -> pyo3::PyResult<Self> {
+    fn new(options: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<Self> {
         let state = {
             if let Ok(options) = options.extract::<pyo3::PyRef<'_, PyHtmlOptions>>() {
                 ParserState::as_html(treedom::ParserSink::parse_html(

@@ -8,21 +8,7 @@
 // - last_child
 // - has_sibling
 // - has_children
-// - hash
 // - richcmp
-//
-// **Document** extends **Node**
-//
-// **Doctype** extends **Node**:
-// - name
-// - public_id
-// - system_id
-//
-// **Comment** extends **Node**:
-// - contents
-//
-// **Text** extends **Node**:
-// - contents
 //
 // **ElementAttrs** extends **list**:
 // - ...
@@ -32,10 +18,6 @@
 // - attrs
 // - template
 // - mathml_annotation_xml_integration_point
-//
-// **ProcessingInstruction** extends **Node**:
-// - data
-// - target
 use std::sync::Arc;
 
 use pyo3::types::PyAnyMethods;
@@ -114,13 +96,6 @@ impl NodeGuard {
             let x = unsafe {
                 object
                     .extract::<pyo3::PyRef<'_, PyComment>>()
-                    .unwrap_unchecked()
-            };
-            Ok(x.0.clone())
-        } else if PyText::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyText>>()
                     .unwrap_unchecked()
             };
             Ok(x.0.clone())
@@ -751,6 +726,269 @@ pub struct PyAttrsList(pub(super) NodeGuard);
 
 #[pyo3::pyclass(name = "Element", module = "xmarkup._rustlib", frozen)]
 pub struct PyElement(pub(super) NodeGuard);
+
+#[pyo3::pymethods]
+impl PyElement {
+    #[new]
+    fn new(
+        treedom: &pyo3::Bound<'_, pyo3::PyAny>,
+        name: pyo3::PyObject,
+        attrs: Vec<(pyo3::PyObject, pyo3::PyObject)>,
+        template: bool,
+        mathml_annotation_xml_integration_point: bool,
+    ) -> pyo3::PyResult<Self> {
+        let treedom = treedom
+            .extract::<pyo3::PyRef<'_, super::tree::PyTreeDom>>()
+            .map_err(|_| {
+                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
+                    "expected TreeDom for treedom, got {}",
+                    unsafe { crate::tools::get_type_name(treedom.py(), treedom.as_ptr()) }
+                ))
+            })?;
+
+        let name = crate::tools::qualname_from_pyobject(treedom.py(), &name).map_err(|_| {
+            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
+                "expected QualName or str for name, got {}",
+                unsafe { crate::tools::get_type_name(treedom.py(), name.as_ptr()) }
+            ))
+        })?;
+
+        let mut attributes = Vec::with_capacity(attrs.len());
+
+        for (key, val) in attrs.into_iter() {
+            let key = match crate::tools::qualname_from_pyobject(treedom.py(), &key) {
+                Ok(x) => x,
+                Err(_) => {
+                    return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                        format!("expected QualName or str for attrs #1, got {}", unsafe {
+                            crate::tools::get_type_name(treedom.py(), key.as_ptr())
+                        }),
+                    ))
+                }
+            };
+
+            let val = unsafe {
+                if pyo3::ffi::PyUnicode_Check(val.as_ptr()) == 1 {
+                    val.bind(treedom.py())
+                        .extract::<String>()
+                        .unwrap_unchecked()
+                } else {
+                    return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                        format!(
+                            "expected str for attrs #2, got {}",
+                            crate::tools::get_type_name(treedom.py(), val.as_ptr())
+                        ),
+                    ));
+                }
+            };
+
+            attributes.push((key, treedom::atomic::AtomicTendril::from(val)));
+        }
+
+        let val = ::treedom::interface::ElementInterface::new(
+            name,
+            attributes.into_iter(),
+            template,
+            mathml_annotation_xml_integration_point,
+        );
+
+        let mut dom = treedom.dom.lock();
+        let node = dom.orphan(val.into());
+
+        Ok(Self(NodeGuard::from_nodemut(treedom.dom.clone(), node)))
+    }
+
+    #[getter]
+    fn name(&self) -> super::qualname::PyQualName {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap();
+
+        super::qualname::PyQualName {
+            name: node.value().element().unwrap().name.clone(),
+        }
+    }
+
+    #[setter]
+    fn set_name(&self, name: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<()> {
+        let mut tree = self.0.tree.lock();
+        let mut node = tree.get_mut(self.0.id).unwrap();
+
+        let name =
+            crate::tools::qualname_from_pyobject(name.py(), name.as_unbound()).map_err(|_| {
+                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
+                    "expected QualName or str for name, got {}",
+                    unsafe { crate::tools::get_type_name(name.py(), name.as_ptr()) }
+                ))
+            })?;
+
+        node.value().element_mut().unwrap().name = name;
+        Ok(())
+    }
+
+    #[getter]
+    fn attrs(&self) -> PyAttrsList {
+        PyAttrsList(self.0.clone())
+    }
+
+    #[setter]
+    fn set_attrs(
+        &self,
+        py: pyo3::Python<'_>,
+        attrs: Vec<(pyo3::PyObject, pyo3::PyObject)>,
+    ) -> pyo3::PyResult<()> {
+        let mut tree = self.0.tree.lock();
+        let mut node = tree.get_mut(self.0.id).unwrap();
+
+        let mut attributes = Vec::with_capacity(attrs.len());
+
+        for (key, val) in attrs.into_iter() {
+            let key = match crate::tools::qualname_from_pyobject(py, &key) {
+                Ok(x) => x,
+                Err(_) => {
+                    return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                        format!("expected QualName or str for attrs #1, got {}", unsafe {
+                            crate::tools::get_type_name(py, key.as_ptr())
+                        }),
+                    ))
+                }
+            };
+
+            let val = unsafe {
+                if pyo3::ffi::PyUnicode_Check(val.as_ptr()) == 1 {
+                    val.bind(py).extract::<String>().unwrap_unchecked()
+                } else {
+                    return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                        format!(
+                            "expected str for attrs #2, got {}",
+                            crate::tools::get_type_name(py, val.as_ptr())
+                        ),
+                    ));
+                }
+            };
+
+            attributes.push((key, treedom::atomic::AtomicTendril::from(val)));
+        }
+
+        node.value()
+            .element_mut()
+            .unwrap()
+            .attrs
+            .replace(attributes.into_iter());
+        Ok(())
+    }
+
+    #[getter]
+    fn template(&self) -> bool {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap();
+        node.value().element().unwrap().template
+    }
+
+    #[setter]
+    fn set_template(&self, template: bool) {
+        let mut tree = self.0.tree.lock();
+        let mut node = tree.get_mut(self.0.id).unwrap();
+        node.value().element_mut().unwrap().template = template;
+    }
+
+    #[getter]
+    fn mathml_annotation_xml_integration_point(&self) -> bool {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap();
+        node.value()
+            .element()
+            .unwrap()
+            .mathml_annotation_xml_integration_point
+    }
+
+    #[setter]
+    fn set_mathml_annotation_xml_integration_point(
+        &self,
+        mathml_annotation_xml_integration_point: bool,
+    ) {
+        let mut tree = self.0.tree.lock();
+        let mut node = tree.get_mut(self.0.id).unwrap();
+        node.value()
+            .element_mut()
+            .unwrap()
+            .mathml_annotation_xml_integration_point = mathml_annotation_xml_integration_point;
+    }
+
+    fn tree(&self) -> super::tree::PyTreeDom {
+        self.0.tree()
+    }
+
+    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+        self.0.parent().map(move |x| x.into_any(py))
+    }
+
+    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+        self.0.prev_sibling().map(move |x| x.into_any(py))
+    }
+
+    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+        self.0.next_sibling().map(move |x| x.into_any(py))
+    }
+
+    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+        self.0.first_child().map(move |x| x.into_any(py))
+    }
+
+    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+        self.0.last_child().map(move |x| x.into_any(py))
+    }
+
+    fn has_children(&self) -> bool {
+        self.0.has_children()
+    }
+
+    fn has_siblings(&self) -> bool {
+        self.0.has_siblings()
+    }
+
+    fn __richcmp__(
+        self_: pyo3::PyRef<'_, Self>,
+        other: pyo3::PyObject,
+        cmp: pyo3::basic::CompareOp,
+    ) -> pyo3::PyResult<bool> {
+        if matches!(cmp, pyo3::basic::CompareOp::Eq)
+            && std::ptr::addr_eq(self_.as_ptr(), other.as_ptr())
+        {
+            return Ok(true);
+        }
+
+        match cmp {
+            pyo3::basic::CompareOp::Eq => {
+                let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
+                    Ok(o) => o,
+                    Err(_) => return Ok(false),
+                };
+
+                Ok(self_.0 == other.0)
+            }
+            pyo3::basic::CompareOp::Ne => {
+                let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
+                    Ok(o) => o,
+                    Err(_) => return Ok(false),
+                };
+
+                Ok(self_.0 != other.0)
+            }
+            pyo3::basic::CompareOp::Gt => {
+                _create_richcmp_notimplemented!('>', self_)
+            }
+            pyo3::basic::CompareOp::Lt => {
+                _create_richcmp_notimplemented!('<', self_)
+            }
+            pyo3::basic::CompareOp::Le => {
+                _create_richcmp_notimplemented!("<=", self_)
+            }
+            pyo3::basic::CompareOp::Ge => {
+                _create_richcmp_notimplemented!(">=", self_)
+            }
+        }
+    }
+}
 
 #[pyo3::pyclass(name = "ProcessingInstruction", module = "xmarkup._rustlib", frozen)]
 pub struct PyProcessingInstruction(pub(super) NodeGuard);

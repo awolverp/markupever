@@ -93,7 +93,7 @@ impl TextInterface {
 /// and also triggers update will removes caches when attributes updated
 #[derive(Clone)]
 pub struct CachedAttributes {
-    item: Vec<(markup5ever::QualName, AtomicTendril)>,
+    pub item: Vec<(markup5ever::QualName, AtomicTendril)>,
     id: OnceLock<Option<AtomicTendril>>,
     classes: OnceLock<Vec<markup5ever::LocalName>>,
 }
@@ -110,6 +110,16 @@ impl CachedAttributes {
             id: OnceLock::new(),
             classes: OnceLock::new(),
         }
+    }
+
+    #[inline]
+    pub fn replace<I>(&mut self, item: I)
+    where
+        I: Iterator<Item = (markup5ever::QualName, AtomicTendril)>,
+    {
+        self.id.take();
+        self.classes.take();
+        self.item = item.collect();
     }
 
     /// Finds, caches, and returns the 'id' attribute from attributes.
