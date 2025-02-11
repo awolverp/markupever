@@ -155,6 +155,67 @@ def test_text():
     assert x.contents == "I am text"
 
 
+def test_element():
+    dom = rl.TreeDom()
+    x = rl.Element(dom, "body", [], False, False)
+
+    with pytest.raises(TypeError):
+        rl.Element(x, "d", [], False, False)
+
+    with pytest.raises(TypeError):
+        rl.Element(b"", "d", [], False, False)
+
+    assert x.parent() is None  # make sure it is orphan
+
+    assert x.name == rl.QualName("body", "", None)
+    assert isinstance(x.attrs, rl.AttrsList)
+    assert x.template is False
+    assert x.mathml_annotation_xml_integration_point is False
+
+    x = rl.Element(dom, rl.QualName("div", "html", "ns"), [], False, True)
+
+    assert x.name == rl.QualName("div", "html", "ns")
+    assert isinstance(x.attrs, rl.AttrsList)
+    assert x.template is False
+    assert x.mathml_annotation_xml_integration_point is True
+
+    with pytest.raises(TypeError):
+        rl.Element(dom, rl.QualName("div", "html", "ns"), {}, False, True)
+
+    rl.Element(dom, rl.QualName("div", "html", "ns"), [("a", "b")], False, True)
+    rl.Element(dom, rl.QualName("div", "html", "ns"), [("a", "b"), ("c", "d")], False, True)
+    rl.Element(dom, rl.QualName("div", "html", "ns"), [(rl.QualName("a"), "b"), ("c", "d")], False, True)
+    rl.Element(dom, rl.QualName("div", "html", "ns"), ((rl.QualName("a"), "b"), ("c", "d")), False, True)
+
+    with pytest.raises(TypeError):
+        rl.Element(dom, rl.QualName("div", "html", "ns"), [(rl.QualName("a"), rl.QualName("b"))], False, True)
+
+    with pytest.raises(TypeError):
+        rl.Element(dom, rl.QualName("div", "html", "ns"), [rl.QualName("a")], False, False)
+
+    x = rl.Element(dom, rl.QualName("div", "html", "ns"), [], False, True)
+
+    assert x.name == rl.QualName("div", "html", "ns")
+    assert isinstance(x.attrs, rl.AttrsList)
+    assert x.template is False
+    assert x.mathml_annotation_xml_integration_point is True
+
+    x.template = True
+    x.mathml_annotation_xml_integration_point = False
+    x.name = rl.QualName("html")
+    x.attrs = []
+    x.attrs = [(rl.QualName("a"), "b"), ("c", "d")]
+
+    assert x.name == rl.QualName("html")
+    assert isinstance(x.attrs, rl.AttrsList)
+    assert x.template is True
+    assert x.mathml_annotation_xml_integration_point is False
+
+    x.name = "template"
+
+    assert x.name == rl.QualName("template")
+
+
 def test_pi():
     dom = rl.TreeDom()
     x = rl.ProcessingInstruction(dom, "d", target="t")
