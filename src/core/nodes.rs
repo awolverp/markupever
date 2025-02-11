@@ -18,9 +18,9 @@
 // - attrs
 // - template
 // - mathml_annotation_xml_integration_point
-use std::sync::Arc;
-
+use hashbrown::HashMap;
 use pyo3::types::PyAnyMethods;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum NodeGuardType {
@@ -724,6 +724,23 @@ impl PyText {
 #[pyo3::pyclass(name = "AttrsList", module = "xmarkup._rustlib", mapping, frozen)]
 pub struct PyAttrsList(pub(super) NodeGuard);
 
+#[pyo3::pymethods]
+impl PyAttrsList {
+    #[new]
+    #[pyo3(signature=(*args, **kwds))]
+    #[allow(unused_variables)]
+    fn new(
+        args: &pyo3::Bound<'_, pyo3::types::PyTuple>,
+        kwds: Option<&pyo3::Bound<'_, pyo3::types::PyDict>>,
+    ) -> pyo3::PyResult<Self> {
+        Err(
+            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                "You cannot create PyAttrsList instance directly; this structure is design only for communicating with element attributes."
+            )
+        )
+    }
+}
+
 #[pyo3::pyclass(name = "Element", module = "xmarkup._rustlib", frozen)]
 pub struct PyElement(pub(super) NodeGuard);
 
@@ -839,7 +856,7 @@ impl PyElement {
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
 
-        let mut attributes = Vec::with_capacity(attrs.len());
+        let mut attributes = HashMap::with_capacity(attrs.len());
 
         for (key, val) in attrs.into_iter() {
             let key = match crate::tools::qualname_from_pyobject(py, &key) {
@@ -866,14 +883,15 @@ impl PyElement {
                 }
             };
 
-            attributes.push((key, treedom::atomic::AtomicTendril::from(val)));
+            attributes.insert(
+                treedom::interface::AttrName::from(key),
+                treedom::atomic::AtomicTendril::from(val),
+            );
         }
 
-        node.value()
-            .element_mut()
-            .unwrap()
-            .attrs
-            .replace(attributes.into_iter());
+        node.value().element_mut().unwrap().attrs = attributes;
+        node.value().element_mut().unwrap().reset_classes();
+
         Ok(())
     }
 

@@ -20,7 +20,7 @@ build-prod:
 .PHONY: test-rs
 test-rs:
 	cargo clippy
-	cargo test -- --nocapture
+	cargo test --workspace -- --nocapture
 
 .PHONY: test-py
 test-py: build-dev

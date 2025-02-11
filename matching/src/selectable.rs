@@ -24,7 +24,7 @@ impl<'a> CssNodeRef<'a> {
     }
 }
 
-impl<'a> selectors::Element for CssNodeRef<'a> {
+impl selectors::Element for CssNodeRef<'_> {
     type Impl = crate::_impl::ParserImplementation;
 
     fn opaque(&self) -> selectors::OpaqueElement {
@@ -153,7 +153,7 @@ impl<'a> selectors::Element for CssNodeRef<'a> {
         id: &<Self::Impl as selectors::SelectorImpl>::Identifier,
         case_sensitivity: selectors::attr::CaseSensitivity,
     ) -> bool {
-        match self.0.value().element().unwrap().attrs.id() {
+        match self.0.value().element().unwrap().attrs.get("id") {
             Some(val) => case_sensitivity.eq(val.as_bytes(), id.content.as_bytes()),
             None => false,
         }
@@ -168,7 +168,6 @@ impl<'a> selectors::Element for CssNodeRef<'a> {
             .value()
             .element()
             .unwrap()
-            .attrs
             .classes()
             .any(|c| case_sensitivity.eq(c.as_bytes(), name.content.as_bytes()))
     }

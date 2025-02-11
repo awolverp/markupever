@@ -1,4 +1,5 @@
 use crate::atomic::{make_atomic_tendril, AtomicTendril, OnceLock};
+use hashbrown::HashMap;
 use tendril::StrTendril;
 
 /// The root of a document
@@ -89,91 +90,61 @@ impl TextInterface {
     }
 }
 
-/// Element attributes that caches 'id' and 'class' attributes of element
-/// and also triggers update will removes caches when attributes updated
-#[derive(Clone)]
-pub struct CachedAttributes {
-    pub item: Vec<(markup5ever::QualName, AtomicTendril)>,
-    id: OnceLock<Option<AtomicTendril>>,
-    classes: OnceLock<Vec<markup5ever::LocalName>>,
-}
+#[derive(Clone, Debug, PartialOrd, Ord)]
+pub struct AttrName(markup5ever::QualName);
 
-impl CachedAttributes {
-    /// Creates a new [`CachedAttributes`]
-    #[inline]
-    pub fn new<I>(item: I) -> Self
-    where
-        I: Iterator<Item = (markup5ever::QualName, AtomicTendril)>,
-    {
-        Self {
-            item: item.collect(),
-            id: OnceLock::new(),
-            classes: OnceLock::new(),
-        }
-    }
-
-    #[inline]
-    pub fn replace<I>(&mut self, item: I)
-    where
-        I: Iterator<Item = (markup5ever::QualName, AtomicTendril)>,
-    {
-        self.id.take();
-        self.classes.take();
-        self.item = item.collect();
-    }
-
-    /// Finds, caches, and returns the 'id' attribute from attributes.
-    #[inline]
-    pub fn id(&self) -> Option<&str> {
-        self.id
-            .get_or_init(|| {
-                self.item
-                    .iter()
-                    .find(|(name, _)| &name.local == "id")
-                    .map(|(_, value)| value.clone())
-            })
-            .as_deref()
-    }
-
-    /// Finds, caches, and returns the 'class' attributes from attributes.
-    #[inline]
-    pub fn classes(&self) -> std::slice::Iter<'_, markup5ever::LocalName> {
-        let classes = self.classes.get_or_init(|| {
-            let mut classes = self
-                .item
-                .iter()
-                .filter(|(name, _)| name.local.as_ref() == "class")
-                .flat_map(|(_, value)| {
-                    value
-                        .split_ascii_whitespace()
-                        .map(markup5ever::LocalName::from)
-                })
-                .collect::<Vec<_>>();
-
-            classes.sort_unstable();
-            classes.dedup();
-
-            classes
-        });
-
-        classes.iter()
+impl std::hash::Hash for AttrName {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
     }
 }
 
-impl std::ops::Deref for CachedAttributes {
-    type Target = Vec<(markup5ever::QualName, AtomicTendril)>;
+impl std::borrow::Borrow<str> for AttrName {
+    fn borrow(&self) -> &str {
+        &self.0.local
+    }
+}
+
+impl hashbrown::Equivalent<str> for AttrName {
+    fn equivalent(&self, key: &str) -> bool {
+        &self.0.local == key
+    }
+}
+
+impl PartialEq<markup5ever::QualName> for AttrName {
+    fn eq(&self, other: &markup5ever::QualName) -> bool {
+        &self.0 == other
+    }
+}
+impl PartialEq<str> for AttrName {
+    fn eq(&self, other: &str) -> bool {
+        &self.0.local == other
+    }
+}
+impl PartialEq for AttrName {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+impl Eq for AttrName {}
+
+impl From<markup5ever::QualName> for AttrName {
+    fn from(value: markup5ever::QualName) -> Self {
+        Self(value)
+    }
+}
+
+impl std::ops::Deref for AttrName {
+    type Target = markup5ever::QualName;
 
     fn deref(&self) -> &Self::Target {
-        &self.item
+        &self.0
     }
 }
 
-impl std::ops::DerefMut for CachedAttributes {
+impl std::ops::DerefMut for AttrName {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.id.take();
-        self.classes.take();
-
-        &mut self.item
+        &mut self.0
     }
 }
 
@@ -181,28 +152,38 @@ impl std::ops::DerefMut for CachedAttributes {
 #[derive(Clone)]
 pub struct ElementInterface {
     pub name: markup5ever::QualName,
-    pub attrs: CachedAttributes,
+    pub attrs: HashMap<AttrName, AtomicTendril>,
     pub template: bool,
     pub mathml_annotation_xml_integration_point: bool,
+
+    class_cache: OnceLock<Vec<markup5ever::LocalName>>,
 }
 
 impl ElementInterface {
     /// Creates a new [`ElementInterface`]
     #[inline]
-    pub fn new<I>(
+    pub fn new<I, Q>(
         name: markup5ever::QualName,
         attrs: I,
         template: bool,
         mathml_annotation_xml_integration_point: bool,
     ) -> Box<Self>
     where
-        I: Iterator<Item = (markup5ever::QualName, AtomicTendril)>,
+        I: Iterator<Item = (Q, AtomicTendril)>,
+        Q: Into<AttrName>,
     {
+        let mut hm = HashMap::new();
+
+        for (k, v) in attrs {
+            hm.insert(k.into(), v);
+        }
+
         Box::new(Self {
             name,
-            attrs: CachedAttributes::new(attrs),
+            attrs: hm,
             template,
             mathml_annotation_xml_integration_point,
+            class_cache: OnceLock::new(),
         })
     }
 
@@ -224,6 +205,29 @@ impl ElementInterface {
             mathml_annotation_xml_integration_point,
         )
     }
+
+    pub fn classes(&self) -> std::slice::Iter<'_, markup5ever::LocalName> {
+        let classes = self.class_cache.get_or_init(|| {
+            let mut classes = self
+                .attrs
+                .get("class")
+                .unwrap_or(&AtomicTendril::new())
+                .split_ascii_whitespace()
+                .map(markup5ever::LocalName::from)
+                .collect::<Vec<_>>();
+
+            classes.sort_unstable();
+            classes.dedup();
+
+            classes
+        });
+
+        classes.iter()
+    }
+
+    pub fn reset_classes(&mut self) {
+        self.class_cache.take();
+    }
 }
 
 impl PartialEq for ElementInterface {
@@ -236,9 +240,7 @@ impl PartialEq for ElementInterface {
             return false;
         }
 
-        self.attrs
-            .iter()
-            .all(|x| other.attrs.binary_search(x).is_ok())
+        self.attrs == other.attrs
     }
 }
 
@@ -248,7 +250,7 @@ impl std::fmt::Debug for ElementInterface {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Element")
             .field("name", &self.name)
-            .field("attrs", &*self.attrs)
+            .field("attrs", &self.attrs)
             .field("template", &self.template)
             .field(
                 "mathml_annotation_xml_integration_point",

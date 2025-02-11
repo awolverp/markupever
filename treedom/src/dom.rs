@@ -1,9 +1,6 @@
 use super::interface;
-
-#[cfg(feature = "hashbrown")]
 use hashbrown::HashMap;
-#[cfg(not(feature = "hashbrown"))]
-use std::collections::HashMap;
+use std::ops::Deref;
 
 pub type NamespaceMap = HashMap<markup5ever::Prefix, markup5ever::Namespace>;
 
@@ -97,7 +94,7 @@ impl<'a> Serializer<'a> {
     }
 }
 
-impl<'a> markup5ever::serialize::Serialize for Serializer<'a> {
+impl markup5ever::serialize::Serialize for Serializer<'_> {
     fn serialize<S>(
         &self,
         serializer: &mut S,
@@ -143,7 +140,7 @@ impl<'a> markup5ever::serialize::Serialize for Serializer<'a> {
                     }
                     interface::Interface::Element(element) => serializer.start_elem(
                         element.name.clone(),
-                        element.attrs.iter().map(|at| (&at.0, &at.1[..])),
+                        element.attrs.iter().map(|at| (at.0.deref(), &at.1[..])),
                     )?,
                     interface::Interface::ProcessingInstruction(pi) => {
                         serializer.write_processing_instruction(&pi.target, &pi.data)?

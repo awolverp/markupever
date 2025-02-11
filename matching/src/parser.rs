@@ -179,22 +179,19 @@ mod tests {
         for res in Select::new(dom.root().descendants(), "div.title", None).unwrap() {
             let elem = res.value().element().unwrap();
             assert_eq!(&*elem.name.local, "div");
-            assert_eq!(
-                elem.attrs.classes().collect::<Vec<_>>(),
-                &[&treedom::markup5ever::LocalName::from("title")]
-            );
+            elem.attrs.get("title").unwrap();
         }
 
         for res in Select::new(dom.root().descendants(), "nav.navbar p", None).unwrap() {
             let elem = res.value().element().unwrap();
             assert_eq!(&*elem.name.local, "p");
-            assert!(elem.attrs.id().is_some());
+            assert!(elem.attrs.get("id").is_some());
         }
 
         for res in Select::new(dom.root().descendants(), "nav.nav2 p", None).unwrap() {
             let elem = res.value().element().unwrap();
             assert_eq!(&*elem.name.local, "p");
-            assert!(elem.attrs.id().is_none());
+            assert!(elem.attrs.get("id").is_none());
         }
     }
 }

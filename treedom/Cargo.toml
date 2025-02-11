@@ -15,15 +15,11 @@ markup5ever = { version = "0.14" }
 parking_lot = { version = "0.12" }
 xml5ever = { version = "0.20.0", optional = true }
 tendril = { version = "^0.4" }
-hashbrown = { version = "0.15", optional = true, default-features = false, features = [
-    "default-hasher",
-    "inline-more",
-] }
+hashbrown = { version = "0.15", default-features = false}
 ego-tree = { version = "0.10.0" }
 
 [features]
-default = ["html5ever", "xml5ever", "hashbrown"]
+default = ["html5ever", "xml5ever"]
 
 html5ever = ["dep:html5ever"]
 xml5ever = ["dep:xml5ever"]
-hashbrown = ["dep:hashbrown"]

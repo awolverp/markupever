@@ -41,6 +41,10 @@ pyo3 = { version = "0.23", default-features = false, features = [
 parking_lot = { version = "0.12" }
 treedom = { path = "treedom" }
 matching = { path = "matching" }
+hashbrown = { version = "0.15", default-features = false, features = [
+    "default-hasher",
+    "inline-more",
+] }
 
 [build-dependencies]
 pyo3-build-config = { version = "0.23", features = ["resolve-config"] }

@@ -1,11 +1,7 @@
 use super::dom::IDTreeDOM;
 use super::interface;
 use std::cell::{Cell, UnsafeCell};
-
-#[cfg(feature = "hashbrown")]
 use hashbrown::HashMap;
-#[cfg(not(feature = "hashbrown"))]
-use std::collections::HashMap;
 
 /// Markup parser that implemented [`markup5ever::interface::TreeSink`]
 #[derive(Debug)]
@@ -193,15 +189,12 @@ impl markup5ever::interface::TreeSink for ParserSink {
             }
         }
 
-        let mut element = interface::ElementInterface::from_non_atomic(
+        let element = interface::ElementInterface::from_non_atomic(
             name,
             attrs.into_iter().map(|x| (x.name, x.value)),
             flags.template,
             flags.mathml_annotation_xml_integration_point,
         );
-
-        element.attrs.sort_unstable_by(|a, b| a.0.cmp(&b.0));
-        element.attrs.dedup();
 
         let node = self.tree_mut().orphan(interface::Interface::new(element));
         node.id()
@@ -328,10 +321,8 @@ impl markup5ever::interface::TreeSink for ParserSink {
             element.attrs.extend(
                 attrs
                     .into_iter()
-                    .map(|x| (x.name, crate::atomic::make_atomic_tendril(x.value))),
+                    .map(|x| (x.name.into(), crate::atomic::make_atomic_tendril(x.value))),
             );
-            element.attrs.sort_unstable_by(|a, b| a.0.cmp(&b.0));
-            element.attrs.dedup();
         } else {
             unreachable!("add_attrs_if_missing called on a non-element node")
         }
