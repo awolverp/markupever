@@ -27,7 +27,7 @@ def test_qualname():
     assert q1 != q2
 
     assert q1 != 1
-    assert q1 != "a"
+    assert q1 == "a"
     assert q1 != "b"
 
     with pytest.raises(TypeError):

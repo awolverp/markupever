@@ -739,6 +739,92 @@ impl PyAttrsList {
             )
         )
     }
+
+    #[allow(clippy::explicit_auto_deref)]
+    fn to_list(&self, py: pyo3::Python<'_>, to_string: bool) -> pyo3::PyResult<pyo3::PyObject> {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap().value().element().unwrap();
+
+        unsafe {
+            let list = pyo3::ffi::PyList_New(node.attrs.len() as isize);
+
+            if list.is_null() {
+                return Err(pyo3::PyErr::fetch(py));
+            }
+
+            for (index, (key, val)) in node.attrs.iter().enumerate() {
+                let qualname = {
+                    if to_string {
+                        pyo3::types::PyString::new(py, &*key.local.clone())
+                            .into_any()
+                            .unbind()
+                    } else {
+                        let q = pyo3::Py::new(
+                            py,
+                            super::qualname::PyQualName {
+                                name: key.clone().into_qualname(),
+                            },
+                        )?;
+
+                        q.into_any()
+                    }
+                };
+
+                let string = pyo3::types::PyString::new(py, &*val.clone());
+
+                let tuple = pyo3::ffi::PyTuple_New(2);
+
+                if tuple.is_null() {
+                    pyo3::ffi::Py_DecRef(list);
+                    return Err(pyo3::PyErr::fetch(py));
+                }
+
+                assert!(pyo3::ffi::PyTuple_SetItem(tuple, 0isize, qualname.into_ptr()) == 0);
+                assert!(pyo3::ffi::PyTuple_SetItem(tuple, 1isize, string.into_ptr()) == 0);
+                assert!(pyo3::ffi::PyList_SetItem(list, index as isize, tuple) == 0);
+            }
+
+            Ok(pyo3::Py::from_owned_ptr(py, list))
+        }
+    }
+
+    #[allow(clippy::explicit_auto_deref)]
+    fn to_dict(&self, py: pyo3::Python<'_>, to_string: bool) -> pyo3::PyResult<pyo3::PyObject> {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap().value().element().unwrap();
+
+        unsafe {
+            let mp = pyo3::ffi::PyDict_New();
+
+            if mp.is_null() {
+                return Err(pyo3::PyErr::fetch(py));
+            }
+
+            for (key, val) in node.attrs.iter() {
+                let qualname = {
+                    if to_string {
+                        pyo3::types::PyString::new(py, &*key.local.clone())
+                            .into_any()
+                            .unbind()
+                    } else {
+                        let q = pyo3::Py::new(
+                            py,
+                            super::qualname::PyQualName {
+                                name: key.clone().into_qualname(),
+                            },
+                        )?;
+
+                        q.into_any()
+                    }
+                };
+                let string = pyo3::types::PyString::new(py, &*val.clone());
+
+                assert!(pyo3::ffi::PyDict_SetItem(mp, qualname.into_ptr(), string.into_ptr()) == 0);
+            }
+
+            Ok(pyo3::Py::from_owned_ptr(py, mp))
+        }
+    }
 }
 
 #[pyo3::pyclass(name = "Element", module = "xmarkup._rustlib", frozen)]
@@ -763,17 +849,20 @@ impl PyElement {
                 ))
             })?;
 
-        let name = crate::tools::qualname_from_pyobject(treedom.py(), &name).map_err(|_| {
-            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                "expected QualName or str for name, got {}",
-                unsafe { crate::tools::get_type_name(treedom.py(), name.as_ptr()) }
-            ))
-        })?;
+        let name = crate::tools::qualname_from_pyobject(treedom.py(), &name)
+            .into_qualname()
+            .map_err(|_| {
+                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
+                    "expected QualName or str for name, got {}",
+                    unsafe { crate::tools::get_type_name(treedom.py(), name.as_ptr()) }
+                ))
+            })?;
 
         let mut attributes = Vec::with_capacity(attrs.len());
 
         for (key, val) in attrs.into_iter() {
-            let key = match crate::tools::qualname_from_pyobject(treedom.py(), &key) {
+            let key = match crate::tools::qualname_from_pyobject(treedom.py(), &key).into_qualname()
+            {
                 Ok(x) => x,
                 Err(_) => {
                     return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
@@ -830,8 +919,9 @@ impl PyElement {
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
 
-        let name =
-            crate::tools::qualname_from_pyobject(name.py(), name.as_unbound()).map_err(|_| {
+        let name = crate::tools::qualname_from_pyobject(name.py(), name.as_unbound())
+            .into_qualname()
+            .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected QualName or str for name, got {}",
                     unsafe { crate::tools::get_type_name(name.py(), name.as_ptr()) }
@@ -859,7 +949,7 @@ impl PyElement {
         let mut attributes = HashMap::with_capacity(attrs.len());
 
         for (key, val) in attrs.into_iter() {
-            let key = match crate::tools::qualname_from_pyobject(py, &key) {
+            let key = match crate::tools::qualname_from_pyobject(py, &key).into_qualname() {
                 Ok(x) => x,
                 Err(_) => {
                     return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(

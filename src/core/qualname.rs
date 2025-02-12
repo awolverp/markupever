@@ -127,20 +127,22 @@ impl PyQualName {
 
         match cmp {
             pyo3::basic::CompareOp::Eq => {
-                let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
-                    Ok(qual) => qual,
-                    Err(_) => return Ok(false),
-                };
-
-                Ok(self_.name == other.name)
+                match crate::tools::qualname_from_pyobject(self_.py(), &other) {
+                    crate::tools::QualNameFromPyObjectResult::QualName(x) => {
+                        Ok(x.name == self_.name)
+                    }
+                    crate::tools::QualNameFromPyObjectResult::Str(x) => Ok(self_.name.local == x),
+                    crate::tools::QualNameFromPyObjectResult::Err(_) => Ok(false),
+                }
             }
             pyo3::basic::CompareOp::Ne => {
-                let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
-                    Ok(qual) => qual,
-                    Err(_) => return Ok(true),
-                };
-
-                Ok(self_.name != other.name)
+                match crate::tools::qualname_from_pyobject(self_.py(), &other) {
+                    crate::tools::QualNameFromPyObjectResult::QualName(x) => {
+                        Ok(x.name != self_.name)
+                    }
+                    crate::tools::QualNameFromPyObjectResult::Str(x) => Ok(self_.name.local != x),
+                    crate::tools::QualNameFromPyObjectResult::Err(_) => Ok(true),
+                }
             }
             pyo3::basic::CompareOp::Gt => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {

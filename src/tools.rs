@@ -12,27 +12,42 @@ pub unsafe fn get_type_name(py: pyo3::Python<'_>, obj: *mut pyo3::ffi::PyObject)
     }
 }
 
-pub fn qualname_from_pyobject(
-    py: pyo3::Python<'_>,
+pub enum QualNameFromPyObjectResult<'p> {
+    QualName(pyo3::PyRef<'p, crate::core::PyQualName>),
+    Str(String),
+    Err(pyo3::PyErr),
+}
+
+impl QualNameFromPyObjectResult<'_> {
+    pub fn into_qualname(self) -> pyo3::PyResult<treedom::markup5ever::QualName> {
+        match self {
+            Self::QualName(q) => Ok(q.name.clone()),
+            Self::Str(s) => Ok(treedom::markup5ever::QualName::new(
+                None,
+                treedom::markup5ever::namespace_url!(""),
+                s.into(),
+            )),
+            Self::Err(e) => Err(e),
+        }
+    }
+}
+
+pub fn qualname_from_pyobject<'a>(
+    py: pyo3::Python<'a>,
     object: &pyo3::PyObject,
-) -> pyo3::PyResult<treedom::markup5ever::QualName> {
+) -> QualNameFromPyObjectResult<'a> {
     use pyo3::types::PyAnyMethods;
     unsafe {
         if pyo3::ffi::PyUnicode_Check(object.as_ptr()) == 1 {
-            Ok(treedom::markup5ever::QualName::new(
-                None,
-                treedom::markup5ever::namespace_url!(""),
-                object
-                    .bind(py)
-                    .extract::<String>()
-                    .unwrap_unchecked()
-                    .into(),
-            ))
+            QualNameFromPyObjectResult::Str(object.bind(py).extract::<String>().unwrap_unchecked())
         } else {
-            let pyqual: pyo3::PyRef<'_, crate::core::PyQualName> = object
+            match object
                 .bind(py)
-                .extract::<pyo3::PyRef<'_, crate::core::PyQualName>>()?;
-            Ok(pyqual.name.clone())
+                .extract::<pyo3::PyRef<'_, crate::core::PyQualName>>()
+            {
+                Ok(x) => QualNameFromPyObjectResult::QualName(x),
+                Err(e) => QualNameFromPyObjectResult::Err(e),
+            }
         }
     }
 }

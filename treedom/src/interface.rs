@@ -93,6 +93,12 @@ impl TextInterface {
 #[derive(Clone, Debug, PartialOrd, Ord)]
 pub struct AttrName(markup5ever::QualName);
 
+impl AttrName {
+    pub fn into_qualname(self) -> markup5ever::QualName {
+        self.0
+    }
+}
+
 impl std::hash::Hash for AttrName {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.0.hash(state);
