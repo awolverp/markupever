@@ -153,7 +153,7 @@ impl selectors::Element for CssNodeRef<'_> {
         id: &<Self::Impl as selectors::SelectorImpl>::Identifier,
         case_sensitivity: selectors::attr::CaseSensitivity,
     ) -> bool {
-        match self.0.value().element().unwrap().attrs.get("id") {
+        match self.0.value().element().unwrap().attrs.id() {
             Some(val) => case_sensitivity.eq(val.as_bytes(), id.content.as_bytes()),
             None => false,
         }
@@ -168,7 +168,9 @@ impl selectors::Element for CssNodeRef<'_> {
             .value()
             .element()
             .unwrap()
-            .classes()
+            .attrs
+            .class()
+            .iter()
             .any(|c| case_sensitivity.eq(c.as_bytes(), name.content.as_bytes()))
     }
 

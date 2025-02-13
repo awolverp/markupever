@@ -1,7 +1,7 @@
 use super::dom::IDTreeDOM;
 use super::interface;
-use std::cell::{Cell, UnsafeCell};
 use hashbrown::HashMap;
+use std::cell::{Cell, UnsafeCell};
 
 /// Markup parser that implemented [`markup5ever::interface::TreeSink`]
 #[derive(Debug)]

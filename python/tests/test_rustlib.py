@@ -184,11 +184,21 @@ def test_element():
 
     rl.Element(dom, rl.QualName("div", "html", "ns"), [("a", "b")], False, True)
     rl.Element(dom, rl.QualName("div", "html", "ns"), [("a", "b"), ("c", "d")], False, True)
-    rl.Element(dom, rl.QualName("div", "html", "ns"), [(rl.QualName("a"), "b"), ("c", "d")], False, True)
-    rl.Element(dom, rl.QualName("div", "html", "ns"), ((rl.QualName("a"), "b"), ("c", "d")), False, True)
+    rl.Element(
+        dom, rl.QualName("div", "html", "ns"), [(rl.QualName("a"), "b"), ("c", "d")], False, True
+    )
+    rl.Element(
+        dom, rl.QualName("div", "html", "ns"), ((rl.QualName("a"), "b"), ("c", "d")), False, True
+    )
 
     with pytest.raises(TypeError):
-        rl.Element(dom, rl.QualName("div", "html", "ns"), [(rl.QualName("a"), rl.QualName("b"))], False, True)
+        rl.Element(
+            dom,
+            rl.QualName("div", "html", "ns"),
+            [(rl.QualName("a"), rl.QualName("b"))],
+            False,
+            True,
+        )
 
     with pytest.raises(TypeError):
         rl.Element(dom, rl.QualName("div", "html", "ns"), [rl.QualName("a")], False, False)

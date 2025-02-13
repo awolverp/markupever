@@ -1,5 +1,4 @@
 use crate::atomic::{make_atomic_tendril, AtomicTendril, OnceLock};
-use hashbrown::HashMap;
 use tendril::StrTendril;
 
 /// The root of a document
@@ -90,57 +89,16 @@ impl TextInterface {
     }
 }
 
-#[derive(Clone, Debug, PartialOrd, Ord)]
-pub struct AttrName(markup5ever::QualName);
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct AttributeKey(markup5ever::QualName);
 
-impl AttrName {
-    pub fn into_qualname(self) -> markup5ever::QualName {
-        self.0
-    }
-}
-
-impl std::hash::Hash for AttrName {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.hash(state);
+impl AsRef<markup5ever::QualName> for AttributeKey {
+    fn as_ref(&self) -> &markup5ever::QualName {
+        &self.0
     }
 }
 
-impl std::borrow::Borrow<str> for AttrName {
-    fn borrow(&self) -> &str {
-        &self.0.local
-    }
-}
-
-impl hashbrown::Equivalent<str> for AttrName {
-    fn equivalent(&self, key: &str) -> bool {
-        &self.0.local == key
-    }
-}
-
-impl PartialEq<markup5ever::QualName> for AttrName {
-    fn eq(&self, other: &markup5ever::QualName) -> bool {
-        &self.0 == other
-    }
-}
-impl PartialEq<str> for AttrName {
-    fn eq(&self, other: &str) -> bool {
-        &self.0.local == other
-    }
-}
-impl PartialEq for AttrName {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
-    }
-}
-impl Eq for AttrName {}
-
-impl From<markup5ever::QualName> for AttrName {
-    fn from(value: markup5ever::QualName) -> Self {
-        Self(value)
-    }
-}
-
-impl std::ops::Deref for AttrName {
+impl std::ops::Deref for AttributeKey {
     type Target = markup5ever::QualName;
 
     fn deref(&self) -> &Self::Target {
@@ -148,9 +106,105 @@ impl std::ops::Deref for AttrName {
     }
 }
 
-impl std::ops::DerefMut for AttrName {
+impl std::ops::DerefMut for AttributeKey {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
+    }
+}
+
+impl PartialEq<str> for AttributeKey {
+    fn eq(&self, other: &str) -> bool {
+        &self.0.local == other
+    }
+}
+
+impl From<markup5ever::QualName> for AttributeKey {
+    fn from(value: markup5ever::QualName) -> Self {
+        Self(value)
+    }
+}
+
+#[derive(Clone)]
+pub struct ElementAttributes {
+    list: Vec<(AttributeKey, AtomicTendril)>,
+    id: OnceLock<Option<AtomicTendril>>,
+    class: OnceLock<Vec<markup5ever::LocalName>>,
+}
+
+impl ElementAttributes {
+    pub fn new(list: Vec<(AttributeKey, AtomicTendril)>) -> Self {
+        Self {
+            list,
+            id: OnceLock::new(),
+            class: OnceLock::new(),
+        }
+    }
+
+    pub fn replace(&mut self, list: Vec<(AttributeKey, AtomicTendril)>) {
+        self.list = list;
+        self.id.take();
+        self.class.take();
+    }
+
+    #[inline]
+    pub fn id(&self) -> Option<&str> {
+        self.id
+            .get_or_init(|| {
+                self.list
+                    .iter()
+                    .find(|(name, _)| name == "id")
+                    .map(|(_, value)| value.clone())
+            })
+            .as_deref()
+    }
+
+    #[inline]
+    pub fn class(&self) -> &[markup5ever::LocalName] {
+        let classes = self.class.get_or_init(|| {
+            let mut classes = self
+                .list
+                .iter()
+                .filter(|(name, _)| name.local.as_ref() == "class")
+                .flat_map(|(_, value)| {
+                    value
+                        .split_ascii_whitespace()
+                        .map(markup5ever::LocalName::from)
+                })
+                .collect::<Vec<_>>();
+            classes.sort_unstable();
+            classes.dedup();
+            classes
+        });
+
+        classes.as_slice()
+    }
+}
+
+impl PartialEq for ElementAttributes {
+    fn eq(&self, other: &Self) -> bool {
+        self.list == other.list
+    }
+}
+
+impl std::fmt::Debug for ElementAttributes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ElementAttributes({:?})", &self.list)
+    }
+}
+
+impl std::ops::Deref for ElementAttributes {
+    type Target = Vec<(AttributeKey, AtomicTendril)>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.list
+    }
+}
+
+impl std::ops::DerefMut for ElementAttributes {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.id.take();
+        self.class.take();
+        &mut self.list
     }
 }
 
@@ -158,11 +212,9 @@ impl std::ops::DerefMut for AttrName {
 #[derive(Clone)]
 pub struct ElementInterface {
     pub name: markup5ever::QualName,
-    pub attrs: HashMap<AttrName, AtomicTendril>,
+    pub attrs: ElementAttributes,
     pub template: bool,
     pub mathml_annotation_xml_integration_point: bool,
-
-    class_cache: OnceLock<Vec<markup5ever::LocalName>>,
 }
 
 impl ElementInterface {
@@ -176,20 +228,13 @@ impl ElementInterface {
     ) -> Box<Self>
     where
         I: Iterator<Item = (Q, AtomicTendril)>,
-        Q: Into<AttrName>,
+        AttributeKey: From<Q>,
     {
-        let mut hm = HashMap::new();
-
-        for (k, v) in attrs {
-            hm.insert(k.into(), v);
-        }
-
         Box::new(Self {
             name,
-            attrs: hm,
+            attrs: ElementAttributes::new(attrs.map(|(k, v)| (AttributeKey::from(k), v)).collect()),
             template,
             mathml_annotation_xml_integration_point,
-            class_cache: OnceLock::new(),
         })
     }
 
@@ -210,29 +255,6 @@ impl ElementInterface {
             template,
             mathml_annotation_xml_integration_point,
         )
-    }
-
-    pub fn classes(&self) -> std::slice::Iter<'_, markup5ever::LocalName> {
-        let classes = self.class_cache.get_or_init(|| {
-            let mut classes = self
-                .attrs
-                .get("class")
-                .unwrap_or(&AtomicTendril::new())
-                .split_ascii_whitespace()
-                .map(markup5ever::LocalName::from)
-                .collect::<Vec<_>>();
-
-            classes.sort_unstable();
-            classes.dedup();
-
-            classes
-        });
-
-        classes.iter()
-    }
-
-    pub fn reset_classes(&mut self) {
-        self.class_cache.take();
     }
 }
 

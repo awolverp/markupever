@@ -10,12 +10,30 @@
 // - has_children
 // - richcmp
 //
-// **ElementAttrs** extends **list**:
-// - ...
+// **AttrsList**:
+// - to_list
+// - to_dict
+// - clear
+// - append
+// - count
+// - index
+// - insert
+// - pop
+// - remove
+// - reverse
+// - sort
+// - dedup
+// - getindex
+// - setindex
+// - delindex
+// - contains
+// - richcmp
 //
 // **Element** extends **Node**:
 // - name
 // - attrs
+// - classes
+// - id
 // - template
 // - mathml_annotation_xml_integration_point
 use hashbrown::HashMap;
@@ -73,56 +91,6 @@ impl NodeGuard {
         node: ::treedom::NodeRef<'_>,
     ) -> Self {
         Self::new(tree, node.id(), NodeGuardType::from(node.value()))
-    }
-
-    pub fn from_pyobject(object: &pyo3::Bound<'_, pyo3::PyAny>) -> Result<Self, ()> {
-        use pyo3::type_object::PyTypeInfo;
-
-        if PyDocument::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyDocument>>()
-                    .unwrap_unchecked()
-            };
-            Ok(x.0.clone())
-        } else if PyDoctype::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyDoctype>>()
-                    .unwrap_unchecked()
-            };
-            Ok(x.0.clone())
-        } else if PyComment::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyComment>>()
-                    .unwrap_unchecked()
-            };
-            Ok(x.0.clone())
-        } else if PyText::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyText>>()
-                    .unwrap_unchecked()
-            };
-            Ok(x.0.clone())
-        } else if PyElement::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyElement>>()
-                    .unwrap_unchecked()
-            };
-            Ok(x.0.clone())
-        } else if PyProcessingInstruction::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyProcessingInstruction>>()
-                    .unwrap_unchecked()
-            };
-            Ok(x.0.clone())
-        } else {
-            Err(())
-        }
     }
 
     pub fn tree(&self) -> super::tree::PyTreeDom {
@@ -762,7 +730,7 @@ impl PyAttrsList {
                         let q = pyo3::Py::new(
                             py,
                             super::qualname::PyQualName {
-                                name: key.clone().into_qualname(),
+                                name: key.as_ref().clone(),
                             },
                         )?;
 
@@ -810,7 +778,7 @@ impl PyAttrsList {
                         let q = pyo3::Py::new(
                             py,
                             super::qualname::PyQualName {
-                                name: key.clone().into_qualname(),
+                                name: key.as_ref().clone(),
                             },
                         )?;
 
@@ -824,6 +792,14 @@ impl PyAttrsList {
 
             Ok(pyo3::Py::from_owned_ptr(py, mp))
         }
+    }
+
+    fn clear(&self) {
+        let mut tree = self.0.tree.lock();
+        let mut node = tree.get_mut(self.0.id).unwrap();
+        let elem = node.value().element_mut().unwrap();
+        elem.attrs.clear();
+        elem.attrs.shrink_to_fit();
     }
 }
 
@@ -946,7 +922,7 @@ impl PyElement {
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
 
-        let mut attributes = HashMap::with_capacity(attrs.len());
+        let mut attributes = Vec::with_capacity(attrs.len());
 
         for (key, val) in attrs.into_iter() {
             let key = match crate::tools::qualname_from_pyobject(py, &key).into_qualname() {
@@ -973,14 +949,13 @@ impl PyElement {
                 }
             };
 
-            attributes.insert(
-                treedom::interface::AttrName::from(key),
+            attributes.push((
+                treedom::interface::AttributeKey::from(key),
                 treedom::atomic::AtomicTendril::from(val),
-            );
+            ));
         }
 
-        node.value().element_mut().unwrap().attrs = attributes;
-        node.value().element_mut().unwrap().reset_classes();
+        node.value().element_mut().unwrap().attrs.replace(attributes);
 
         Ok(())
     }

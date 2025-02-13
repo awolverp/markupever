@@ -171,6 +171,13 @@ mod tests {
         <nav class="nav2"><p>World</p></nav>
         </div>"#;
 
+    fn get_attr<'a>(
+        attrs: &'a treedom::interface::ElementAttributes,
+        key: &str,
+    ) -> Option<&'a treedom::atomic::AtomicTendril> {
+        attrs.iter().find(|(k, _)| k == key).map(|(_, v)| v)
+    }
+
     #[test]
     fn test_select() {
         let tree = treedom::ParserSink::parse_html(true, Default::default(), Default::default());
@@ -179,19 +186,19 @@ mod tests {
         for res in Select::new(dom.root().descendants(), "div.title", None).unwrap() {
             let elem = res.value().element().unwrap();
             assert_eq!(&*elem.name.local, "div");
-            elem.attrs.get("title").unwrap();
+            get_attr(&elem.attrs, "title").unwrap();
         }
 
         for res in Select::new(dom.root().descendants(), "nav.navbar p", None).unwrap() {
             let elem = res.value().element().unwrap();
             assert_eq!(&*elem.name.local, "p");
-            assert!(elem.attrs.get("id").is_some());
+            get_attr(&elem.attrs, "id").unwrap();
         }
 
         for res in Select::new(dom.root().descendants(), "nav.nav2 p", None).unwrap() {
             let elem = res.value().element().unwrap();
             assert_eq!(&*elem.name.local, "p");
-            assert!(elem.attrs.get("id").is_none());
+            assert!(get_attr(&elem.attrs, "id").is_none());
         }
     }
 }
