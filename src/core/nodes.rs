@@ -11,32 +11,23 @@
 // - richcmp
 //
 // **AttrsList**:
-// - to_list
-// - to_dict
-// - clear
-// - append
-// - count
-// - index
-// - insert
-// - pop
-// - remove
-// - reverse
-// - sort
-// - dedup
-// - getindex
-// - setindex
-// - delindex
-// - contains
-// - richcmp
+// - push(key, val)
+// - items()
+// - update_value(index, val)
+// - remove(index)
+// - swap_remove(index)
+// - clear()
+// - dedup()
+// - len()
+// - reverse()
 //
 // **Element** extends **Node**:
 // - name
 // - attrs
-// - classes
 // - id
+// - classes
 // - template
 // - mathml_annotation_xml_integration_point
-use hashbrown::HashMap;
 use pyo3::types::PyAnyMethods;
 use std::sync::Arc;
 
@@ -689,6 +680,74 @@ impl PyText {
     }
 }
 
+#[pyo3::pyclass(name = "AttrsListItems", module = "xmarkup._rustlib", mapping, frozen)]
+pub struct PyAttrsListItems {
+    guard: NodeGuard,
+    index: std::sync::atomic::AtomicUsize,
+}
+
+#[pyo3::pymethods]
+impl PyAttrsListItems {
+    #[new]
+    #[pyo3(signature=(*args, **kwds))]
+    #[allow(unused_variables)]
+    fn new(
+        args: &pyo3::Bound<'_, pyo3::types::PyTuple>,
+        kwds: Option<&pyo3::Bound<'_, pyo3::types::PyDict>>,
+    ) -> pyo3::PyResult<Self> {
+        Err(
+            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                "You cannot create PyAttrsListItens instance directly; this structure is design only for communicating with element attributes."
+            )
+        )
+    }
+
+    fn __iter__(self_: pyo3::PyRef<'_, Self>) -> pyo3::PyRef<'_, Self> {
+        self_
+    }
+
+    fn __next__(
+        self_: pyo3::PyRef<'_, Self>,
+        py: pyo3::Python<'_>,
+    ) -> pyo3::PyResult<pyo3::PyObject> {
+        let tree = self_.guard.tree.lock();
+        let node = tree.get(self_.guard.id).unwrap().value().element().unwrap();
+
+        let index = self_.index.load(std::sync::atomic::Ordering::Relaxed);
+        let (attrkey, t_value) = match node.attrs.get(index) {
+            Some(x) => x.clone(),
+            None => return Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
+        };
+
+        self_
+            .index
+            .store(index + 1, std::sync::atomic::Ordering::Relaxed);
+
+        std::mem::drop(tree);
+
+        unsafe {
+            let key = pyo3::Py::new(
+                py,
+                super::qualname::PyQualName {
+                    name: (*attrkey).clone(),
+                },
+            )?;
+            let val = pyo3::types::PyString::new(py, &t_value);
+
+            let tuple = pyo3::ffi::PyTuple_New(2);
+
+            if tuple.is_null() {
+                return Err(pyo3::PyErr::fetch(py));
+            }
+
+            pyo3::ffi::PyTuple_SetItem(tuple, 0, key.into_ptr());
+            pyo3::ffi::PyTuple_SetItem(tuple, 1, val.into_ptr());
+
+            Ok(pyo3::Py::from_owned_ptr(py, tuple))
+        }
+    }
+}
+
 #[pyo3::pyclass(name = "AttrsList", module = "xmarkup._rustlib", mapping, frozen)]
 pub struct PyAttrsList(pub(super) NodeGuard);
 
@@ -708,98 +767,144 @@ impl PyAttrsList {
         )
     }
 
-    #[allow(clippy::explicit_auto_deref)]
-    fn to_list(&self, py: pyo3::Python<'_>, to_string: bool) -> pyo3::PyResult<pyo3::PyObject> {
-        let tree = self.0.tree.lock();
-        let node = tree.get(self.0.id).unwrap().value().element().unwrap();
-
-        unsafe {
-            let list = pyo3::ffi::PyList_New(node.attrs.len() as isize);
-
-            if list.is_null() {
-                return Err(pyo3::PyErr::fetch(py));
-            }
-
-            for (index, (key, val)) in node.attrs.iter().enumerate() {
-                let qualname = {
-                    if to_string {
-                        pyo3::types::PyString::new(py, &*key.local.clone())
-                            .into_any()
-                            .unbind()
-                    } else {
-                        let q = pyo3::Py::new(
-                            py,
-                            super::qualname::PyQualName {
-                                name: key.as_ref().clone(),
-                            },
-                        )?;
-
-                        q.into_any()
-                    }
-                };
-
-                let string = pyo3::types::PyString::new(py, &*val.clone());
-
-                let tuple = pyo3::ffi::PyTuple_New(2);
-
-                if tuple.is_null() {
-                    pyo3::ffi::Py_DecRef(list);
-                    return Err(pyo3::PyErr::fetch(py));
-                }
-
-                assert!(pyo3::ffi::PyTuple_SetItem(tuple, 0isize, qualname.into_ptr()) == 0);
-                assert!(pyo3::ffi::PyTuple_SetItem(tuple, 1isize, string.into_ptr()) == 0);
-                assert!(pyo3::ffi::PyList_SetItem(list, index as isize, tuple) == 0);
-            }
-
-            Ok(pyo3::Py::from_owned_ptr(py, list))
-        }
-    }
-
-    #[allow(clippy::explicit_auto_deref)]
-    fn to_dict(&self, py: pyo3::Python<'_>, to_string: bool) -> pyo3::PyResult<pyo3::PyObject> {
-        let tree = self.0.tree.lock();
-        let node = tree.get(self.0.id).unwrap().value().element().unwrap();
-
-        unsafe {
-            let mp = pyo3::ffi::PyDict_New();
-
-            if mp.is_null() {
-                return Err(pyo3::PyErr::fetch(py));
-            }
-
-            for (key, val) in node.attrs.iter() {
-                let qualname = {
-                    if to_string {
-                        pyo3::types::PyString::new(py, &*key.local.clone())
-                            .into_any()
-                            .unbind()
-                    } else {
-                        let q = pyo3::Py::new(
-                            py,
-                            super::qualname::PyQualName {
-                                name: key.as_ref().clone(),
-                            },
-                        )?;
-
-                        q.into_any()
-                    }
-                };
-                let string = pyo3::types::PyString::new(py, &*val.clone());
-
-                assert!(pyo3::ffi::PyDict_SetItem(mp, qualname.into_ptr(), string.into_ptr()) == 0);
-            }
-
-            Ok(pyo3::Py::from_owned_ptr(py, mp))
-        }
-    }
-
     fn clear(&self) {
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
         elem.attrs.clear();
         elem.attrs.shrink_to_fit();
+    }
+
+    fn push(
+        &self,
+        py: pyo3::Python<'_>,
+        key: pyo3::PyObject,
+        value: pyo3::PyObject,
+    ) -> pyo3::PyResult<()> {
+        let key = crate::tools::qualname_from_pyobject(py, &key)
+            .into_qualname()
+            .map_err(|_| {
+                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
+                    "expected QualName or str for key, got {}",
+                    unsafe { crate::tools::get_type_name(py, key.as_ptr()) }
+                ))
+            })?;
+
+        let val = unsafe {
+            if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
+                value.bind(py).extract::<String>().unwrap_unchecked()
+            } else {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    format!(
+                        "expected str for value, got {}",
+                        crate::tools::get_type_name(py, value.as_ptr())
+                    ),
+                ));
+            }
+        };
+
+        let mut tree = self.0.tree.lock();
+        let mut node = tree.get_mut(self.0.id).unwrap();
+        let elem = node.value().element_mut().unwrap();
+
+        elem.attrs.push((key.into(), val.into()));
+
+        Ok(())
+    }
+
+    fn items(self_: pyo3::PyRef<'_, Self>) -> PyAttrsListItems {
+        PyAttrsListItems {
+            guard: self_.0.clone(),
+            index: std::sync::atomic::AtomicUsize::new(0),
+        }
+    }
+
+    fn update_value(
+        self_: pyo3::PyRef<'_, Self>,
+        index: usize,
+        value: pyo3::PyObject,
+    ) -> pyo3::PyResult<()> {
+        let value = unsafe {
+            if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
+                value
+                    .bind(self_.py())
+                    .extract::<String>()
+                    .unwrap_unchecked()
+            } else {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    format!(
+                        "expected str for value, got {}",
+                        crate::tools::get_type_name(self_.py(), value.as_ptr())
+                    ),
+                ));
+            }
+        };
+
+        let mut tree = self_.0.tree.lock();
+        let mut node = tree.get_mut(self_.0.id).unwrap();
+        let elem = node.value().element_mut().unwrap();
+
+        match elem.attrs.get_mut(index) {
+            Some(x) => {
+                x.1 = value.into();
+                Ok(())
+            }
+            None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                "range out of bound",
+            )),
+        }
+    }
+
+    fn remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<()> {
+        let mut tree = self_.0.tree.lock();
+        let mut node = tree.get_mut(self_.0.id).unwrap();
+        let elem = node.value().element_mut().unwrap();
+
+        if index >= elem.attrs.len() {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                "range out of bound",
+            ));
+        }
+
+        elem.attrs.remove(index);
+        Ok(())
+    }
+
+    fn swap_remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<()> {
+        let mut tree = self_.0.tree.lock();
+        let mut node = tree.get_mut(self_.0.id).unwrap();
+        let elem = node.value().element_mut().unwrap();
+
+        if index >= elem.attrs.len() {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                "range out of bound",
+            ));
+        }
+
+        elem.attrs.swap_remove(index);
+        Ok(())
+    }
+
+    fn dedup(&self) {
+        let mut tree = self.0.tree.lock();
+        let mut node = tree.get_mut(self.0.id).unwrap();
+        let elem = node.value().element_mut().unwrap();
+        elem.attrs.dedup();
+        elem.attrs.shrink_to_fit();
+    }
+
+    fn __len__(&self) -> usize {
+        let mut tree = self.0.tree.lock();
+        let mut node = tree.get_mut(self.0.id).unwrap();
+        let elem = node.value().element_mut().unwrap();
+        elem.attrs.len()
+    }
+
+    fn reverse(&self) {
+        let mut tree = self.0.tree.lock();
+        let mut node = tree.get_mut(self.0.id).unwrap();
+        let elem = node.value().element_mut().unwrap();
+        elem.attrs.reverse();
     }
 }
 
@@ -955,7 +1060,11 @@ impl PyElement {
             ));
         }
 
-        node.value().element_mut().unwrap().attrs.replace(attributes);
+        node.value()
+            .element_mut()
+            .unwrap()
+            .attrs
+            .replace(attributes);
 
         Ok(())
     }
@@ -995,6 +1104,22 @@ impl PyElement {
             .element_mut()
             .unwrap()
             .mathml_annotation_xml_integration_point = mathml_annotation_xml_integration_point;
+    }
+
+    fn id(&self) -> Option<String> {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap();
+        let elem = node.value().element().unwrap();
+
+        elem.attrs.id().map(String::from)
+    }
+
+    fn class_list(&self) -> Vec<String> {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap();
+        let elem = node.value().element().unwrap();
+
+        elem.attrs.class().iter().map(|x| x.to_string()).collect()
     }
 
     fn tree(&self) -> super::tree::PyTreeDom {

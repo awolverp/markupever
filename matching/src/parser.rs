@@ -186,7 +186,7 @@ mod tests {
         for res in Select::new(dom.root().descendants(), "div.title", None).unwrap() {
             let elem = res.value().element().unwrap();
             assert_eq!(&*elem.name.local, "div");
-            get_attr(&elem.attrs, "title").unwrap();
+            assert_eq!(get_attr(dbg!(&elem.attrs), "class"), Some(&"title".to_owned().into()))
         }
 
         for res in Select::new(dom.root().descendants(), "nav.navbar p", None).unwrap() {
