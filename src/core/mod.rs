@@ -3,6 +3,8 @@ mod parser;
 mod qualname;
 mod tree;
 
+pub mod iter;
+
 pub use qualname::PyQualName;
 
 pub use parser::PyHtmlOptions;

@@ -33,10 +33,12 @@ def test_qualname():
     with pytest.raises(TypeError):
         q1 >= 1
 
+    repr(q1)
+
 
 def test_options():
-    _ = rl.HtmlOptions()
-    _ = rl.XmlOptions()
+    repr(rl.HtmlOptions())
+    repr(rl.XmlOptions())
 
 
 def test_parser_generators():
@@ -44,8 +46,12 @@ def test_parser_generators():
     parser.process(b"<html><p>Ali</p></html>")
     parser.finish()
 
+    repr(parser)
+
     parser = rl.Parser(rl.HtmlOptions())
     parser.process("<html><p>Ali</p></html>")
+
+    repr(parser)
 
     with pytest.raises(TypeError):
         parser.process(1)
@@ -83,6 +89,8 @@ def test_parser_generators():
 
     _ = parser.into_dom()
 
+    repr(parser)
+
     with pytest.raises(RuntimeError):
         parser.errors()
 
@@ -95,6 +103,8 @@ def test_document():
 
     assert isinstance(dom.root(), rl.Document)
     assert dom.root() == dom.root()
+
+    repr(dom)
 
 
 def test_doctype():
@@ -120,6 +130,8 @@ def test_doctype():
     assert doctype.system_id == "hello"
     assert doctype.public_id == "test"
 
+    repr(doctype)
+
 
 def test_comment():
     dom = rl.TreeDom()
@@ -137,6 +149,8 @@ def test_comment():
     x.contents = "I am comment"
     assert x.contents == "I am comment"
 
+    repr(x)
+
 
 def test_text():
     dom = rl.TreeDom()
@@ -153,6 +167,8 @@ def test_text():
     assert x.contents == "test"
     x.contents = "I am text"
     assert x.contents == "I am text"
+
+    repr(x)
 
 
 def test_element():
@@ -225,6 +241,8 @@ def test_element():
 
     assert x.name == rl.QualName("template")
 
+    repr(x)
+
 
 def _get_attr(attrs: rl.AttrsList, name):
     for index, v in enumerate(attrs.items()):
@@ -293,6 +311,8 @@ def test_element_attrs():
     x.attrs.reverse()
     assert _get_attr(x.attrs, "class") == (0, "main")
 
+    repr(x.attrs)
+
 
 def test_pi():
     dom = rl.TreeDom()
@@ -313,3 +333,5 @@ def test_pi():
 
     assert x.data == "I am data"
     assert x.target == "t"
+
+    repr(x)

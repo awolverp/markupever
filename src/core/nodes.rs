@@ -241,7 +241,7 @@ impl PyDocument {
     }
 
     fn __repr__(&self) -> String {
-        String::from("[document]")
+        String::from("xmarkup._rustlib.Document")
     }
 }
 
@@ -402,7 +402,7 @@ impl PyDoctype {
         let doctype = node.value().doctype().unwrap();
 
         format!(
-            "Doctype(name={:?}, public_id={:?}, system_id={:?})",
+            "xmarkup._rustlib.Doctype(name={:?}, public_id={:?}, system_id={:?})",
             &*doctype.name, &*doctype.public_id, &*doctype.system_id
         )
     }
@@ -527,7 +527,10 @@ impl PyComment {
         let node = tree.get(self.0.id).unwrap();
         let comment = node.value().comment().unwrap();
 
-        format!("Comment(contents={:?})", &*comment.contents)
+        format!(
+            "xmarkup._rustlib.Comment(contents={:?})",
+            &*comment.contents
+        )
     }
 }
 
@@ -650,7 +653,7 @@ impl PyText {
         let node = tree.get(self.0.id).unwrap();
         let text = node.value().text().unwrap();
 
-        format!("Text(contents={:?})", &*text.contents)
+        format!("xmarkup._rustlib.Text(contents={:?})", &*text.contents)
     }
 }
 
@@ -720,6 +723,37 @@ impl PyAttrsListItems {
             Ok(pyo3::Py::from_owned_ptr(py, tuple))
         }
     }
+
+    fn __len__(&self) -> usize {
+        let tree = self.guard.tree.lock();
+        let node = tree.get(self.guard.id).unwrap().value().element().unwrap();
+
+        node.attrs.len()
+    }
+}
+
+fn repr_attrlist(element: &::treedom::interface::ElementInterface) -> String {
+    let mut writer = String::from("[");
+
+    let mut iter_ = element.attrs.iter();
+
+    if let Some((key, val)) = iter_.next() {
+        writer += &format!(
+            "({}, {:?})",
+            super::qualname::repr_qualname(&*key),
+            val.as_ref()
+        );
+    }
+
+    for (key, val) in iter_ {
+        writer += &format!(
+            ", ({}, {:?})",
+            super::qualname::repr_qualname(&*key),
+            val.as_ref()
+        );
+    }
+
+    writer + "])"
 }
 
 /// This type is design for communicating with element attributes.
@@ -880,6 +914,14 @@ impl PyAttrsList {
         let mut node = tree.get_mut(self.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
         elem.attrs.reverse();
+    }
+
+    fn __repr__(&self) -> String {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap();
+        let elem = node.value().element().unwrap();
+
+        repr_attrlist(&elem)
     }
 }
 
@@ -1172,6 +1214,20 @@ impl PyElement {
             }
         }
     }
+
+    fn __repr__(&self) -> String {
+        let tree = self.0.tree.lock();
+        let node = tree.get(self.0.id).unwrap();
+        let elem = node.value().element().unwrap();
+
+        format!(
+            "xmarkup._rustlib.Element(name={}, attrs={}, template={}, mathml_annotation_xml_integration_point={})",
+            super::qualname::repr_qualname(&elem.name),
+            repr_attrlist(&elem),
+            elem.template,
+            elem.mathml_annotation_xml_integration_point
+        )
+    }
 }
 
 /// A processing instruction node
@@ -1321,7 +1377,7 @@ impl PyProcessingInstruction {
         let pi = node.value().processing_instruction().unwrap();
 
         format!(
-            "ProcessingInstruction(data={:?}, target={:?})",
+            "xmarkup._rustlib.ProcessingInstruction(data={:?}, target={:?})",
             &*pi.data, &*pi.target
         )
     }

@@ -1,5 +1,15 @@
 use std::hash::Hasher;
 
+#[inline(always)]
+pub(super) fn repr_qualname(q: &treedom::markup5ever::QualName) -> String {
+    format!(
+        "xmarkup._rustlib.QualName(local={:?}, ns={:?}, prefix={:?})",
+        q.local.as_ref(),
+        q.ns.as_ref(),
+        q.prefix.as_ref().map(|x| x.as_ref())
+    )
+}
+
 /// A fully qualified name (with a namespace), used to depict names of tags and attributes.
 ///
 /// Namespaces can be used to differentiate between similar XML fragments. For example:
@@ -195,11 +205,6 @@ impl PyQualName {
     }
 
     fn __repr__(&self) -> String {
-        format!(
-            "xmarkup._rustlib.QualName(local={:?}, ns={:?}, prefix={:?})",
-            self.name.local.as_ref(),
-            self.name.ns.as_ref(),
-            self.name.prefix.as_ref().map(|x| x.as_ref())
-        )
+        repr_qualname(&self.name)
     }
 }
