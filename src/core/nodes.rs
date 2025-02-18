@@ -654,7 +654,6 @@ impl PyText {
     }
 }
 
-
 #[pyo3::pyclass(name = "AttrsListItems", module = "xmarkup._rustlib", mapping, frozen)]
 pub struct PyAttrsListItems {
     guard: NodeGuard,

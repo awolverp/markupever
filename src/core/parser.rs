@@ -1,7 +1,7 @@
 use pyo3::types::PyAnyMethods;
 
 /// These are options for HTML parsing.
-/// 
+///
 /// # Note
 /// this type is immutable.
 #[pyo3::pyclass(name = "HtmlOptions", module = "markupselect._rustlib", frozen)]
@@ -18,7 +18,7 @@ pub struct PyHtmlOptions {
 #[pyo3::pymethods]
 impl PyHtmlOptions {
     /// Creates a new [`PyHtmlOptions`]
-    /// 
+    ///
     /// - `full_document`: Is this a complete document? (means includes html, head, and body tag). Default: true.
     /// - `exact_errors`: Report all parse errors described in the spec, at some performance penalty? Default: false.
     /// - `discard_bom`: Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? Default: true.
@@ -115,7 +115,7 @@ pub struct PyXmlOptions {
 #[pyo3::pymethods]
 impl PyXmlOptions {
     /// Creates a new [`PyXmlOptions`]
-    /// 
+    ///
     /// - `exact_errors`: Report all parse errors described in the spec, at some performance penalty? Default: false.
     /// - `discard_bom`: Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? Default: true.
     /// - `profile`: Keep a record of how long we spent in each state? Printed when `finish()` is called. Default: false.
@@ -231,7 +231,7 @@ impl std::fmt::Debug for ParserState {
 }
 
 /// An HTML/XML parser, ready to receive unicode input.
-/// 
+///
 /// This is very easy to use and allows you to stream input using `.process()` method; By this way
 /// you are don't worry about memory usages of huge inputs.
 #[pyo3::pyclass(name = "Parser", module = "xmarkup._rustlib", frozen)]
@@ -242,7 +242,7 @@ pub struct PyParser {
 #[pyo3::pymethods]
 impl PyParser {
     /// Creates a new [`PyParser`]
-    /// 
+    ///
     /// - `options`: If your input is a HTML document, pass a PyHtmlOptions;
     ///              If your input is a XML document, pass PyXmlOptions.
     #[new]
@@ -290,9 +290,9 @@ impl PyParser {
     }
 
     /// Processes an input.
-    /// 
+    ///
     /// `content` must be `str` or `bytes`.
-    /// 
+    ///
     /// Raises `RuntimeError` if `.finish()` method is called.
     fn process(&self, content: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<()> {
         let content = unsafe {
@@ -406,9 +406,7 @@ impl PyParser {
     fn __repr__(&self) -> String {
         let state = self.state.lock();
 
-        format!(
-            "<xmarkup._rustlib.Parser - {:?}>", &*state
-        )
+        format!("<xmarkup._rustlib.Parser - {:?}>", &*state)
     }
 }
 

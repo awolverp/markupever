@@ -230,14 +230,16 @@ def _get_attr(attrs: rl.AttrsList, name):
     for index, v in enumerate(attrs.items()):
         if v[0] == name:
             return index, v[1]
-    
+
     return None
 
 
 def test_element_attrs():
     dom = rl.TreeDom()
     x = rl.Element(dom, "body", [("class", "flex"), ("id", "main")], False, False)
-    x = rl.Element(dom, "body", [(rl.QualName("class"), "flex"), (rl.QualName("id"), "main")], False, False)
+    x = rl.Element(
+        dom, "body", [(rl.QualName("class"), "flex"), (rl.QualName("id"), "main")], False, False
+    )
 
     with pytest.raises(TypeError):
         rl.Element(dom, "wolf", (1, ""), False, False)
@@ -279,7 +281,9 @@ def test_element_attrs():
     assert len(x.attrs) == 0
     assert _get_attr(x.attrs, "class") is None
 
-    x = rl.Element(dom, "body", [("class", "flex"), ("class", "main"), ("class", "main")], False, False)
+    x = rl.Element(
+        dom, "body", [("class", "flex"), ("class", "main"), ("class", "main")], False, False
+    )
 
     assert len(x.attrs) == 3
     x.attrs.dedup()
