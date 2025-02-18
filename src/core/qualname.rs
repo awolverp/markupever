@@ -46,6 +46,8 @@ use std::hash::Hasher;
 ///  prefix (when resolved gives namespace_url `https://furniture.rs`)
 /// ```
 ///
+/// # Note
+/// This type is immutable.
 #[pyo3::pyclass(name = "QualName", module = "xmarkup._rustlib", frozen)]
 pub struct PyQualName {
     pub name: treedom::markup5ever::QualName,
@@ -53,6 +55,7 @@ pub struct PyQualName {
 
 #[pyo3::pymethods]
 impl PyQualName {
+    /// Creates a new [`PyQualName`] instance
     #[new]
     #[pyo3(signature=(local, ns=String::new(), prefix=None))]
     fn new(local: String, ns: String, prefix: Option<String>) -> pyo3::PyResult<Self> {
@@ -78,21 +81,27 @@ impl PyQualName {
         Ok(Self { name })
     }
 
+    /// The local name (e.g. `table` in `<furn:table>` above).
     #[getter]
     fn local(&self) -> String {
         self.name.local.to_string()
     }
 
+    /// The namespace after resolution (e.g. https://furniture.rs in example above).
     #[getter]
     fn ns(&self) -> String {
         self.name.ns.to_string()
     }
 
+    /// The prefix of qualified (e.g. furn in <furn:table> above).
+    /// Optional (since some namespaces can be empty or inferred),
+    /// and only useful for namespace resolution (since different prefix can still resolve to same namespace)
     #[getter]
     fn prefix(&self) -> Option<String> {
         self.name.prefix.as_ref().map(|x| x.to_string())
     }
 
+    /// Copies the QualName
     fn copy(&self) -> Self {
         Self {
             name: self.name.clone(),

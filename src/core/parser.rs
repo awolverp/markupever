@@ -1,36 +1,31 @@
 use pyo3::types::PyAnyMethods;
 
-/// These are options for HTML parsing
+/// These are options for HTML parsing.
+/// 
+/// # Note
+/// this type is immutable.
 #[pyo3::pyclass(name = "HtmlOptions", module = "markupselect._rustlib", frozen)]
 pub struct PyHtmlOptions {
-    /// Report all parse errors described in the spec, at some
-    /// performance penalty?  Default: false
     exact_errors: bool,
-
-    /// Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning
-    /// of the stream?  Default: true
     discard_bom: bool,
-
-    /// Keep a record of how long we spent in each state?  Printed
-    /// when `end()` is called.  Default: false
     profile: bool,
-
-    /// Is this an `iframe srcdoc` document?
     iframe_srcdoc: bool,
-
-    /// Should we drop the DOCTYPE (if any) from the tree?
     drop_doctype: bool,
-
-    /// Is this a complete document? (means includes html, head, and body tag)
-    /// Default: true
     full_document: bool,
-
-    /// Initial TreeBuilder quirks mode. Default: NoQuirks
     quirks_mode: treedom::markup5ever::interface::QuirksMode,
 }
 
 #[pyo3::pymethods]
 impl PyHtmlOptions {
+    /// Creates a new [`PyHtmlOptions`]
+    /// 
+    /// - `full_document`: Is this a complete document? (means includes html, head, and body tag). Default: true.
+    /// - `exact_errors`: Report all parse errors described in the spec, at some performance penalty? Default: false.
+    /// - `discard_bom`: Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? Default: true.
+    /// - `profile`: Keep a record of how long we spent in each state? Printed when `finish()` is called. Default: false.
+    /// - `iframe_srcdoc`: Is this an `iframe srcdoc` document? Default: false.
+    /// - `drop_doctype`: Should we drop the DOCTYPE (if any) from the tree? Default: false.
+    /// - `quirks_mode`: Initial TreeBuilder quirks mode. Default: QUIRKS_MODE_OFF.
     #[new]
     #[pyo3(signature=(full_document=true, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, quirks_mode=crate::tools::QUIRKS_MODE_OFF))]
     fn new(
@@ -112,21 +107,18 @@ impl PyHtmlOptions {
 
 #[pyo3::pyclass(name = "XmlOptions", module = "markupselect._rustlib", frozen)]
 pub struct PyXmlOptions {
-    /// Report all parse errors described in the spec, at some
-    /// performance penalty?  Default: false
     exact_errors: bool,
-
-    /// Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning
-    /// of the stream?  Default: true
     discard_bom: bool,
-
-    /// Keep a record of how long we spent in each state?  Printed
-    /// when `end()` is called.  Default: false
     profile: bool,
 }
 
 #[pyo3::pymethods]
 impl PyXmlOptions {
+    /// Creates a new [`PyXmlOptions`]
+    /// 
+    /// - `exact_errors`: Report all parse errors described in the spec, at some performance penalty? Default: false.
+    /// - `discard_bom`: Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? Default: true.
+    /// - `profile`: Keep a record of how long we spent in each state? Printed when `finish()` is called. Default: false.
     #[new]
     #[pyo3(signature=(exact_errors=false, discard_bom=true, profile=false))]
     fn new(exact_errors: bool, discard_bom: bool, profile: bool) -> Self {
@@ -230,14 +222,18 @@ impl ParserState {
 impl std::fmt::Debug for ParserState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::OnHtml(..) => write!(f, "ParserState::OnHtml(..)"),
-            Self::OnXml(..) => write!(f, "ParserState::OnXml(..)"),
-            Self::Finished(..) => write!(f, "ParserState::Finished(..)"),
-            Self::Dropped => write!(f, "ParserState::Dropped"),
+            Self::OnHtml(..) => write!(f, "parsing HTML"),
+            Self::OnXml(..) => write!(f, "parsing XML"),
+            Self::Finished(..) => write!(f, "finished"),
+            Self::Dropped => write!(f, "converted"),
         }
     }
 }
 
+/// An HTML/XML parser, ready to receive unicode input.
+/// 
+/// This is very easy to use and allows you to stream input using `.process()` method; By this way
+/// you are don't worry about memory usages of huge inputs.
 #[pyo3::pyclass(name = "Parser", module = "xmarkup._rustlib", frozen)]
 pub struct PyParser {
     state: parking_lot::Mutex<ParserState>,
@@ -245,6 +241,10 @@ pub struct PyParser {
 
 #[pyo3::pymethods]
 impl PyParser {
+    /// Creates a new [`PyParser`]
+    /// 
+    /// - `options`: If your input is a HTML document, pass a PyHtmlOptions;
+    ///              If your input is a XML document, pass PyXmlOptions.
     #[new]
     fn new(options: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<Self> {
         let state = {
@@ -289,6 +289,11 @@ impl PyParser {
         })
     }
 
+    /// Processes an input.
+    /// 
+    /// `content` must be `str` or `bytes`.
+    /// 
+    /// Raises `RuntimeError` if `.finish()` method is called.
     fn process(&self, content: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<()> {
         let content = unsafe {
             if pyo3::ffi::PyBytes_Check(content.as_ptr()) == 1 {
@@ -310,6 +315,7 @@ impl PyParser {
         state.process(content)
     }
 
+    /// Finishes the parser and marks it as finished.
     fn finish(&self) -> pyo3::PyResult<()> {
         let mut state = self.state.lock();
 
@@ -325,6 +331,8 @@ impl PyParser {
         Ok(())
     }
 
+    /// Converts the self into `PyTreeDom`.
+    /// after calling this method, the self is unusable and you cannot use it.
     #[allow(clippy::wrong_self_convention)]
     fn into_dom(&self) -> pyo3::PyResult<super::tree::PyTreeDom> {
         let mut state = self.state.lock();
@@ -346,6 +354,7 @@ impl PyParser {
         }
     }
 
+    /// Returns the errors which are detected while parsing
     fn errors(&self) -> pyo3::PyResult<Vec<String>> {
         let state = self.state.lock();
 
@@ -362,6 +371,7 @@ impl PyParser {
         }
     }
 
+    /// Returns the Quirks Mode.
     fn quirks_mode(&self) -> pyo3::PyResult<u8> {
         let state = self.state.lock();
 
@@ -378,6 +388,7 @@ impl PyParser {
         }
     }
 
+    /// Returns the line count of the parsed content (always is `1` for XML).
     fn lineno(&self) -> pyo3::PyResult<u64> {
         let state = self.state.lock();
 
@@ -390,6 +401,14 @@ impl PyParser {
                 "the parser is not finished yet",
             )),
         }
+    }
+
+    fn __repr__(&self) -> String {
+        let state = self.state.lock();
+
+        format!(
+            "<xmarkup._rustlib.Parser - {:?}>", &*state
+        )
     }
 }
 

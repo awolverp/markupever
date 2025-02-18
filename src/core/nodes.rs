@@ -1,33 +1,3 @@
-// **Node**:
-// - new - does orphan
-// - tree
-// - parent
-// - prev_sibling
-// - next_sibling
-// - first_child
-// - last_child
-// - has_sibling
-// - has_children
-// - richcmp
-//
-// **AttrsList**:
-// - push(key, val)
-// - items()
-// - update_value(index, val)
-// - remove(index)
-// - swap_remove(index)
-// - clear()
-// - dedup()
-// - len()
-// - reverse()
-//
-// **Element** extends **Node**:
-// - name
-// - attrs
-// - id
-// - classes
-// - template
-// - mathml_annotation_xml_integration_point
 use pyo3::types::PyAnyMethods;
 use std::sync::Arc;
 
@@ -179,6 +149,7 @@ macro_rules! _create_richcmp_notimplemented {
     };
 }
 
+/// A document node
 #[pyo3::pyclass(name = "Document", module = "xmarkup._rustlib", frozen)]
 pub struct PyDocument(pub(super) NodeGuard);
 
@@ -274,6 +245,7 @@ impl PyDocument {
     }
 }
 
+/// A doctype node
 #[pyo3::pyclass(name = "Doctype", module = "xmarkup._rustlib", frozen)]
 pub struct PyDoctype(pub(super) NodeGuard);
 
@@ -436,6 +408,7 @@ impl PyDoctype {
     }
 }
 
+/// A comment node
 #[pyo3::pyclass(name = "Comment", module = "xmarkup._rustlib", frozen)]
 pub struct PyComment(pub(super) NodeGuard);
 
@@ -558,6 +531,7 @@ impl PyComment {
     }
 }
 
+/// A text node
 #[pyo3::pyclass(name = "Text", module = "xmarkup._rustlib", frozen)]
 pub struct PyText(pub(super) NodeGuard);
 
@@ -680,6 +654,7 @@ impl PyText {
     }
 }
 
+
 #[pyo3::pyclass(name = "AttrsListItems", module = "xmarkup._rustlib", mapping, frozen)]
 pub struct PyAttrsListItems {
     guard: NodeGuard,
@@ -748,7 +723,8 @@ impl PyAttrsListItems {
     }
 }
 
-#[pyo3::pyclass(name = "AttrsList", module = "xmarkup._rustlib", mapping, frozen)]
+/// This type is design for communicating with element attributes.
+#[pyo3::pyclass(name = "AttrsList", module = "xmarkup._rustlib", frozen)]
 pub struct PyAttrsList(pub(super) NodeGuard);
 
 #[pyo3::pymethods]
@@ -908,6 +884,7 @@ impl PyAttrsList {
     }
 }
 
+/// An element node
 #[pyo3::pyclass(name = "Element", module = "xmarkup._rustlib", frozen)]
 pub struct PyElement(pub(super) NodeGuard);
 
@@ -1198,6 +1175,7 @@ impl PyElement {
     }
 }
 
+/// A processing instruction node
 #[pyo3::pyclass(name = "ProcessingInstruction", module = "xmarkup._rustlib", frozen)]
 pub struct PyProcessingInstruction(pub(super) NodeGuard);
 

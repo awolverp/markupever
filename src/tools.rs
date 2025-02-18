@@ -1,5 +1,8 @@
 use pyo3::types::{PyStringMethods, PyTypeMethods};
 
+/// Returns the type name of a [`pyo3::ffi::PyObject`].
+/// 
+/// Returns `"<unknown>"` on failure.
 pub unsafe fn get_type_name(py: pyo3::Python<'_>, obj: *mut pyo3::ffi::PyObject) -> String {
     let type_ = unsafe { (*obj).ob_type };
 

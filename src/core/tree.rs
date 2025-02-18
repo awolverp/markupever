@@ -32,6 +32,7 @@ impl PyTreeDom {
 
 #[pyo3::pymethods]
 impl PyTreeDom {
+    /// Creates a new [`PyTreeDom`]
     #[new]
     #[classmethod]
     #[pyo3(signature=(*, namespaces=None))]
@@ -42,6 +43,7 @@ impl PyTreeDom {
         Self::with_capacity(cls, 0, namespaces)
     }
 
+    /// Creates a new [`PyTreeDom`] with the specified capacity.
     #[classmethod]
     #[pyo3(signature=(capacity, *, namespaces=None))]
     fn with_capacity(
@@ -96,6 +98,7 @@ impl PyTreeDom {
         })
     }
 
+    /// Returns the available namespaces in DOM as a `dict`.
     fn namespaces<'a>(&self, py: pyo3::Python<'a>) -> pyo3::PyResult<pyo3::Bound<'a, pyo3::PyAny>> {
         use pyo3::types::{PyDict, PyDictMethods};
 
@@ -110,6 +113,7 @@ impl PyTreeDom {
         Ok(dict.into_any())
     }
 
+    /// Returns the root node (always is PyDocument).
     fn root(&self) -> super::nodes::PyDocument {
         let root_id = self.dom.lock().root().id();
         super::nodes::PyDocument(super::nodes::NodeGuard::new(

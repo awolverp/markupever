@@ -226,6 +226,70 @@ def test_element():
     assert x.name == rl.QualName("template")
 
 
+def _get_attr(attrs: rl.AttrsList, name):
+    for index, v in enumerate(attrs.items()):
+        if v[0] == name:
+            return index, v[1]
+    
+    return None
+
+
+def test_element_attrs():
+    dom = rl.TreeDom()
+    x = rl.Element(dom, "body", [("class", "flex"), ("id", "main")], False, False)
+    x = rl.Element(dom, "body", [(rl.QualName("class"), "flex"), (rl.QualName("id"), "main")], False, False)
+
+    with pytest.raises(TypeError):
+        rl.Element(dom, "wolf", (1, ""), False, False)
+
+    with pytest.raises(TypeError):
+        rl.Element(dom, "temple", {}, False, False)
+
+    with pytest.raises(TypeError):
+        rl.Element(dom, "hello", 0, False, False)
+
+    assert len(x.attrs) == 2
+    x.attrs.clear()
+    assert len(x.attrs) == 0
+
+    x.attrs.push("id", "panel")
+    x.attrs.push(rl.QualName("class", "html"), "flex")
+
+    assert _get_attr(x.attrs, "id") == (0, "panel")
+    assert _get_attr(x.attrs, rl.QualName("id")) == (0, "panel")
+
+    assert _get_attr(x.attrs, "class") == (1, "flex")
+    assert _get_attr(x.attrs, rl.QualName("class", "html")) == (1, "flex")
+    assert _get_attr(x.attrs, rl.QualName("class")) is None
+    assert _get_attr(x.attrs, rl.QualName("class", "xml")) is None
+
+    index, _ = _get_attr(x.attrs, "id")
+    x.attrs.update_value(index, "x")
+
+    assert _get_attr(x.attrs, "id") == (0, "x")
+
+    with pytest.raises(IndexError):
+        x.attrs.update_value(10, "x")
+
+    x.attrs.remove(0)
+    assert len(x.attrs) == 1
+    assert _get_attr(x.attrs, "id") is None
+
+    x.attrs.swap_remove(0)
+    assert len(x.attrs) == 0
+    assert _get_attr(x.attrs, "class") is None
+
+    x = rl.Element(dom, "body", [("class", "flex"), ("class", "main"), ("class", "main")], False, False)
+
+    assert len(x.attrs) == 3
+    x.attrs.dedup()
+    assert len(x.attrs) == 2
+
+    assert _get_attr(x.attrs, "class") == (0, "flex")
+    x.attrs.reverse()
+    assert _get_attr(x.attrs, "class") == (0, "main")
+
+
 def test_pi():
     dom = rl.TreeDom()
     x = rl.ProcessingInstruction(dom, "d", target="t")
