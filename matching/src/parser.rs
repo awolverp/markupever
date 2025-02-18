@@ -156,12 +156,28 @@ mod tests {
         let _ = ExpressionGroup::new(":root", None).unwrap();
         let _ = ExpressionGroup::new(".title, div.m", None).unwrap();
         let _ = ExpressionGroup::new("a:nth-child(1)", None).unwrap();
+        let _ = ExpressionGroup::new("[href]", None).unwrap();
+        let _ = ExpressionGroup::new("[type=\"text\"]", None).unwrap();
+        let _ = ExpressionGroup::new("div > li", None).unwrap();
+        let _ = ExpressionGroup::new("div + li", None).unwrap();
+        let _ = ExpressionGroup::new("div ~ li", None).unwrap();
+        let _ = ExpressionGroup::new("a.externals[href]", None).unwrap();
+        let _ = ExpressionGroup::new("a[href^=\"https\"]", None).unwrap();
+        let _ = ExpressionGroup::new("[href*=ht]", None).unwrap();
+        let _ = ExpressionGroup::new("[href~=ht]", None).unwrap();
+        let _ = ExpressionGroup::new("[href|=ht]", None).unwrap();
+        let _ = ExpressionGroup::new("[src$=\".png\"]", None).unwrap();
+        let _ = ExpressionGroup::new("a:empty", None).unwrap();
+        let _ = ExpressionGroup::new("a:only-child", None).unwrap();
+        let _ = ExpressionGroup::new("a:only-of-type", None).unwrap();
     }
 
     #[test]
     fn test_invalid_expr() {
         let _ = ExpressionGroup::new("<bad expr>", None).unwrap_err();
         let _ = ExpressionGroup::new("a:child-nth(1)", None).unwrap_err();
+        let _ = ExpressionGroup::new("div..example", None).unwrap_err();
+        let _ = ExpressionGroup::new("div - li", None).unwrap_err();
     }
 
     const HTML: &'static str = r#"<div class="title">
@@ -179,7 +195,7 @@ mod tests {
     }
 
     #[test]
-    fn test_select() {
+    fn test_select_1() {
         let tree = treedom::ParserSink::parse_html(true, Default::default(), Default::default());
         let dom = tree.one(HTML).into_dom();
 
@@ -187,7 +203,7 @@ mod tests {
             let elem = res.value().element().unwrap();
             assert_eq!(&*elem.name.local, "div");
             assert_eq!(
-                get_attr(dbg!(&elem.attrs), "class"),
+                get_attr(&elem.attrs, "class"),
                 Some(&"title".to_owned().into())
             )
         }
