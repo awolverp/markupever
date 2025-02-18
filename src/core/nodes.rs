@@ -105,6 +105,63 @@ impl NodeGuard {
         node.has_children()
     }
 
+    pub fn from_pyobject(object: &pyo3::Bound<'_, pyo3::PyAny>) -> Result<Self, ()> {
+        use pyo3::type_object::PyTypeInfo;
+
+        if PyDocument::is_exact_type_of(object) {
+            let x = unsafe {
+                object
+                    .extract::<pyo3::PyRef<'_, PyDocument>>()
+                    .unwrap_unchecked()
+            };
+            Ok(x.0.clone())
+        } else if PyDoctype::is_exact_type_of(object) {
+            let x = unsafe {
+                object
+                    .extract::<pyo3::PyRef<'_, PyDoctype>>()
+                    .unwrap_unchecked()
+            };
+            Ok(x.0.clone())
+        } else if PyComment::is_exact_type_of(object) {
+            let x = unsafe {
+                object
+                    .extract::<pyo3::PyRef<'_, PyComment>>()
+                    .unwrap_unchecked()
+            };
+            Ok(x.0.clone())
+        } else if PyText::is_exact_type_of(object) {
+            let x = unsafe {
+                object
+                    .extract::<pyo3::PyRef<'_, PyText>>()
+                    .unwrap_unchecked()
+            };
+            Ok(x.0.clone())
+        } else if PyText::is_exact_type_of(object) {
+            let x = unsafe {
+                object
+                    .extract::<pyo3::PyRef<'_, PyText>>()
+                    .unwrap_unchecked()
+            };
+            Ok(x.0.clone())
+        } else if PyElement::is_exact_type_of(object) {
+            let x = unsafe {
+                object
+                    .extract::<pyo3::PyRef<'_, PyElement>>()
+                    .unwrap_unchecked()
+            };
+            Ok(x.0.clone())
+        } else if PyProcessingInstruction::is_exact_type_of(object) {
+            let x = unsafe {
+                object
+                    .extract::<pyo3::PyRef<'_, PyProcessingInstruction>>()
+                    .unwrap_unchecked()
+            };
+            Ok(x.0.clone())
+        } else {
+            Err(())
+        }
+    }
+
     pub fn into_any(self, py: pyo3::Python<'_>) -> pyo3::PyObject {
         match &self.type_ {
             NodeGuardType::Document => pyo3::Py::new(py, PyDocument(self)).unwrap().into_any(),

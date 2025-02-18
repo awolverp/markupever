@@ -335,3 +335,20 @@ def test_pi():
     assert x.target == "t"
 
     repr(x)
+
+
+def test_append_prepend():
+    dom = rl.TreeDom()
+    doctype = rl.Doctype(dom, "html", "", system_id="hello")
+
+    dom.append(dom.root(), doctype)
+
+    assert doctype.parent() == dom.root()
+    assert dom.root().first_child() == doctype
+
+    x = rl.Element(dom, "body", [("class", "flex"), ("id", "main")], False, False)
+
+    dom.prepend(dom.root(), x)
+
+    assert x.parent() == dom.root()
+    assert dom.root().first_child() == x
