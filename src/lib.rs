@@ -28,6 +28,8 @@ fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<core::PyProcessingInstruction>()?;
     m.add_class::<core::PyText>()?;
 
+    m.add_function(wrap_pyfunction!(core::serialize, m)?)?;
+
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add("__author__", "awolverp")?;
     Ok(())

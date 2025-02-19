@@ -412,3 +412,28 @@ impl PyParser {
 
 unsafe impl Send for PyParser {}
 unsafe impl Sync for PyParser {}
+
+#[pyo3::pyfunction]
+pub fn serialize(node: &pyo3::Bound<'_, pyo3::PyAny>, is_xml: bool) -> pyo3::PyResult<Vec<u8>> {
+    let node = super::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
+        pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
+            "expected an node (such as Element, Text, Comment, ...) for node, got {}",
+            unsafe { crate::tools::get_type_name(node.py(), node.as_ptr()) }
+        ))
+    })?;
+
+    let mut writer = Vec::with_capacity(10);
+    let dom = node.tree.lock();
+
+    let serializer = ::treedom::Serializer::new(&*dom, node.id);
+
+    if is_xml {
+        ::treedom::xml5ever::serialize::serialize(&mut writer, &serializer, Default::default())
+            .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
+    } else {
+        ::treedom::html5ever::serialize::serialize(&mut writer, &serializer, Default::default())
+            .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
+    }
+
+    Ok(writer)
+}

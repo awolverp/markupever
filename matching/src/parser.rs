@@ -38,15 +38,14 @@ impl<'i> selectors::parser::Parser<'i> for Parser<'i> {
         &self,
         prefix: &<Self::Impl as selectors::SelectorImpl>::NamespacePrefix,
     ) -> Option<<Self::Impl as selectors::SelectorImpl>::NamespaceUrl> {
-        if self.0.is_none() || prefix.0.is_empty() {
-            return None;
-        }
+        if let Some(x) = self.0 {
+            if x.is_empty() {
+                return None;
+            }
 
-        unsafe {
-            self.0
-                .unwrap_unchecked()
-                .get(&prefix.0)
-                .map(treedom::markup5ever::Namespace::from)
+            x.get(&prefix.0).map(treedom::markup5ever::Namespace::from)
+        } else {
+            None
         }
     }
 }

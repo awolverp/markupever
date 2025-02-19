@@ -7,14 +7,53 @@ pub struct PyTreeDom {
 }
 
 impl PyTreeDom {
+    #[inline(always)]
     pub fn from_treedom(dom: ::treedom::IDTreeDOM) -> Self {
         Self {
             dom: Arc::new(parking_lot::Mutex::new(dom)),
         }
     }
 
+    #[inline(always)]
     pub fn from_arc_mutex(dom: Arc<parking_lot::Mutex<::treedom::IDTreeDOM>>) -> Self {
         Self { dom }
+    }
+
+    #[inline]
+    fn add_new_namespace(
+        &self,
+        mut lock: ::parking_lot::MutexGuard<'_, ::treedom::IDTreeDOM>,
+        id: ::treedom::NodeId,
+    ) {
+        let child = lock.get(id).unwrap();
+
+        if let Some(elem) = child.value().element() {
+            if let Some(prefix) = elem.name.prefix.clone() {
+                let ns = elem.name.ns.clone();
+
+                lock.namespaces_mut().insert(prefix, ns);
+            } else if lock.namespaces().is_empty() && !elem.name.ns.is_empty() {
+                let ns = elem.name.ns.clone();
+
+                lock.namespaces_mut()
+                    .insert(::treedom::markup5ever::Prefix::from(""), ns);
+            }
+        }
+    }
+
+    #[inline]
+    fn remove_old_namespace(
+        &self,
+        mut lock: ::parking_lot::MutexGuard<'_, ::treedom::IDTreeDOM>,
+        id: ::treedom::NodeId,
+    ) {
+        let child = lock.get(id).unwrap();
+
+        if let Some(elem) = child.value().element() {
+            if let Some(prefix) = elem.name.prefix.clone() {
+                lock.namespaces_mut().remove(&prefix);
+            }
+        }
     }
 }
 
@@ -148,7 +187,10 @@ impl PyTreeDom {
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.append_id(child.id);
-        
+        let _ = parent;
+
+        self_.add_new_namespace(tree, child.id);
+
         Ok(())
     }
 
@@ -189,7 +231,10 @@ impl PyTreeDom {
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.prepend_id(child.id);
-        
+        let _ = parent;
+
+        self_.add_new_namespace(tree, child.id);
+
         Ok(())
     }
 
@@ -230,7 +275,10 @@ impl PyTreeDom {
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.insert_id_before(child.id);
-        
+        let _ = parent;
+
+        self_.add_new_namespace(tree, child.id);
+
         Ok(())
     }
 
@@ -271,21 +319,20 @@ impl PyTreeDom {
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.insert_id_after(child.id);
-        
+        let _ = parent;
+
+        self_.add_new_namespace(tree, child.id);
+
         Ok(())
     }
 
-    fn detach(
-        self_: pyo3::PyRef<'_, Self>,
-        node: pyo3::PyObject,
-    ) -> pyo3::PyResult<()> {
-        let node =
-            super::nodes::NodeGuard::from_pyobject(node.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for node, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), node.as_ptr()) }
-                ))
-            })?;
+    fn detach(self_: pyo3::PyRef<'_, Self>, node: pyo3::PyObject) -> pyo3::PyResult<()> {
+        let node = super::nodes::NodeGuard::from_pyobject(node.bind(self_.py())).map_err(|_| {
+            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
+                "expected an node (such as Element, Text, Comment, ...) for node, got {}",
+                unsafe { crate::tools::get_type_name(self_.py(), node.as_ptr()) }
+            ))
+        })?;
 
         if !Arc::ptr_eq(&self_.dom, &node.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
@@ -297,7 +344,11 @@ impl PyTreeDom {
         let mut node = tree.get_mut(node.id).unwrap();
 
         node.detach();
-        
+        let id = node.id();
+        let _ = node;
+
+        self_.remove_old_namespace(tree, id);
+
         Ok(())
     }
 
@@ -338,7 +389,7 @@ impl PyTreeDom {
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.reparent_from_id_append(child.id);
-        
+
         Ok(())
     }
 
@@ -379,7 +430,7 @@ impl PyTreeDom {
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.reparent_from_id_prepend(child.id);
-        
+
         Ok(())
     }
 

@@ -346,9 +346,25 @@ def test_append_prepend():
     assert doctype.parent() == dom.root()
     assert dom.root().first_child() == doctype
 
-    x = rl.Element(dom, "body", [("class", "flex"), ("id", "main")], False, False)
+    x = rl.Element(dom, rl.QualName("head", "mynamespace"), [("class", "flex"), ("id", "main")], False, False)
+
+    assert dom.namespaces() == {}
 
     dom.prepend(dom.root(), x)
 
+    assert dom.namespaces() == {"": "mynamespace"}
+
     assert x.parent() == dom.root()
     assert dom.root().first_child() == x
+
+    y = rl.Element(dom, rl.QualName("head", "namespace2", "ns"), [("class", "flex"), ("id", "main")], False, False)
+
+    assert dom.namespaces() == {"": "mynamespace"}
+    dom.insert_before(x, y)
+
+    assert dom.namespaces() == {"": "mynamespace", "ns": "namespace2"}
+
+    y = rl.Element(dom, rl.QualName("head", "namespace3"), [("class", "flex"), ("id", "main")], False, False)
+    dom.insert_after(x, y)
+
+    assert dom.namespaces() == {"": "mynamespace", "ns": "namespace2"}
