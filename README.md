@@ -37,19 +37,17 @@ dom.select_one("h1.title")
 ```python
 import xmarkup
 
-def read_file():
-    with open("content.html", "rb") as fd:
-        for line in iter(fd.readline, b""):
-            yield line
-
-parser = xmarkup.stream(read_file, xmarkup.HTMLOptions(...))
+parser = xmarkup.Parser(xmarkup.HTMLOptions(...))
+parser.process("... content part 1 ...")
+parser.process("... content part 2 ...")
+parser.finish()
 
 parser.errors # errors in content
 parser.lineno # number of lines
 
 dom: xmarkup.dom.DOMTree = parser.into_dom()
 
-dom.select_one("h1.title")
+dom.select("h1.title")
 ```
 
 **"\_rustlib" Target:**
