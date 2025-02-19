@@ -16,7 +16,7 @@ pub unsafe fn get_type_name(py: pyo3::Python<'_>, obj: *mut pyo3::ffi::PyObject)
 }
 
 pub enum QualNameFromPyObjectResult<'p> {
-    QualName(pyo3::PyRef<'p, crate::core::PyQualName>),
+    QualName(pyo3::PyRef<'p, crate::qualname::PyQualName>),
     Str(String),
     Err(pyo3::PyErr),
 }
@@ -46,7 +46,7 @@ pub fn qualname_from_pyobject<'a>(
         } else {
             match object
                 .bind(py)
-                .extract::<pyo3::PyRef<'_, crate::core::PyQualName>>()
+                .extract::<pyo3::PyRef<'_, crate::qualname::PyQualName>>()
             {
                 Ok(x) => QualNameFromPyObjectResult::QualName(x),
                 Err(e) => QualNameFromPyObjectResult::Err(e),
