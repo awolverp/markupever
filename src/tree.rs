@@ -434,6 +434,11 @@ impl PyTreeDom {
         Ok(())
     }
 
+    fn __len__(&self) -> usize {
+        let dom = self.dom.lock();
+        dom.values().len()
+    }
+
     fn __str__(&self) -> String {
         let dom = self.dom.lock();
         format!("{}", dom)

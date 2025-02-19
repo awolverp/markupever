@@ -182,6 +182,10 @@ impl PartialEq for NodeGuard {
             return false;
         }
 
+        if self.id == other.id {
+            return true;
+        }
+
         let tree = self.tree.lock();
 
         let g1 = tree.get(self.id).unwrap();
@@ -810,7 +814,7 @@ fn repr_attrlist(element: &::treedom::interface::ElementInterface) -> String {
         );
     }
 
-    writer + "])"
+    writer + "]"
 }
 
 /// This type is design for communicating with element attributes.

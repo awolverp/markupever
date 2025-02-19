@@ -3,12 +3,12 @@ use pyo3::prelude::*;
 extern crate matching;
 extern crate treedom;
 
+mod iter;
 mod nodes;
 mod parser;
 mod qualname;
-mod tree;
-mod iter;
 mod tools;
+mod tree;
 
 #[pymodule(gil_used = false)]
 #[cold]
@@ -33,6 +33,8 @@ fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<nodes::PyText>()?;
 
     m.add_function(wrap_pyfunction!(parser::serialize, m)?)?;
+
+    iter::register_iter_module(m)?;
 
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add("__author__", "awolverp")?;
