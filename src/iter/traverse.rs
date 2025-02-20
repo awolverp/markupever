@@ -11,7 +11,14 @@ pub struct PyTraverse {
 }
 
 impl PyTraverse {
-    fn next_edge(&mut self, py: pyo3::Python<'_>) -> pyo3::PyResult<(pyo3::PyObject, bool)> {
+    pub fn from_nodeguard(node: crate::nodes::NodeGuard) -> Self {
+        Self {
+            root: Some(node),
+            edge: None,
+        }
+    }
+
+    pub fn next_edge(&mut self) -> Option<(crate::nodes::NodeGuard, bool)> {
         match &self.edge {
             None => {
                 if let Some(root) = &self.root {
@@ -38,9 +45,9 @@ impl PyTraverse {
         }
 
         match &self.edge {
-            Some(EdgeSign::Open(x)) => Ok((x.clone().into_any(py), false)),
-            Some(EdgeSign::Close(x)) => Ok((x.clone().into_any(py), true)),
-            None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
+            Some(EdgeSign::Open(x)) => Some((x.clone(), false)),
+            Some(EdgeSign::Close(x)) => Some((x.clone(), true)),
+            None => None,
         }
     }
 }
@@ -56,10 +63,7 @@ impl PyTraverse {
             ))
         })?;
 
-        Ok(Self {
-            root: Some(node),
-            edge: None,
-        })
+        Ok(Self::from_nodeguard(node))
     }
 
     fn __iter__(self_: pyo3::PyRef<'_, Self>) -> pyo3::PyRef<'_, Self> {
@@ -68,7 +72,10 @@ impl PyTraverse {
 
     pub fn __next__(mut self_: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<(pyo3::PyObject, bool)> {
         let py = self_.py();
-        self_.next_edge(py)
+        match self_.next_edge() {
+            Some((x, y)) => Ok((x.into_any(py), y)),
+            None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()))
+        }
     }
 }
 
@@ -100,14 +107,14 @@ impl PyDescendants {
     fn __next__(mut self_: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::PyObject> {
         let py = self_.py();
 
-        loop {
-            let (node, is_close) = self_.0.next_edge(py)?;
-
+        while let Some((node, is_close)) = self_.0.next_edge() {
             if is_close {
                 continue;
             }
 
-            return Ok(node);
+            return Ok(node.into_any(py));
         }
+
+        Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()))
     }
 }

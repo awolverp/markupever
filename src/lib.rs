@@ -7,6 +7,7 @@ mod iter;
 mod nodes;
 mod parser;
 mod qualname;
+mod select;
 mod tools;
 mod tree;
 
@@ -31,6 +32,8 @@ fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<nodes::PyElement>()?;
     m.add_class::<nodes::PyProcessingInstruction>()?;
     m.add_class::<nodes::PyText>()?;
+
+    m.add_class::<select::PySelect>()?;
 
     m.add_function(wrap_pyfunction!(parser::serialize, m)?)?;
 

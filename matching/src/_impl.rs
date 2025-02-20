@@ -5,7 +5,7 @@ use precomputed_hash::PrecomputedHash;
 /// A StrTendril which implemented [`cssparser::ToCss`] and [`precomputed_hash::PrecomputedHash`]
 #[derive(Clone, PartialEq, Eq)]
 pub struct CssTendril {
-    pub content: tendril::StrTendril,
+    pub content: ::treedom::atomic::AtomicTendril,
     hash: u32,
 }
 
@@ -28,7 +28,7 @@ impl<'a> From<&'a str> for CssTendril {
     fn from(value: &'a str) -> Self {
         use std::hash::Hash;
 
-        let c = tendril::StrTendril::from(value);
+        let c = treedom::atomic::AtomicTendril::from(value);
 
         let mut state = std::hash::DefaultHasher::new();
         c.hash(&mut state);
@@ -46,6 +46,8 @@ impl AsRef<str> for CssTendril {
         &self.content
     }
 }
+
+unsafe impl Sync for CssTendril {}
 
 /// A [`treedom::markup5ever::LocalName`] which implemented [`cssparser::ToCss`]
 #[derive(Clone, PartialEq, Eq)]

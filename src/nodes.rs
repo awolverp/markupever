@@ -2,7 +2,7 @@ use pyo3::types::PyAnyMethods;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum NodeGuardType {
+pub enum NodeGuardType {
     Document,
     Doctype,
     Comment,
@@ -25,7 +25,7 @@ impl From<&::treedom::interface::Interface> for NodeGuardType {
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct NodeGuard {
+pub struct NodeGuard {
     pub tree: Arc<parking_lot::Mutex<::treedom::IDTreeDOM>>,
     pub id: ::treedom::NodeId,
     pub type_: NodeGuardType,

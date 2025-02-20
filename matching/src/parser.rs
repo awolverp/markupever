@@ -51,10 +51,10 @@ impl<'i> selectors::parser::Parser<'i> for Parser<'i> {
 }
 
 #[derive(Debug)]
-struct ExpressionGroup(selectors::SelectorList<_impl::ParserImplementation>);
+pub struct ExpressionGroup(selectors::SelectorList<_impl::ParserImplementation>);
 
 impl ExpressionGroup {
-    fn new<'a>(
+    pub fn new<'a>(
         content: &'a str,
         namespaces: Option<&'a treedom::NamespaceMap>,
     ) -> Result<Self, cssparser::ParseError<'a, CssParserKindError<'a>>> {
@@ -70,7 +70,7 @@ impl ExpressionGroup {
         Ok(Self(sl))
     }
 
-    fn matches<'a>(
+    pub fn matches<'a>(
         &self,
         node: CssNodeRef<'a>,
         scope: Option<CssNodeRef<'a>>,
