@@ -338,6 +338,7 @@ def test_pi():
 
 
 def test_append_prepend():
+    # this test is enough because these methods uses ego_tree crate of Rust which is completely tested
     dom = rl.TreeDom()
     doctype = rl.Doctype(dom, "html", "", system_id="hello")
 
@@ -346,7 +347,9 @@ def test_append_prepend():
     assert doctype.parent() == dom.root()
     assert dom.root().first_child() == doctype
 
-    x = rl.Element(dom, rl.QualName("head", "mynamespace"), [("class", "flex"), ("id", "main")], False, False)
+    x = rl.Element(
+        dom, rl.QualName("head", "mynamespace"), [("class", "flex"), ("id", "main")], False, False
+    )
 
     assert dom.namespaces() == {}
 
@@ -357,14 +360,203 @@ def test_append_prepend():
     assert x.parent() == dom.root()
     assert dom.root().first_child() == x
 
-    y = rl.Element(dom, rl.QualName("head", "namespace2", "ns"), [("class", "flex"), ("id", "main")], False, False)
+    y = rl.Element(
+        dom,
+        rl.QualName("head", "namespace2", "ns"),
+        [("class", "flex"), ("id", "main")],
+        False,
+        False,
+    )
 
     assert dom.namespaces() == {"": "mynamespace"}
     dom.insert_before(x, y)
 
     assert dom.namespaces() == {"": "mynamespace", "ns": "namespace2"}
 
-    y = rl.Element(dom, rl.QualName("head", "namespace3"), [("class", "flex"), ("id", "main")], False, False)
+    y = rl.Element(
+        dom, rl.QualName("head", "namespace3"), [("class", "flex"), ("id", "main")], False, False
+    )
     dom.insert_after(x, y)
 
     assert dom.namespaces() == {"": "mynamespace", "ns": "namespace2"}
+
+
+def test_iterator():
+    dom = rl.TreeDom()
+
+    testcase = [
+        rl.Doctype(dom, "one", "", ""),
+        rl.Element(dom, "two", [], False, False),
+        rl.Text(dom, "three"),
+        rl.Comment(dom, "four"),
+        rl.Element(dom, "five", [("class", "flex flex-row")], False, False),
+        rl.Element(dom, rl.QualName("html", "html", None), [], False, False),
+        rl.ProcessingInstruction(dom, "1", "2"),
+    ]
+
+    for index, node in enumerate(rl.iter.Iterator(dom)):
+        if isinstance(node, rl.Document):
+            continue
+
+        assert testcase[index - 1] == node
+
+        dom.append(dom.root(), node)
+
+    for index, node in enumerate(rl.iter.Iterator(dom)):
+        if isinstance(node, rl.Document):
+            continue
+
+        assert testcase[index - 1] == node
+
+
+def test_ancestors():
+    dom = rl.TreeDom()
+
+    testcase = [
+        rl.Doctype(dom, "one", "", ""),
+        rl.Element(dom, "html", [(rl.QualName("lang", "", None), "en")], False, False),
+        rl.Element(dom, "head", [(rl.QualName("lang", "", None), "en")], False, False),
+        rl.Text(dom, "Hello World"),
+    ]
+
+    dom.append(dom.root(), testcase[0])
+    dom.append(dom.root(), testcase[1])
+    dom.append(testcase[1], testcase[2])
+    dom.append(testcase[2], testcase[3])
+
+    result = list(rl.iter.Ancestors(testcase[3]))
+
+    assert isinstance(result[-1], rl.Document)
+    assert result[-2] == testcase[1]
+
+
+def test_children():
+    dom = rl.TreeDom()
+
+    testcase = [
+        rl.Doctype(dom, "one", "", ""),
+        rl.Element(dom, "html", [(rl.QualName("lang", "", None), "en")], False, False),
+        rl.Element(dom, "head", [(rl.QualName("lang", "", None), "en")], False, False),
+        rl.Text(dom, "Hello World"),
+    ]
+
+    for n in testcase:
+        dom.append(dom.root(), n)
+
+    result = list(rl.iter.Children(dom.root()))
+
+    assert result == testcase
+
+
+def test_traverse():
+    dom = rl.TreeDom()
+
+    testcase = [
+        rl.Doctype(dom, "one", "", ""),
+        rl.Element(dom, "html", [(rl.QualName("lang", "", None), "en")], False, False),
+        rl.Element(dom, "head", [(rl.QualName("lang", "", None), "en")], False, False),
+        rl.Text(dom, "Hello World"),
+    ]
+
+    dom.append(dom.root(), testcase[0])
+    dom.append(dom.root(), testcase[1])
+    dom.append(testcase[1], testcase[2])
+    dom.append(testcase[2], testcase[3])
+
+    expected = [
+        (testcase[0], False),
+        (testcase[0], True),
+        (testcase[1], False),
+        (testcase[2], False),
+        (testcase[3], False),
+        (testcase[3], True),
+        (testcase[2], True),
+        (testcase[1], True),
+    ]
+    result = list(rl.iter.Traverse(dom.root()))[1:-1]
+
+    assert result == expected
+
+
+def _get_text(node) -> str:
+    s = ""
+
+    for n in rl.iter.Descendants(node):
+        if isinstance(n, rl.Text):
+            s += n.contents
+    
+    return s.strip()
+
+
+def test_select():
+    p = rl.Parser(rl.HtmlOptions())
+    p.process(
+        """<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="header" data-role="banner">
+        <h1 title="main heading">Welcome</h1>
+        <p>This is paragraph 1</p>
+        <p>This is paragraph 2</p>
+    </div>
+    <ul class="menu">
+        <li class="example">Item 1</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
+    </ul>
+    <a href="https://example.com" class="external">External Link</a>
+    <input type="text" required>
+    <input type="checkbox" checked>
+    <div class="box"></div>
+    <p lang="en">English</p>
+    <p lang="fr">Texte en</p>
+</body>
+</html>"""
+    )
+    p.finish()
+    d = p.into_dom()
+
+    is_ok = False
+    for node in rl.Select(d.root(), '[href*="example"]'):
+        assert node.name == "a"
+        
+        _, v = _get_attr(node.attrs, "href")
+        assert "example" in v
+        is_ok = True
+
+    assert is_ok
+
+    is_ok = False
+    for node in rl.Select(d.root(), 'div p:nth-of-type(2)'):
+        assert node.name == "p"
+        
+        assert _get_text(node) == "This is paragraph 2"
+        is_ok = True
+
+    assert is_ok
+
+    is_ok = False
+    for node in rl.Select(d.root(), 'div:empty'):
+        assert node.name == "div"
+        
+        assert node.class_list() == ["box"]
+
+        is_ok = True
+
+    assert is_ok
+
+    is_ok = False
+    for node in rl.Select(d.root(), 'div[data-role] a'):
+        assert node.name == "p"
+        
+        _, v = _get_attr(node.attrs, "lang")
+        assert v == "en"
+
+        is_ok = True
+
+    assert is_ok

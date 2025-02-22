@@ -187,7 +187,6 @@ impl PyTreeDom {
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.append_id(child.id);
-        std::mem::drop(parent);
 
         self_.add_new_namespace(tree, child.id);
 
@@ -231,7 +230,6 @@ impl PyTreeDom {
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.prepend_id(child.id);
-        std::mem::drop(parent);
 
         self_.add_new_namespace(tree, child.id);
 
@@ -275,7 +273,6 @@ impl PyTreeDom {
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.insert_id_before(child.id);
-        std::mem::drop(parent);
 
         self_.add_new_namespace(tree, child.id);
 
@@ -319,7 +316,6 @@ impl PyTreeDom {
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.insert_id_after(child.id);
-        std::mem::drop(parent);
 
         self_.add_new_namespace(tree, child.id);
 

@@ -186,7 +186,7 @@ impl markup5ever::interface::TreeSink for ParserSink {
         unsafe {
             if let Some(ref prefix) = name.prefix {
                 (*self.namespaces.get()).insert(prefix.clone(), name.ns.clone());
-            } else if (&*self.namespaces.get()).is_empty() {
+            } else if (*self.namespaces.get()).is_empty() {
                 (*self.namespaces.get()).insert(markup5ever::Prefix::from(""), name.ns.clone());
             }
         }

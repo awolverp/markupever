@@ -425,7 +425,7 @@ pub fn serialize(node: &pyo3::Bound<'_, pyo3::PyAny>, is_xml: bool) -> pyo3::PyR
     let mut writer = Vec::with_capacity(10);
     let dom = node.tree.lock();
 
-    let serializer = ::treedom::Serializer::new(&*dom, node.id);
+    let serializer = ::treedom::Serializer::new(&dom, node.id);
 
     if is_xml {
         ::treedom::xml5ever::serialize::serialize(&mut writer, &serializer, Default::default())

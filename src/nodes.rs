@@ -136,13 +136,6 @@ impl NodeGuard {
                     .unwrap_unchecked()
             };
             Ok(x.0.clone())
-        } else if PyText::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyText>>()
-                    .unwrap_unchecked()
-            };
-            Ok(x.0.clone())
         } else if PyElement::is_exact_type_of(object) {
             let x = unsafe {
                 object
@@ -801,7 +794,7 @@ fn repr_attrlist(element: &::treedom::interface::ElementInterface) -> String {
     if let Some((key, val)) = iter_.next() {
         writer += &format!(
             "({}, {:?})",
-            super::qualname::repr_qualname(&*key),
+            super::qualname::repr_qualname(key),
             val.as_ref()
         );
     }
@@ -809,7 +802,7 @@ fn repr_attrlist(element: &::treedom::interface::ElementInterface) -> String {
     for (key, val) in iter_ {
         writer += &format!(
             ", ({}, {:?})",
-            super::qualname::repr_qualname(&*key),
+            super::qualname::repr_qualname(key),
             val.as_ref()
         );
     }
@@ -982,7 +975,7 @@ impl PyAttrsList {
         let node = tree.get(self.0.id).unwrap();
         let elem = node.value().element().unwrap();
 
-        repr_attrlist(&elem)
+        repr_attrlist(elem)
     }
 }
 
@@ -1284,7 +1277,7 @@ impl PyElement {
         format!(
             "xmarkup._rustlib.Element(name={}, attrs={}, template={}, mathml_annotation_xml_integration_point={})",
             super::qualname::repr_qualname(&elem.name),
-            repr_attrlist(&elem),
+            repr_attrlist(elem),
             elem.template,
             elem.mathml_annotation_xml_integration_point
         )

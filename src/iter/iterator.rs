@@ -110,7 +110,7 @@ axis_iterators! {
     PyFirstChildren(crate::nodes::NodeGuard::first_child) as "FirstChildren";
 
     /// Iterates over last children.
-    PyLastChildren(crate::nodes::NodeGuard::first_child) as "LastChildren";
+    PyLastChildren(crate::nodes::NodeGuard::last_child) as "LastChildren";
 }
 
 #[pyo3::pyclass(name = "Children", module = "xmarkup._rustlib")]

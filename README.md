@@ -11,7 +11,7 @@ text: xmarkup.dom.Text = body.create_text("Body Text")
 comment: xmarkup.dom.Comment = body.create_comment("Comment")
 # other elements ...
 
-dom.serialize("html")
+dom.serialize(is_xml=False)
 """
 <body class="main">
     Body Text

@@ -3,7 +3,6 @@ use std::sync::Arc;
 struct PySelectInner {
     traverse: crate::iter::PyTraverse,
     expr: ::matching::ExpressionGroup,
-    caches: ::matching::SelectorCaches,
 }
 
 impl PySelectInner {
@@ -17,7 +16,6 @@ impl PySelectInner {
         Ok(Self {
             traverse: crate::iter::PyTraverse::from_nodeguard(node),
             expr,
-            caches: Default::default(),
         })
     }
 
@@ -49,7 +47,7 @@ impl Iterator for PySelectInner {
             if self.expr.matches(
                 unsafe { ::matching::CssNodeRef::new_unchecked(node) },
                 None,
-                &mut self.caches,
+                &mut Default::default(),
             ) {
                 std::mem::drop(tree);
                 return Some(guard);
