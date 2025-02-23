@@ -74,7 +74,7 @@ impl PyTraverse {
         let py = self_.py();
         match self_.next_edge() {
             Some((x, y)) => Ok((x.into_any(py), y)),
-            None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()))
+            None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
         }
     }
 }

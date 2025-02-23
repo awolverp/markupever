@@ -8,7 +8,7 @@ pub use traverse::PyTraverse;
 #[cold]
 pub fn register_iter_module(m: &pyo3::Bound<'_, pyo3::types::PyModule>) -> pyo3::PyResult<()> {
     let iter_module = pyo3::types::PyModule::new(m.py(), "iter")?;
-    
+
     iter_module.add_class::<iterator::PyIterator>()?;
     iter_module.add_class::<iterator::PyAncestors>()?;
     iter_module.add_class::<iterator::PyPrevSiblings>()?;

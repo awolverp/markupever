@@ -484,7 +484,7 @@ def _get_text(node) -> str:
     for n in rl.iter.Descendants(node):
         if isinstance(n, rl.Text):
             s += n.contents
-    
+
     return s.strip()
 
 
@@ -524,7 +524,7 @@ def test_select():
     is_ok = False
     for node in rl.Select(d.root(), '[href*="example"]'):
         assert node.name == "a"
-        
+
         _, v = _get_attr(node.attrs, "href")
         assert "example" in v
         is_ok = True
@@ -532,18 +532,18 @@ def test_select():
     assert is_ok
 
     is_ok = False
-    for node in rl.Select(d.root(), 'div p:nth-of-type(2)'):
+    for node in rl.Select(d.root(), "div p:nth-of-type(2)"):
         assert node.name == "p"
-        
+
         assert _get_text(node) == "This is paragraph 2"
         is_ok = True
 
     assert is_ok
 
     is_ok = False
-    for node in rl.Select(d.root(), 'div:empty'):
+    for node in rl.Select(d.root(), "div:empty"):
         assert node.name == "div"
-        
+
         assert node.class_list() == ["box"]
 
         is_ok = True
@@ -551,9 +551,9 @@ def test_select():
     assert is_ok
 
     is_ok = False
-    for node in rl.Select(d.root(), 'div[data-role] a'):
+    for node in rl.Select(d.root(), "div[data-role] a"):
         assert node.name == "p"
-        
+
         _, v = _get_attr(node.attrs, "lang")
         assert v == "en"
 

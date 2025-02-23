@@ -87,7 +87,7 @@ impl PySelect {
 
     pub fn __next__(self_: pyo3::PyRef<'_, Self>) -> pyo3::PyResult<pyo3::PyObject> {
         let mut lock = self_.inner.lock();
-        
+
         lock.next()
             .ok_or_else(|| pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()))
             .map(|x| x.into_any(self_.py()))

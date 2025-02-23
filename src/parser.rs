@@ -406,7 +406,7 @@ impl PyParser {
     fn __repr__(&self) -> String {
         let state = self.state.lock();
 
-        format!("<xmarkup._rustlib.Parser - {:?}>", &*state)
+        format!("<Parser - {:?}>", &*state)
     }
 }
 
