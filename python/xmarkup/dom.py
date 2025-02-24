@@ -3,7 +3,7 @@ import typing
 
 
 class TreeDom:
-    __slots__ = ("__raw",)
+    __slots__ = ("_raw",)
 
     def __init__(self, *, raw: typing.Optional[_rustlib.TreeDom] = None):
         """
@@ -13,33 +13,33 @@ class TreeDom:
         The allocated memory is never reduced and is only released when it is dropped.
         """
         if raw is None:
-            self.__raw = _rustlib.TreeDom()
+            self._raw = _rustlib.TreeDom()
         else:
             assert isinstance(raw, _rustlib.TreeDom)
-            self.__raw = raw
+            self._raw = raw
 
     def namespaces(self) -> typing.Dict[str, str]:
         """Returns the DOM namespaces."""
-        return self.__raw.namespaces()
+        return self._raw.namespaces()
 
     def root(self) -> "Document":
         """Returns the root node."""
-        return Document(self.__raw.root())
+        return Document(self._raw.root())
 
     def __iter__(self) -> typing.Generator["BaseNode", typing.Any, None]:
         """Iterates the nodes in insert order - don't matter which are orphan which not."""
-        for rn in _rustlib.iter.Iterator(self.__raw):
+        for rn in _rustlib.iter.Iterator(self._raw):
             yield BaseNode._wrap(rn)
 
     def __len__(self) -> int:
         """Returns the number of nodes in tree."""
-        return len(self.__raw)
+        return len(self._raw)
 
-    def __str__(self):
-        return str(self.__raw)
+    def __str__(self) -> str:
+        return str(self._raw)
 
-    def __repr__(self):
-        return repr(self.__raw)
+    def __repr__(self) -> str:
+        return repr(self._raw)
 
 
 class _ConfigNode:
