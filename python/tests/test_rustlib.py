@@ -145,9 +145,9 @@ def test_comment():
 
     assert x.parent() is None  # make sure it is orphan
 
-    assert x.contents == "test"
-    x.contents = "I am comment"
-    assert x.contents == "I am comment"
+    assert x.content == "test"
+    x.content = "I am comment"
+    assert x.content == "I am comment"
 
     repr(x)
 
@@ -164,9 +164,9 @@ def test_text():
 
     assert x.parent() is None  # make sure it is orphan
 
-    assert x.contents == "test"
-    x.contents = "I am text"
-    assert x.contents == "I am text"
+    assert x.content == "test"
+    x.content = "I am text"
+    assert x.content == "I am text"
 
     repr(x)
 
@@ -483,7 +483,7 @@ def _get_text(node) -> str:
 
     for n in rl.iter.Descendants(node):
         if isinstance(n, rl.Text):
-            s += n.contents
+            s += n.content
 
     return s.strip()
 
@@ -551,11 +551,9 @@ def test_select():
     assert is_ok
 
     is_ok = False
-    for node in rl.Select(d.root(), "div[data-role] a"):
+    for node in rl.Select(d.root(), "div[data-role] p"):
         assert node.name == "p"
-
-        _, v = _get_attr(node.attrs, "lang")
-        assert v == "en"
+        assert _get_text(node).startswith("This is paragraph")
 
         is_ok = True
 

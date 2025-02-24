@@ -24,7 +24,7 @@ test-rs:
 
 .PHONY: test-py
 test-py: build-dev
-	pytest -s -v
+	coverage run -m pytest -s -v
 	-rm -rf .pytest_cache
 	-ruff check .
 	ruff clean
@@ -41,4 +41,6 @@ clean:
 	-rm -rf python/xmarkup/*.so
 	-rm -rf target/release
 	-rm -rf .pytest_cache
+	-rm -rf .coverage
+	-rm -rf htmlcov
 	-ruff clean

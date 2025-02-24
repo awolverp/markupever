@@ -295,7 +295,7 @@ impl PyDocument {
     }
 
     fn __repr__(&self) -> String {
-        String::from("xmarkup._rustlib.Document")
+        String::from("Document")
     }
 }
 
@@ -456,7 +456,7 @@ impl PyDoctype {
         let doctype = node.value().doctype().unwrap();
 
         format!(
-            "xmarkup._rustlib.Doctype(name={:?}, public_id={:?}, system_id={:?})",
+            "Doctype(name={:?}, public_id={:?}, system_id={:?})",
             &*doctype.name, &*doctype.public_id, &*doctype.system_id
         )
     }
@@ -469,7 +469,7 @@ pub struct PyComment(pub(super) NodeGuard);
 #[pyo3::pymethods]
 impl PyComment {
     #[new]
-    fn new(treedom: &pyo3::Bound<'_, pyo3::PyAny>, contents: String) -> pyo3::PyResult<Self> {
+    fn new(treedom: &pyo3::Bound<'_, pyo3::PyAny>, content: String) -> pyo3::PyResult<Self> {
         let treedom = treedom
             .extract::<pyo3::PyRef<'_, super::tree::PyTreeDom>>()
             .map_err(|_| {
@@ -479,7 +479,7 @@ impl PyComment {
                 ))
             })?;
 
-        let val = ::treedom::interface::CommentInterface::new(contents.into());
+        let val = ::treedom::interface::CommentInterface::new(content.into());
 
         let mut dom = treedom.dom.lock();
         let node = dom.orphan(val.into());
@@ -488,17 +488,17 @@ impl PyComment {
     }
 
     #[getter]
-    fn contents(&self) -> String {
+    fn content(&self) -> String {
         let tree = self.0.tree.lock();
         let node = tree.get(self.0.id).unwrap();
         node.value().comment().unwrap().contents.to_string()
     }
 
     #[setter]
-    fn set_contents(&self, contents: String) {
+    fn set_content(&self, content: String) {
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
-        node.value().comment_mut().unwrap().contents = contents.into();
+        node.value().comment_mut().unwrap().contents = content.into();
     }
 
     fn tree(&self) -> super::tree::PyTreeDom {
@@ -581,10 +581,7 @@ impl PyComment {
         let node = tree.get(self.0.id).unwrap();
         let comment = node.value().comment().unwrap();
 
-        format!(
-            "xmarkup._rustlib.Comment(contents={:?})",
-            &*comment.contents
-        )
+        format!("Comment(content={:?})", &*comment.contents)
     }
 }
 
@@ -595,7 +592,7 @@ pub struct PyText(pub(super) NodeGuard);
 #[pyo3::pymethods]
 impl PyText {
     #[new]
-    fn new(treedom: &pyo3::Bound<'_, pyo3::PyAny>, contents: String) -> pyo3::PyResult<Self> {
+    fn new(treedom: &pyo3::Bound<'_, pyo3::PyAny>, content: String) -> pyo3::PyResult<Self> {
         let treedom = treedom
             .extract::<pyo3::PyRef<'_, super::tree::PyTreeDom>>()
             .map_err(|_| {
@@ -605,7 +602,7 @@ impl PyText {
                 ))
             })?;
 
-        let val = ::treedom::interface::TextInterface::new(contents.into());
+        let val = ::treedom::interface::TextInterface::new(content.into());
 
         let mut dom = treedom.dom.lock();
         let node = dom.orphan(val.into());
@@ -614,17 +611,17 @@ impl PyText {
     }
 
     #[getter]
-    fn contents(&self) -> String {
+    fn content(&self) -> String {
         let tree = self.0.tree.lock();
         let node = tree.get(self.0.id).unwrap();
         node.value().text().unwrap().contents.to_string()
     }
 
     #[setter]
-    fn set_contents(&self, contents: String) {
+    fn set_content(&self, content: String) {
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
-        node.value().text_mut().unwrap().contents = contents.into();
+        node.value().text_mut().unwrap().contents = content.into();
     }
 
     fn tree(&self) -> super::tree::PyTreeDom {
@@ -707,7 +704,7 @@ impl PyText {
         let node = tree.get(self.0.id).unwrap();
         let text = node.value().text().unwrap();
 
-        format!("xmarkup._rustlib.Text(contents={:?})", &*text.contents)
+        format!("Text(content={:?})", &*text.contents)
     }
 }
 

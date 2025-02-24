@@ -100,7 +100,12 @@ def parse_file(
     """
     Parses your HTML (or XML depend on `options` type) file and returns the parsed document tree.
     """
+    from pathlib import Path
+
     close = False
+
+    if isinstance(path, Path):
+        path = str(path)
 
     if isinstance(path, str):
         path = open(path, "rb")
