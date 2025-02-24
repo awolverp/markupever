@@ -79,3 +79,81 @@ class XmlOptions:
     @property
     def profile(self) -> bool: ...
     def __repr__(self) -> str: ...
+
+class QualName:
+    """
+    A fully qualified name (with a namespace), used to depict names of tags and attributes.
+
+    Namespaces can be used to differentiate between similar XML fragments. For example:
+
+    ```
+    // HTML
+    <table>
+      <tr>
+        <td>Apples</td>
+        <td>Bananas</td>
+      </tr>
+    </table>
+
+    // Furniture XML
+    <table>
+      <name>African Coffee Table</name>
+      <width>80</width>
+      <length>120</length>
+    </table>
+    ```
+
+    Without XML namespaces, we can't use those two fragments in the same document
+    at the same time. However if we declare a namespace we could instead say:
+
+    ```
+    // Furniture XML
+    <furn:table xmlns:furn="https://furniture.rs">
+      <furn:name>African Coffee Table</furn:name>
+      <furn:width>80</furn:width>
+      <furn:length>120</furn:length>
+    </furn:table>
+    ```
+
+    and bind the prefix `furn` to a different namespace.
+
+    For this reason we parse names that contain a colon in the following way:
+
+    ```
+    <furn:table>
+       |    |
+       |    +- local name
+       |
+     prefix (when resolved gives namespace_url `https://furniture.rs`)
+    ```
+
+    Note: This type is immutable.
+    """
+
+    def __new__(cls, local: str, ns: str = ..., prefix: typing.Optional[str] = ...): ...
+    @property
+    def local(self) -> str:
+        """The local name (e.g. `table` in `<furn:table>` above)."""
+        ...
+    @property
+    def ns(self) -> str:
+        """The namespace after resolution (e.g. https://furniture.rs in example above)."""
+        ...
+    @property
+    def prefix(self) -> typing.Optional[str]:
+        """
+        The prefix of qualified (e.g. furn in <furn:table> above).
+        Optional (since some namespaces can be empty or inferred),
+        and only useful for namespace resolution (since different prefix can still resolve to same namespace)
+        """
+        ...
+
+    def copy(self) -> "QualName": ...
+    def __eq__(self, value) -> bool: ...
+    def __ne__(self, value) -> bool: ...
+    def __gt__(self, value) -> bool: ...
+    def __ge__(self, value) -> bool: ...
+    def __lt__(self, value) -> bool: ...
+    def __le__(self, value) -> bool: ...
+    def __hash__(self) -> int: ...
+    def __repr__(self) -> str: ...

@@ -1,4 +1,4 @@
-from .tree import TreeDom
+from .dom import TreeDom
 from . import _rustlib
 import typing
 
@@ -13,7 +13,7 @@ class Parser:
         This is very easy to use and allows you to stream input using `.process()` method; By this way
         you are don't worry about memory usages of huge inputs.
 
-        for `options`, If your input is a HTML document, pass a `HtmlOptions`; 
+        for `options`, If your input is a HTML document, pass a `HtmlOptions`;
         If your input is a XML document, pass `XmlOptions`.
         """
         self.__raw = _rustlib.Parser(options)
@@ -95,7 +95,7 @@ def parse_file(
     path: typing.Union[str, typing.TextIO, typing.BinaryIO],
     options: typing.Union[_rustlib.HtmlOptions, _rustlib.XmlOptions],
     *,
-    chunk_size: int = 10240
+    chunk_size: int = 10240,
 ) -> TreeDom:
     """
     Parses your HTML (or XML depend on `options` type) file and returns the parsed document tree.
@@ -105,7 +105,7 @@ def parse_file(
     if isinstance(path, str):
         path = open(path, "rb")
         close = True
-    
+
     try:
         parser = Parser(options)
 
@@ -115,7 +115,7 @@ def parse_file(
                 break
 
             parser.process(content)
-        
+
         parser.finish()
         return parser.into_dom()
     finally:

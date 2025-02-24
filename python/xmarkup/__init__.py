@@ -6,8 +6,9 @@ from .parser import (
 from ._rustlib import (
     HtmlOptions as HtmlOptions,
     XmlOptions as XmlOptions,
+    QualName as QualName,
     QUIRKS_MODE_FULL as QUIRKS_MODE_FULL,
     QUIRKS_MODE_OFF as QUIRKS_MODE_OFF,
     QUIRKS_MODE_LIMITED as QUIRKS_MODE_LIMITED,
 )
-from .tree import TreeDom as TreeDom
+from . import dom as dom

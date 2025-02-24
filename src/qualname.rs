@@ -3,7 +3,7 @@ use std::hash::Hasher;
 #[inline(always)]
 pub(super) fn repr_qualname(q: &treedom::markup5ever::QualName) -> String {
     format!(
-        "xmarkup._rustlib.QualName(local={:?}, ns={:?}, prefix={:?})",
+        "QualName(local={:?}, ns={:?}, prefix={:?})",
         q.local.as_ref(),
         q.ns.as_ref(),
         q.prefix.as_ref().map(|x| x.as_ref())
