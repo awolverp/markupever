@@ -92,13 +92,13 @@ class BaseNode:
         if ordering == Order.APPEND:
             dom.append(self._raw, child)
 
-        if ordering == Order.PREPEND:
+        elif ordering == Order.PREPEND:
             dom.prepend(self._raw, child)
 
-        if ordering == Order.INSERT_AFTER:
+        elif ordering == Order.INSERT_AFTER:
             dom.insert_after(self._raw, child)
 
-        if ordering == Order.INSERT_BEFORE:
+        elif ordering == Order.INSERT_BEFORE:
             dom.insert_before(self._raw, child)
 
         else:
