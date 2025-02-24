@@ -28,6 +28,7 @@ test-py: build-dev
 	-rm -rf .pytest_cache
 	-ruff check .
 	ruff clean
+	coverage html
 
 .PHONY: format
 format:

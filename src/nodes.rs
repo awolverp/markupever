@@ -1272,7 +1272,7 @@ impl PyElement {
         let elem = node.value().element().unwrap();
 
         format!(
-            "xmarkup._rustlib.Element(name={}, attrs={}, template={}, mathml_annotation_xml_integration_point={})",
+            "Element(name={}, attrs={}, template={}, mathml_annotation_xml_integration_point={})",
             super::qualname::repr_qualname(&elem.name),
             repr_attrlist(elem),
             elem.template,
@@ -1428,7 +1428,7 @@ impl PyProcessingInstruction {
         let pi = node.value().processing_instruction().unwrap();
 
         format!(
-            "xmarkup._rustlib.ProcessingInstruction(data={:?}, target={:?})",
+            "ProcessingInstruction(data={:?}, target={:?})",
             &*pi.data, &*pi.target
         )
     }

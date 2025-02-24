@@ -1,4 +1,4 @@
-from . import _rustlib
+from . import _rustlib, iterators
 import typing
 
 
@@ -26,7 +26,13 @@ class TreeDom:
         """Returns the root node."""
         return Document(self.__raw.root())
 
+    def __iter__(self) -> typing.Generator["BaseNode", typing.Any, None]:
+        """Iterates the nodes in insert order - don't matter which are orphan which not."""
+        for rn in _rustlib.iter.Iterator(self.__raw):
+            yield BaseNode._wrap(rn)
+
     def __len__(self) -> int:
+        """Returns the number of nodes in tree."""
         return len(self.__raw)
 
     def __str__(self):
@@ -112,9 +118,6 @@ class BaseNode:
         assert cls._CONFIG.basetype is not None
         BaseNode._SUBCLASS_WRAP[cls._CONFIG.basetype] = cls
 
-    def tree(self) -> "TreeDom":
-        return TreeDom(raw=self._raw.tree())
-
     @property
     def parent(self) -> typing.Optional["BaseNode"]:
         parent = self._raw.parent()
@@ -148,11 +151,51 @@ class BaseNode:
     def has_children(self) -> bool:
         return self._raw.has_children
 
+    def tree(self) -> "TreeDom":
+        return TreeDom(raw=self._raw.tree())
+
+    def children(self) -> iterators.Children:
+        return iterators.Children(self)
+
+    def ancestors(self) -> iterators.Ancestors:
+        return iterators.Ancestors(self)
+
+    def prev_siblings(self) -> iterators.PrevSiblings:
+        return iterators.PrevSiblings(self)
+
+    def next_siblings(self) -> iterators.NextSiblings:
+        return iterators.NextSiblings(self)
+
+    def first_children(self) -> iterators.FirstChildren:
+        return iterators.FirstChildren(self)
+
+    def last_children(self) -> iterators.LastChildren:
+        return iterators.LastChildren(self)
+
+    def traverse(self) -> iterators.Traverse:
+        return iterators.Traverse(self)
+
+    def descendants(self) -> iterators.Descendants:
+        return iterators.Descendants(self)
+
     def detach(self) -> None:
         if isinstance(self._raw, _rustlib.Document):
             raise ValueError("you cannot detach Document instance.")
 
         self._raw.tree().detach(self._raw)
+
+    def select(self, expr: str, limit: int = 0, offset: int = 0) -> iterators.Select:
+        return iterators.Select(self, expr, limit=limit, offset=offset)
+
+    def select_one(self, expr: str, offset: int = 0) -> typing.Optional["Element"]:
+        selector = iterators.Select(self, expr, limit=1, offset=offset)
+
+        try:
+            node = next(selector)
+        except StopIteration:
+            return None
+        else:
+            return node
 
     def __eq__(self, value):
         if isinstance(value, BaseNode):

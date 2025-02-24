@@ -2,7 +2,7 @@ import xmarkup
 import pytest
 
 
-def test_parser(): # this is a copy of test_rustlib.test_parser for xmarkup.parser.Parser
+def test_parser():  # this is a copy of test_rustlib.test_parser for xmarkup.parser.Parser
     parser = xmarkup.Parser(xmarkup.HtmlOptions())
     parser.process(b"<html><p>Ali</p></html>")
     parser.finish()

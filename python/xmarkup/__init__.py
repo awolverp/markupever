@@ -12,3 +12,4 @@ from ._rustlib import (
     QUIRKS_MODE_LIMITED as QUIRKS_MODE_LIMITED,
 )
 from . import dom as dom
+from . import iterators as iterators
