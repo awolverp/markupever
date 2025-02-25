@@ -92,6 +92,12 @@ impl TextInterface {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct AttributeKey(markup5ever::QualName);
 
+impl AttributeKey {
+    pub fn into_qualname(self) -> markup5ever::QualName {
+        self.0
+    }
+}
+
 impl AsRef<markup5ever::QualName> for AttributeKey {
     fn as_ref(&self) -> &markup5ever::QualName {
         &self.0

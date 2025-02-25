@@ -8,7 +8,7 @@ def test_treedom():
 
     assert dom.namespaces() == {}
     assert len(dom) == 1
-    
+
     _ = str(dom)
     _ = repr(dom)
 
@@ -33,7 +33,9 @@ def test_basenode_init():
     _test_rustlib_node_convert(_rustlib.Comment, xmarkup.dom.Comment, dom, "content")
     _test_rustlib_node_convert(_rustlib.Text, xmarkup.dom.Text, dom, "content")
     _test_rustlib_node_convert(_rustlib.Element, xmarkup.dom.Element, dom, "name", [], False, False)
-    _test_rustlib_node_convert(_rustlib.ProcessingInstruction, xmarkup.dom.ProcessingInstruction, dom, "name", "data")
+    _test_rustlib_node_convert(
+        _rustlib.ProcessingInstruction, xmarkup.dom.ProcessingInstruction, dom, "name", "data"
+    )
 
     with pytest.raises(TypeError):
         xmarkup.dom.BaseNode("invalid type")

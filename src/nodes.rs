@@ -835,6 +835,51 @@ impl PyAttrsList {
         elem.attrs.shrink_to_fit();
     }
 
+    fn insert(
+        &self,
+        py: pyo3::Python<'_>,
+        index: usize,
+        key: pyo3::PyObject,
+        value: pyo3::PyObject,
+    ) -> pyo3::PyResult<()> {
+        let key = crate::tools::qualname_from_pyobject(py, &key)
+            .into_qualname()
+            .map_err(|_| {
+                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
+                    "expected QualName or str for key, got {}",
+                    unsafe { crate::tools::get_type_name(py, key.as_ptr()) }
+                ))
+            })?;
+
+        let val = unsafe {
+            if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
+                value.bind(py).extract::<String>().unwrap_unchecked()
+            } else {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    format!(
+                        "expected str for value, got {}",
+                        crate::tools::get_type_name(py, value.as_ptr())
+                    ),
+                ));
+            }
+        };
+
+        let mut tree = self.0.tree.lock();
+        let mut node = tree.get_mut(self.0.id).unwrap();
+        let elem = node.value().element_mut().unwrap();
+
+
+        if index > elem.attrs.len() {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                "range out of bound",
+            ));
+        }
+
+        elem.attrs.insert(index, (key.into(), val.into()));
+
+        Ok(())
+    }
+
     fn push(
         &self,
         py: pyo3::Python<'_>,
@@ -879,6 +924,51 @@ impl PyAttrsList {
         }
     }
 
+    fn update_item(
+        &self,
+        py: pyo3::Python<'_>,
+        index: usize,
+        key: pyo3::PyObject,
+        value: pyo3::PyObject,
+    ) -> pyo3::PyResult<()> {
+        let key = crate::tools::qualname_from_pyobject(py, &key)
+            .into_qualname()
+            .map_err(|_| {
+                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
+                    "expected QualName or str for key, got {}",
+                    unsafe { crate::tools::get_type_name(py, key.as_ptr()) }
+                ))
+            })?;
+
+        let val = unsafe {
+            if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
+                value.bind(py).extract::<String>().unwrap_unchecked()
+            } else {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    format!(
+                        "expected str for value, got {}",
+                        crate::tools::get_type_name(py, value.as_ptr())
+                    ),
+                ));
+            }
+        };
+
+        let mut tree = self.0.tree.lock();
+        let mut node = tree.get_mut(self.0.id).unwrap();
+        let elem = node.value().element_mut().unwrap();
+
+        match elem.attrs.get_mut(index) {
+            Some(x) => {
+                x.0 = key.into();
+                x.1 = val.into();
+                Ok(())
+            }
+            None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                "range out of bound",
+            )),
+        }
+    }
+
     fn update_value(
         self_: pyo3::PyRef<'_, Self>,
         index: usize,
@@ -915,7 +1005,7 @@ impl PyAttrsList {
         }
     }
 
-    fn remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<()> {
+    fn get_by_index(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::PyObject> {
         let mut tree = self_.0.tree.lock();
         let mut node = tree.get_mut(self_.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
@@ -926,11 +1016,33 @@ impl PyAttrsList {
             ));
         }
 
-        elem.attrs.remove(index);
-        Ok(())
+        let (attrkey, value) = elem.attrs.get(index).unwrap();
+
+        unsafe {
+            let key = pyo3::Py::new(
+                self_.py(),
+                super::qualname::PyQualName {
+                    name: attrkey.clone().into_qualname(),
+                },
+            )?;
+            let val = pyo3::types::PyString::new(self_.py(), &value);
+
+            std::mem::drop(tree);
+
+            let tuple = pyo3::ffi::PyTuple_New(2);
+
+            if tuple.is_null() {
+                return Err(pyo3::PyErr::fetch(self_.py()));
+            }
+
+            pyo3::ffi::PyTuple_SetItem(tuple, 0, key.into_ptr());
+            pyo3::ffi::PyTuple_SetItem(tuple, 1, val.into_ptr());
+
+            Ok(pyo3::Py::from_owned_ptr(self_.py(), tuple))
+        }
     }
 
-    fn swap_remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<()> {
+    fn remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::PyObject> {
         let mut tree = self_.0.tree.lock();
         let mut node = tree.get_mut(self_.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
@@ -941,8 +1053,68 @@ impl PyAttrsList {
             ));
         }
 
-        elem.attrs.swap_remove(index);
-        Ok(())
+        let (attrkey, value) = elem.attrs.remove(index);
+
+        std::mem::drop(tree);
+
+        unsafe {
+            let key = pyo3::Py::new(
+                self_.py(),
+                super::qualname::PyQualName {
+                    name: attrkey.into_qualname(),
+                },
+            )?;
+            let val = pyo3::types::PyString::new(self_.py(), &value);
+
+            let tuple = pyo3::ffi::PyTuple_New(2);
+
+            if tuple.is_null() {
+                return Err(pyo3::PyErr::fetch(self_.py()));
+            }
+
+            pyo3::ffi::PyTuple_SetItem(tuple, 0, key.into_ptr());
+            pyo3::ffi::PyTuple_SetItem(tuple, 1, val.into_ptr());
+
+            Ok(pyo3::Py::from_owned_ptr(self_.py(), tuple))
+        }
+    }
+
+    fn swap_remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::PyObject> {
+        let mut tree = self_.0.tree.lock();
+        let mut node = tree.get_mut(self_.0.id).unwrap();
+        let elem = node.value().element_mut().unwrap();
+
+        if index >= elem.attrs.len() {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
+                "range out of bound",
+            ));
+        }
+
+        let (attrkey, value) = elem.attrs.swap_remove(index);
+
+        std::mem::drop(tree);
+
+        unsafe {
+            let key = pyo3::Py::new(
+                self_.py(),
+                super::qualname::PyQualName {
+                    name: attrkey.into_qualname(),
+                },
+            )?;
+            let val = pyo3::types::PyString::new(self_.py(), &value);
+            
+
+            let tuple = pyo3::ffi::PyTuple_New(2);
+
+            if tuple.is_null() {
+                return Err(pyo3::PyErr::fetch(self_.py()));
+            }
+
+            pyo3::ffi::PyTuple_SetItem(tuple, 0, key.into_ptr());
+            pyo3::ffi::PyTuple_SetItem(tuple, 1, val.into_ptr());
+
+            Ok(pyo3::Py::from_owned_ptr(self_.py(), tuple))
+        }
     }
 
     fn dedup(&self) {

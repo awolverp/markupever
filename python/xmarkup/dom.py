@@ -53,8 +53,8 @@ class _ConfigNode:
 class Order:
     APPEND = 0
     PREPEND = 1
-    INSERT_AFTER = 2
-    INSERT_BEFORE = 3
+    AFTER = 2
+    BEFORE = 3
 
 
 class BaseNode:
@@ -91,7 +91,7 @@ class BaseNode:
 
         return _type(node)
 
-    def _connect_node(self, ordering: int, dom, child) -> "BaseNode":
+    def _connect_node(self, ordering: int, dom, child):
         if ordering in self._CONFIG.invalid_ordering:
             raise ValueError("This ordering value is not acceptable for this type.")
 
@@ -101,18 +101,16 @@ class BaseNode:
         elif ordering == Order.PREPEND:
             dom.prepend(self._raw, child)
 
-        elif ordering == Order.INSERT_AFTER:
+        elif ordering == Order.AFTER:
             dom.insert_after(self._raw, child)
 
-        elif ordering == Order.INSERT_BEFORE:
+        elif ordering == Order.BEFORE:
             dom.insert_before(self._raw, child)
 
         else:
             raise ValueError(
                 "ordering must be one of Order variables like Order.APPEND, Order.PREPEND, ..."
             )
-
-        return BaseNode._wrap(child)
 
     def __init_subclass__(cls):
         assert cls._CONFIG.basetype is not None
@@ -197,6 +195,19 @@ class BaseNode:
         else:
             return node
 
+    def strings(self, strip: bool = False):
+        for descendant in self.descendants():
+            if not isinstance(descendant, Text):
+                continue
+            
+            if strip:
+                yield descendant.content.strip()
+            else:
+                yield descendant.content
+
+    def text(self, seperator: str = "", strip: bool = False) -> str:
+        return seperator.join(self.strings(strip=strip))
+
     def __eq__(self, value):
         if isinstance(value, BaseNode):
             value = value._raw
@@ -238,29 +249,27 @@ class BaseNode:
 
 
 class Document(BaseNode):
-    _CONFIG = _ConfigNode(_rustlib.Document, (Order.INSERT_AFTER, Order.INSERT_BEFORE))
+    _CONFIG = _ConfigNode(_rustlib.Document, (Order.AFTER, Order.BEFORE))
 
     def create_doctype(
         self, name: str, public_id: str = "", system_id: str = "", *, ordering: int = Order.APPEND
     ) -> "Doctype":
         dom = self._raw.tree()
-
-        return typing.cast(
-            Doctype,
-            self._connect_node(ordering, dom, _rustlib.Doctype(dom, name, public_id, system_id)),
-        )
+        node = _rustlib.Doctype(dom, name, public_id, system_id)
+        self._connect_node(ordering, dom, node)
+        return Doctype(node)
 
     def create_comment(self, content: str, *, ordering: int = Order.APPEND) -> "Comment":
         dom = self._raw.tree()
-
-        return typing.cast(
-            Comment, self._connect_node(ordering, dom, _rustlib.Comment(dom, content))
-        )
+        node = _rustlib.Comment(dom, content)
+        self._connect_node(ordering, dom, node)
+        return Comment(node)
 
     def create_text(self, content: str, *, ordering: int = Order.APPEND) -> "Text":
         dom = self._raw.tree()
-
-        return typing.cast(Text, self._connect_node(ordering, dom, _rustlib.Text(dom, content)))
+        node = _rustlib.Text(dom, content)
+        self._connect_node(ordering, dom, node)
+        return Text(node)
 
     def create_element(
         self,
@@ -279,26 +288,17 @@ class Document(BaseNode):
         if isinstance(attrs, dict):
             attrs = list(attrs.items())
 
-        return typing.cast(
-            Element,
-            self._connect_node(
-                ordering,
-                dom,
-                _rustlib.Element(
-                    dom, name, attrs, template, mathml_annotation_xml_integration_point
-                ),
-            ),
-        )
+        node = _rustlib.Element(dom, name, attrs, template, mathml_annotation_xml_integration_point)
+        self._connect_node(ordering, dom, node)
+        return Element(node)
 
     def create_processing_instruction(
         self, data: str, target: str, *, ordering: int = Order.APPEND
     ) -> "ProcessingInstruction":
         dom = self._raw.tree()
-
-        return typing.cast(
-            ProcessingInstruction,
-            self._connect_node(ordering, dom, _rustlib.ProcessingInstruction(dom, data, target)),
-        )
+        node = _rustlib.ProcessingInstruction(dom, data, target)
+        self._connect_node(ordering, dom, node)
+        return ProcessingInstruction(node)
 
 
 class Doctype(BaseNode):
@@ -425,9 +425,232 @@ class Text(BaseNode):
         return super().__gt__(value)
 
 
+_D = typing.TypeVar("_D")
+
+
+class AttrsList:
+    __slots__ = ("__raw",)
+
+    def __init__(self, attrs: _rustlib.AttrsList):
+        self.__raw = attrs
+
+    def append(self, key: typing.Union[_rustlib.QualName, str], value: str):
+        self.__raw.push(key, value)
+
+    def insert(self, index: int, key: typing.Union[_rustlib.QualName, str], value: str):
+        self.__raw.insert(index, key, value)
+
+    def _find_by_key(
+        self,
+        key: typing.Union[_rustlib.QualName, str],
+        default: _D = None,
+    ) -> typing.Tuple[typing.Union[str, _D], int]:
+        for index, item in enumerate(self.__raw.items()):
+            k, v = item
+
+            if k == key:
+                return v, index
+
+        return default, -1
+
+    def _find_by_item(
+        self,
+        key: typing.Union[_rustlib.QualName, str],
+        value: str,
+    ) -> int:
+        for index, item in enumerate(self.__raw.items()):
+            k, v = item
+
+            if k == key and value == v:
+                return index
+
+        return -1
+
+    def index(self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple]) -> int:
+        if isinstance(key, tuple):
+            index = self._find_by_item(*key)
+        else:
+            _, index = self._find_by_key(key)
+        
+        if index == -1:
+            raise ValueError(key)
+
+        return index
+
+    def find(
+        self, key: typing.Union[_rustlib.QualName, str], default: _D = None
+    ) -> typing.Tuple[typing.Union[str, _D], int]:
+        val, index = self._find_by_key(key)
+        if index == -1:
+            return default
+
+        return val
+
+    def dedup(self) -> None:
+        self.__raw.dedup()
+
+    def pop(self, index: int = -1) -> typing.Tuple[_rustlib.QualName, str]:
+        return self.__raw.remove(index)
+
+    def remove(self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple]) -> None:
+        index = self.index(key)
+        self.__raw.remove(index)
+
+    def reverse(self) -> None:
+        self.__raw.reverse()
+
+
+    def extend(self, m: typing.Union[dict, typing.Iterable[tuple]]):
+        if isinstance(m, dict):
+            m = m.items()
+
+        for key, val in m:
+            self.__raw.push(key, val)
+
+    def clear(self) -> None:
+        self.__raw.clear()
+
+    def __iter__(self) -> _rustlib.AttrsListItems:
+        return iter(self.__raw)
+
+    def __contains__(self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple]) -> bool:
+        if isinstance(key, tuple):
+            index = self._find_by_item(*key)
+        else:
+            _, index = self._find_by_key(key)
+
+        return index > -1
+
+    def __delitem__(self, index: int) -> None:
+        self.__raw.remove(index)
+    
+    def __setitem__(self, index: int, val: typing.Tuple[typing.Union[_rustlib.QualName, str], str]) -> None:
+        self.__raw.update_item(index, val[0], val[1])
+
+    def __getitem__(self, index: int) -> typing.Tuple[_rustlib.QualName, str]:
+        return self.__raw.get_by_index(index)
+    
+    def __repr__(self) -> str:
+        return repr(self.__raw)
+
+
 class Element(BaseNode):
     _CONFIG = _ConfigNode(_rustlib.Element, ())
+
+    @property
+    def name(self) -> _rustlib.QualName:
+        return self._raw.name
+
+    @name.setter
+    def name(self, value: typing.Union[str, _rustlib.QualName]) -> None:
+        self._raw.name = value
+
+    @property
+    def attrs(self) -> AttrsList:
+        return AttrsList(self._raw.attrs)
+
+    @attrs.setter
+    def attrs(
+        self,
+        value: typing.Union[
+            typing.Sequence[typing.Tuple[typing.Union[_rustlib.QualName, str], str]],
+            typing.Dict[typing.Union[_rustlib.QualName, str], str],
+        ],
+    ) -> None:
+        if isinstance(value, dict):
+            value = list(value.items())
+
+        self._raw.attrs = value
+
+    @property
+    def template(self) -> bool:
+        return self._raw.template
+
+    @template.setter
+    def template(self, value: bool) -> None:
+        self._raw.template = value
+
+    @property
+    def mathml_annotation_xml_integration_point(self) -> bool:
+        return self._raw.mathml_annotation_xml_integration_point
+
+    @mathml_annotation_xml_integration_point.setter
+    def mathml_annotation_xml_integration_point(self, value: bool) -> None:
+        self._raw.mathml_annotation_xml_integration_point = value
+
+    @property
+    def id(self) -> typing.Optional[str]:
+        return self._raw.id()
+
+    @property
+    def class_list(self) -> typing.List[str]:
+        return self._raw.class_list()
+
+    def create_doctype(
+        self, name: str, public_id: str = "", system_id: str = "", *, ordering: int = Order.APPEND
+    ) -> "Doctype":
+        dom = self._raw.tree()
+        node = _rustlib.Doctype(dom, name, public_id, system_id)
+        self._connect_node(ordering, dom, node)
+        return Doctype(node)
+
+    def create_comment(self, content: str, *, ordering: int = Order.APPEND) -> "Comment":
+        dom = self._raw.tree()
+        node = _rustlib.Comment(dom, content)
+        self._connect_node(ordering, dom, node)
+        return Comment(node)
+
+    def create_text(self, content: str, *, ordering: int = Order.APPEND) -> "Text":
+        dom = self._raw.tree()
+        node = _rustlib.Text(dom, content)
+        self._connect_node(ordering, dom, node)
+        return Text(node)
+
+    def create_element(
+        self,
+        name: str,
+        attrs: typing.Union[
+            typing.Sequence[typing.Tuple[typing.Union[_rustlib.QualName, str], str]],
+            typing.Dict[typing.Union[_rustlib.QualName, str], str],
+        ] = [],
+        template: bool = False,
+        mathml_annotation_xml_integration_point: bool = False,
+        *,
+        ordering: int = Order.APPEND,
+    ) -> "Element":
+        dom = self._raw.tree()
+
+        if isinstance(attrs, dict):
+            attrs = list(attrs.items())
+
+        node = _rustlib.Element(dom, name, attrs, template, mathml_annotation_xml_integration_point)
+        self._connect_node(ordering, dom, node)
+        return Element(node)
+
+    def create_processing_instruction(
+        self, data: str, target: str, *, ordering: int = Order.APPEND
+    ) -> "ProcessingInstruction":
+        dom = self._raw.tree()
+        node = _rustlib.ProcessingInstruction(dom, data, target)
+        self._connect_node(ordering, dom, node)
+        return ProcessingInstruction(node)
 
 
 class ProcessingInstruction(BaseNode):
     _CONFIG = _ConfigNode(_rustlib.ProcessingInstruction, (Order.APPEND, Order.PREPEND))
+
+    @property
+    def target(self) -> str:
+        return self._raw.target
+
+    @target.setter
+    def target(self, value: str) -> None:
+        self._raw.target = value
+
+    @property
+    def data(self) -> str:
+        return self._raw.data
+
+    @data.setter
+    def data(self, value: str) -> None:
+        self._raw.data = value
