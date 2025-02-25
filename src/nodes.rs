@@ -1025,7 +1025,7 @@ impl PyAttrsList {
                     name: attrkey.clone().into_qualname(),
                 },
             )?;
-            let val = pyo3::types::PyString::new(self_.py(), &value);
+            let val = pyo3::types::PyString::new(self_.py(), value);
 
             std::mem::drop(tree);
 

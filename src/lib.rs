@@ -15,21 +15,12 @@ mod tree;
 fn _is_node_impl(object: &pyo3::Bound<'_, pyo3::PyAny>) -> bool {
     use pyo3::type_object::PyTypeInfo;
 
-    if nodes::PyDocument::is_exact_type_of(object) {
-        true
-    } else if nodes::PyDoctype::is_exact_type_of(object) {
-        true
-    } else if nodes::PyComment::is_exact_type_of(object) {
-        true
-    } else if nodes::PyText::is_exact_type_of(object) {
-        true
-    } else if nodes::PyElement::is_exact_type_of(object) {
-        true
-    } else if nodes::PyProcessingInstruction::is_exact_type_of(object) {
-        true
-    } else {
-        false
-    }
+    nodes::PyDocument::is_exact_type_of(object)
+        || nodes::PyDoctype::is_exact_type_of(object)
+        || nodes::PyComment::is_exact_type_of(object)
+        || nodes::PyText::is_exact_type_of(object)
+        || nodes::PyElement::is_exact_type_of(object)
+        || nodes::PyProcessingInstruction::is_exact_type_of(object)
 }
 
 #[pymodule(gil_used = false)]
