@@ -14,6 +14,8 @@ def test_treedom():
 
     lst = list(dom)
 
+    assert dom == dom
+    assert dom != 1
     assert len(lst) == 1
     assert isinstance(lst[0], xmarkup.dom.Document)
 
@@ -99,6 +101,13 @@ def test_connect_node():
     assert doctype.next_sibling == html
     assert html.prev_sibling == doctype
 
+    doctype.name = "HTML"
+    doctype.public_id = "public"
+    doctype.system_id = "system"
+    assert doctype.name == "HTML"
+    assert doctype.public_id == "public"
+    assert doctype.system_id == "system"
+
     assert dom.namespaces() == {"": "http://www.w3.org/1999/xhtml"}
 
     p = body.create_element(
@@ -118,13 +127,18 @@ def test_connect_node():
     assert comment.content == "content"
     assert comment == "content"
 
+    comment.content += "testme"
+    assert comment == "contenttestme"
+
     assert p.text() == ""
 
-    text = p.create_text("\ncontent 1")
+    text = p.create_text("\ncontent")
     assert isinstance(text, xmarkup.dom.Text)
     assert text.parent == p
-    assert text.content == "\ncontent 1"
-    assert text == "\ncontent 1"
+    assert text.content == "\ncontent"
+    assert text == "\ncontent"
+
+    text.content += " 1"
 
     p.create_text("\ncontent 2")
 
@@ -138,7 +152,7 @@ def test_connect_node():
 
     assert (
         root.serialize()
-        == '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body class="bg-dark"><p class="font-sans"><!--content-->\ncontent 1\ncontent 2</p></body></html>'
+        == '<!DOCTYPE HTML PUBLIC "public" SYSTEM "system"><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body class="bg-dark"><p class="font-sans"><!--contenttestme-->\ncontent 1\ncontent 2</p></body></html>'
     )
 
     with pytest.raises(ValueError):
@@ -162,5 +176,94 @@ def test_connect_node():
     assert pi.data == "data"
     assert pi.target == "target"
 
+    pi.data = "md"
+    pi.target = "mt"
+    assert pi.data == "md"
+    assert pi.target == "mt"
+
     assert root.first_child == doctype
     assert root.last_child == pi
+
+
+def test_children():
+    dom = xmarkup.dom.TreeDom()
+    root = dom.root()
+
+    testcases = [
+        root.create_element("first"),
+        root.create_text("second"),
+        root.create_doctype("third"),
+        root.create_processing_instruction("fourth", "target"),
+        root.create_comment("fifth"),
+        root.create_element("sixth"),
+    ]
+
+    for index, child in enumerate(root.children()):
+        assert testcases[index] == child
+
+
+def test_ancestors():
+    dom = xmarkup.dom.TreeDom()
+    root = dom.root()
+
+    testcases = [root]
+    parent = root
+    for i in range(10):
+        elem = parent.create_element(f"test{i}")
+        testcases.append(elem)
+        parent = elem
+
+    testcases.pop()
+
+    for index, ans in enumerate(parent.ancestors()):
+        assert testcases[len(testcases) - (index + 1)] == ans
+
+
+def test_siblings():
+    dom = xmarkup.dom.TreeDom()
+    root = dom.root()
+
+    testcases = [
+        root.create_element("first"),
+        root.create_text("second"),
+        root.create_doctype("third"),
+        root.create_processing_instruction("fourth", "target"),
+        root.create_comment("fifth"),
+        root.create_element("sixth"),
+    ]
+
+    for index, sibling in enumerate(testcases[0].next_siblings()):
+        assert testcases[index + 1] == sibling
+
+    for index, sibling in enumerate(testcases[-1].prev_siblings()):
+        assert testcases[len(testcases) - (index + 2)] == sibling
+
+    # No need to test traverse - it's tested in Rust
+    for edge in root.traverse():
+        assert isinstance(edge.closed, bool)
+        assert isinstance(edge.node, xmarkup.dom.BaseNode)
+        repr(edge)
+
+
+def test_detach():
+    dom = xmarkup.dom.TreeDom()
+    root = dom.root()
+
+    with pytest.raises(ValueError):
+        root.detach()
+
+    with pytest.raises(ValueError):
+        tmp_dom = xmarkup.dom.TreeDom()
+        root.attach(tmp_dom.root())
+
+    html = root.create_element("html")
+    body = html.create_element("body")
+
+    assert body.parent == html
+
+    body.detach()
+    assert body.parent is None
+
+    root.attach(body)
+    assert body.parent == root
+    assert root.last_child == body

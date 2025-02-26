@@ -172,10 +172,10 @@ class BaseNode:
         return iterators.NextSiblings(self)
 
     def first_children(self) -> iterators.FirstChildren:
-        return iterators.FirstChildren(self)
+        return iterators.FirstChildren(self)  # pragma: no cover
 
     def last_children(self) -> iterators.LastChildren:
-        return iterators.LastChildren(self)
+        return iterators.LastChildren(self)  # pragma: no cover
 
     def traverse(self) -> iterators.Traverse:
         return iterators.Traverse(self)
@@ -183,9 +183,15 @@ class BaseNode:
     def descendants(self) -> iterators.Descendants:
         return iterators.Descendants(self)
 
+    def attach(self, node: "BaseNode", *, ordering: int = Ordering.APPEND) -> None:
+        if isinstance(node._raw, _rustlib.Document):
+            raise ValueError("you cannot attach a Document node to another node.")
+
+        self._connect_node(ordering, self._raw.tree(), node._raw)
+
     def detach(self) -> None:
         if isinstance(self._raw, _rustlib.Document):
-            raise ValueError("you cannot detach Document instance.")
+            raise ValueError("you cannot detach Document node.")
 
         self._raw.tree().detach(self._raw)
 
@@ -364,31 +370,31 @@ class Comment(BaseNode):
 
         return super().__eq__(value)
 
-    def __ne__(self, value):
+    def __ne__(self, value):  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content != value
 
         return super().__ne__(value)
 
-    def __le__(self, value):
+    def __le__(self, value):  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content <= value
 
         return super().__le__(value)
 
-    def __lt__(self, value):
+    def __lt__(self, value):  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content < value
 
         return super().__lt__(value)
 
-    def __ge__(self, value):
+    def __ge__(self, value):  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content >= value
 
         return super().__ge__(value)
 
-    def __gt__(self, value):
+    def __gt__(self, value):  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content > value
 
@@ -412,31 +418,31 @@ class Text(BaseNode):
 
         return super().__eq__(value)
 
-    def __ne__(self, value):
+    def __ne__(self, value):  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content != value
 
         return super().__ne__(value)
 
-    def __le__(self, value):
+    def __le__(self, value):  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content <= value
 
         return super().__le__(value)
 
-    def __lt__(self, value):
+    def __lt__(self, value):  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content < value
 
         return super().__lt__(value)
 
-    def __ge__(self, value):
+    def __ge__(self, value):  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content >= value
 
         return super().__ge__(value)
 
-    def __gt__(self, value):
+    def __gt__(self, value):  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content > value
 

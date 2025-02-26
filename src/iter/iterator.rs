@@ -77,7 +77,7 @@ macro_rules! axis_iterators {
                         ))
                     })?;
 
-                    Ok(Self { guard: Some(node) })
+                    Ok(Self { guard: $f(&node) })
                 }
 
                 fn __iter__(self_: pyo3::PyRef<'_, Self>) -> pyo3::PyRef<'_, Self> {

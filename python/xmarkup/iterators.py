@@ -2,7 +2,7 @@ from . import _rustlib
 import typing
 
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING: # pragma: no cover
     from . import dom
 
 
@@ -92,7 +92,7 @@ class Select:
     def __next__(self) -> "dom.Element":
         from .dom import Element
 
-        if self.__limit <= 0:
+        if self.__limit == 0:
             raise StopIteration
 
         while self.__offset > 0:
@@ -102,4 +102,4 @@ class Select:
         node = Element(next(self.__raw))
         self.__limit -= 1
 
-        return typing.cast(Element, node)
+        return node

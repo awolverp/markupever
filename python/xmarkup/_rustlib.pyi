@@ -130,7 +130,14 @@ class QualName:
     Note: This type is immutable.
     """
 
-    def __new__(cls, local: str, ns: str = ..., prefix: typing.Optional[str] = ...): ...
+    def __new__(
+        cls,
+        local: str,
+        ns: typing.Union[
+            str, typing.Literal["html", "xml", "xhtml", "xmlns", "xlink", "svg", "mathml", "*"]
+        ] = ...,
+        prefix: typing.Optional[str] = ...,
+    ): ...
     @property
     def local(self) -> str:
         """The local name (e.g. `table` in `<furn:table>` above)."""
