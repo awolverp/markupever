@@ -1,4 +1,5 @@
 from . import _rustlib, iterators
+from ._rustlib import QualName as QualName
 import typing
 
 
@@ -31,6 +32,12 @@ class TreeDom:
         for rn in _rustlib.iter.Iterator(self._raw):
             yield BaseNode._wrap(rn)
 
+    def __eq__(self, val: "TreeDom") -> bool:
+        if not isinstance(val, TreeDom):
+            return False
+
+        return self._raw == val._raw
+
     def __len__(self) -> int:
         """Returns the number of nodes in tree."""
         return len(self._raw)
@@ -50,7 +57,7 @@ class _ConfigNode:
         self.invalid_ordering = invalid_ordering
 
 
-class Order:
+class Ordering:
     APPEND = 0
     PREPEND = 1
     AFTER = 2
@@ -95,21 +102,21 @@ class BaseNode:
         if ordering in self._CONFIG.invalid_ordering:
             raise ValueError("This ordering value is not acceptable for this type.")
 
-        if ordering == Order.APPEND:
+        if ordering == Ordering.APPEND:
             dom.append(self._raw, child)
 
-        elif ordering == Order.PREPEND:
+        elif ordering == Ordering.PREPEND:
             dom.prepend(self._raw, child)
 
-        elif ordering == Order.AFTER:
+        elif ordering == Ordering.AFTER:
             dom.insert_after(self._raw, child)
 
-        elif ordering == Order.BEFORE:
+        elif ordering == Ordering.BEFORE:
             dom.insert_before(self._raw, child)
 
         else:
             raise ValueError(
-                "ordering must be one of Order variables like Order.APPEND, Order.PREPEND, ..."
+                "ordering must be one of Ordering variables like Ordering.APPEND, Ordering.PREPEND, ..."
             )
 
     def __init_subclass__(cls):
@@ -220,58 +227,63 @@ class BaseNode:
 
         return self._raw == value
 
-    def __ne__(self, value):
+    def __ne__(self, value):  # pragma: no cover
         if isinstance(value, BaseNode):
             value = value._raw
 
         return self._raw != value
 
-    def __le__(self, value):
+    def __le__(self, value):  # pragma: no cover
         if isinstance(value, BaseNode):
             value = value._raw
 
         return self._raw <= value
 
-    def __lt__(self, value):
+    def __lt__(self, value):  # pragma: no cover
         if isinstance(value, BaseNode):
             value = value._raw
 
         return self._raw < value
 
-    def __ge__(self, value):
+    def __ge__(self, value):  # pragma: no cover
         if isinstance(value, BaseNode):
             value = value._raw
 
         return self._raw >= value
 
-    def __gt__(self, value):
+    def __gt__(self, value):  # pragma: no cover
         if isinstance(value, BaseNode):
             value = value._raw
 
         return self._raw > value
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return repr(self._raw)
 
 
 class Document(BaseNode):
-    _CONFIG = _ConfigNode(_rustlib.Document, (Order.AFTER, Order.BEFORE))
+    _CONFIG = _ConfigNode(_rustlib.Document, (Ordering.AFTER, Ordering.BEFORE))
 
     def create_doctype(
-        self, name: str, public_id: str = "", system_id: str = "", *, ordering: int = Order.APPEND
+        self,
+        name: str,
+        public_id: str = "",
+        system_id: str = "",
+        *,
+        ordering: int = Ordering.APPEND,
     ) -> "Doctype":
         dom = self._raw.tree()
         node = _rustlib.Doctype(dom, name, public_id, system_id)
         self._connect_node(ordering, dom, node)
         return Doctype(node)
 
-    def create_comment(self, content: str, *, ordering: int = Order.APPEND) -> "Comment":
+    def create_comment(self, content: str, *, ordering: int = Ordering.APPEND) -> "Comment":
         dom = self._raw.tree()
         node = _rustlib.Comment(dom, content)
         self._connect_node(ordering, dom, node)
         return Comment(node)
 
-    def create_text(self, content: str, *, ordering: int = Order.APPEND) -> "Text":
+    def create_text(self, content: str, *, ordering: int = Ordering.APPEND) -> "Text":
         dom = self._raw.tree()
         node = _rustlib.Text(dom, content)
         self._connect_node(ordering, dom, node)
@@ -287,7 +299,7 @@ class Document(BaseNode):
         template: bool = False,
         mathml_annotation_xml_integration_point: bool = False,
         *,
-        ordering: int = Order.APPEND,
+        ordering: int = Ordering.APPEND,
     ) -> "Element":
         dom = self._raw.tree()
 
@@ -299,7 +311,7 @@ class Document(BaseNode):
         return Element(node)
 
     def create_processing_instruction(
-        self, data: str, target: str, *, ordering: int = Order.APPEND
+        self, data: str, target: str, *, ordering: int = Ordering.APPEND
     ) -> "ProcessingInstruction":
         dom = self._raw.tree()
         node = _rustlib.ProcessingInstruction(dom, data, target)
@@ -308,7 +320,7 @@ class Document(BaseNode):
 
 
 class Doctype(BaseNode):
-    _CONFIG = _ConfigNode(_rustlib.Doctype, (Order.APPEND, Order.PREPEND))
+    _CONFIG = _ConfigNode(_rustlib.Doctype, (Ordering.APPEND, Ordering.PREPEND))
 
     @property
     def name(self) -> str:
@@ -336,7 +348,7 @@ class Doctype(BaseNode):
 
 
 class Comment(BaseNode):
-    _CONFIG = _ConfigNode(_rustlib.Comment, (Order.APPEND, Order.PREPEND))
+    _CONFIG = _ConfigNode(_rustlib.Comment, (Ordering.APPEND, Ordering.PREPEND))
 
     @property
     def content(self) -> str:
@@ -384,7 +396,7 @@ class Comment(BaseNode):
 
 
 class Text(BaseNode):
-    _CONFIG = _ConfigNode(_rustlib.Text, (Order.APPEND, Order.PREPEND))
+    _CONFIG = _ConfigNode(_rustlib.Text, (Ordering.APPEND, Ordering.PREPEND))
 
     @property
     def content(self) -> str:
@@ -594,20 +606,29 @@ class Element(BaseNode):
         return self._raw.class_list()
 
     def create_doctype(
-        self, name: str, public_id: str = "", system_id: str = "", *, ordering: int = Order.APPEND
-    ) -> "Doctype":
+        self,
+        name: str,
+        public_id: str = "",
+        system_id: str = "",
+        *,
+        ordering: int = Ordering.APPEND,
+    ) -> "Doctype":  # pragma: no cover # it is a copy of Document.create_doctype
         dom = self._raw.tree()
         node = _rustlib.Doctype(dom, name, public_id, system_id)
         self._connect_node(ordering, dom, node)
         return Doctype(node)
 
-    def create_comment(self, content: str, *, ordering: int = Order.APPEND) -> "Comment":
+    def create_comment(
+        self, content: str, *, ordering: int = Ordering.APPEND
+    ) -> "Comment":  # pragma: no cover # it is a copy of Document.create_comment
         dom = self._raw.tree()
         node = _rustlib.Comment(dom, content)
         self._connect_node(ordering, dom, node)
         return Comment(node)
 
-    def create_text(self, content: str, *, ordering: int = Order.APPEND) -> "Text":
+    def create_text(
+        self, content: str, *, ordering: int = Ordering.APPEND
+    ) -> "Text":  # pragma: no cover # it is a copy of Document.create_text
         dom = self._raw.tree()
         node = _rustlib.Text(dom, content)
         self._connect_node(ordering, dom, node)
@@ -623,8 +644,8 @@ class Element(BaseNode):
         template: bool = False,
         mathml_annotation_xml_integration_point: bool = False,
         *,
-        ordering: int = Order.APPEND,
-    ) -> "Element":
+        ordering: int = Ordering.APPEND,
+    ) -> "Element":  # pragma: no cover # it is a copy of Document.create_element
         dom = self._raw.tree()
 
         if isinstance(attrs, dict):
@@ -635,8 +656,10 @@ class Element(BaseNode):
         return Element(node)
 
     def create_processing_instruction(
-        self, data: str, target: str, *, ordering: int = Order.APPEND
-    ) -> "ProcessingInstruction":
+        self, data: str, target: str, *, ordering: int = Ordering.APPEND
+    ) -> (
+        "ProcessingInstruction"
+    ):  # pragma: no cover # it is a copy of Document.create_processing_instruction
         dom = self._raw.tree()
         node = _rustlib.ProcessingInstruction(dom, data, target)
         self._connect_node(ordering, dom, node)
@@ -644,7 +667,7 @@ class Element(BaseNode):
 
 
 class ProcessingInstruction(BaseNode):
-    _CONFIG = _ConfigNode(_rustlib.ProcessingInstruction, (Order.APPEND, Order.PREPEND))
+    _CONFIG = _ConfigNode(_rustlib.ProcessingInstruction, (Ordering.APPEND, Ordering.PREPEND))
 
     @property
     def target(self) -> str:

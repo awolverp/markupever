@@ -189,7 +189,7 @@ impl PartialEq for NodeGuard {
 }
 impl Eq for NodeGuard {}
 
-macro_rules! _create_richcmp_notimplemented {
+macro_rules! create_richcmp_notimplemented {
     ($token:expr, $selfobj:expr) => {
         unsafe {
             Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
@@ -202,6 +202,8 @@ macro_rules! _create_richcmp_notimplemented {
         }
     };
 }
+
+pub(crate) use create_richcmp_notimplemented;
 
 /// A document node
 #[pyo3::pyclass(name = "Document", module = "xmarkup._rustlib", frozen)]
@@ -280,16 +282,16 @@ impl PyDocument {
                 Ok(self_.0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
-                _create_richcmp_notimplemented!('>', self_)
+                create_richcmp_notimplemented!('>', self_)
             }
             pyo3::basic::CompareOp::Lt => {
-                _create_richcmp_notimplemented!('<', self_)
+                create_richcmp_notimplemented!('<', self_)
             }
             pyo3::basic::CompareOp::Le => {
-                _create_richcmp_notimplemented!("<=", self_)
+                create_richcmp_notimplemented!("<=", self_)
             }
             pyo3::basic::CompareOp::Ge => {
-                _create_richcmp_notimplemented!(">=", self_)
+                create_richcmp_notimplemented!(">=", self_)
             }
         }
     }
@@ -436,16 +438,16 @@ impl PyDoctype {
                 Ok(self_.0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
-                _create_richcmp_notimplemented!('>', self_)
+                create_richcmp_notimplemented!('>', self_)
             }
             pyo3::basic::CompareOp::Lt => {
-                _create_richcmp_notimplemented!('<', self_)
+                create_richcmp_notimplemented!('<', self_)
             }
             pyo3::basic::CompareOp::Le => {
-                _create_richcmp_notimplemented!("<=", self_)
+                create_richcmp_notimplemented!("<=", self_)
             }
             pyo3::basic::CompareOp::Ge => {
-                _create_richcmp_notimplemented!(">=", self_)
+                create_richcmp_notimplemented!(">=", self_)
             }
         }
     }
@@ -562,16 +564,16 @@ impl PyComment {
                 Ok(self_.0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
-                _create_richcmp_notimplemented!('>', self_)
+                create_richcmp_notimplemented!('>', self_)
             }
             pyo3::basic::CompareOp::Lt => {
-                _create_richcmp_notimplemented!('<', self_)
+                create_richcmp_notimplemented!('<', self_)
             }
             pyo3::basic::CompareOp::Le => {
-                _create_richcmp_notimplemented!("<=", self_)
+                create_richcmp_notimplemented!("<=", self_)
             }
             pyo3::basic::CompareOp::Ge => {
-                _create_richcmp_notimplemented!(">=", self_)
+                create_richcmp_notimplemented!(">=", self_)
             }
         }
     }
@@ -685,16 +687,16 @@ impl PyText {
                 Ok(self_.0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
-                _create_richcmp_notimplemented!('>', self_)
+                create_richcmp_notimplemented!('>', self_)
             }
             pyo3::basic::CompareOp::Lt => {
-                _create_richcmp_notimplemented!('<', self_)
+                create_richcmp_notimplemented!('<', self_)
             }
             pyo3::basic::CompareOp::Le => {
-                _create_richcmp_notimplemented!("<=", self_)
+                create_richcmp_notimplemented!("<=", self_)
             }
             pyo3::basic::CompareOp::Ge => {
-                _create_richcmp_notimplemented!(">=", self_)
+                create_richcmp_notimplemented!(">=", self_)
             }
         }
     }
@@ -1422,16 +1424,16 @@ impl PyElement {
                 Ok(self_.0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
-                _create_richcmp_notimplemented!('>', self_)
+                create_richcmp_notimplemented!('>', self_)
             }
             pyo3::basic::CompareOp::Lt => {
-                _create_richcmp_notimplemented!('<', self_)
+                create_richcmp_notimplemented!('<', self_)
             }
             pyo3::basic::CompareOp::Le => {
-                _create_richcmp_notimplemented!("<=", self_)
+                create_richcmp_notimplemented!("<=", self_)
             }
             pyo3::basic::CompareOp::Ge => {
-                _create_richcmp_notimplemented!(">=", self_)
+                create_richcmp_notimplemented!(">=", self_)
             }
         }
     }
@@ -1578,16 +1580,16 @@ impl PyProcessingInstruction {
                 Ok(self_.0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
-                _create_richcmp_notimplemented!('>', self_)
+                create_richcmp_notimplemented!('>', self_)
             }
             pyo3::basic::CompareOp::Lt => {
-                _create_richcmp_notimplemented!('<', self_)
+                create_richcmp_notimplemented!('<', self_)
             }
             pyo3::basic::CompareOp::Le => {
-                _create_richcmp_notimplemented!("<=", self_)
+                create_richcmp_notimplemented!("<=", self_)
             }
             pyo3::basic::CompareOp::Ge => {
-                _create_richcmp_notimplemented!(">=", self_)
+                create_richcmp_notimplemented!(">=", self_)
             }
         }
     }

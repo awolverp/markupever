@@ -430,6 +430,63 @@ impl PyTreeDom {
         Ok(())
     }
 
+    fn __richcmp__(
+        self_: pyo3::PyRef<'_, Self>,
+        other: pyo3::PyObject,
+        cmp: pyo3::basic::CompareOp,
+    ) -> pyo3::PyResult<bool> {
+        if matches!(cmp, pyo3::basic::CompareOp::Eq)
+            && std::ptr::addr_eq(self_.as_ptr(), other.as_ptr())
+        {
+            return Ok(true);
+        }
+
+        match cmp {
+            pyo3::basic::CompareOp::Eq => {
+                let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
+                    Ok(o) => o,
+                    Err(_) => return Ok(false),
+                };
+
+                if Arc::ptr_eq(&self_.dom, &other.dom) {
+                    Ok(true)
+                } else {
+                    let t1 = self_.dom.lock();
+                    let t2 = other.dom.lock();
+
+                    Ok(&*t1 == &*t2)
+                }
+            }
+            pyo3::basic::CompareOp::Ne => {
+                let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
+                    Ok(o) => o,
+                    Err(_) => return Ok(false),
+                };
+
+                if Arc::ptr_eq(&self_.dom, &other.dom) {
+                    Ok(false)
+                } else {
+                    let t1 = self_.dom.lock();
+                    let t2 = other.dom.lock();
+
+                    Ok(&*t1 != &*t2)
+                }
+            }
+            pyo3::basic::CompareOp::Gt => {
+                crate::nodes::create_richcmp_notimplemented!('>', self_)
+            }
+            pyo3::basic::CompareOp::Lt => {
+                crate::nodes::create_richcmp_notimplemented!('<', self_)
+            }
+            pyo3::basic::CompareOp::Le => {
+                crate::nodes::create_richcmp_notimplemented!("<=", self_)
+            }
+            pyo3::basic::CompareOp::Ge => {
+                crate::nodes::create_richcmp_notimplemented!(">=", self_)
+            }
+        }
+    }
+
     fn __len__(&self) -> usize {
         let dom = self.dom.lock();
         dom.values().len()

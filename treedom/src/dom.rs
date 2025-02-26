@@ -5,6 +5,7 @@ use std::ops::Deref;
 pub type NamespaceMap = HashMap<markup5ever::Prefix, markup5ever::Namespace>;
 
 /// A DOM based on [`ego_tree::Tree`]
+#[derive(PartialEq, Eq)]
 pub struct IDTreeDOM {
     pub(super) tree: ego_tree::Tree<interface::Interface>,
     pub(super) namespaces: NamespaceMap,
