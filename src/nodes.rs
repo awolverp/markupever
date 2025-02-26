@@ -868,7 +868,6 @@ impl PyAttrsList {
         let mut node = tree.get_mut(self.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
 
-
         if index > elem.attrs.len() {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
                 "range out of bound",
@@ -1102,7 +1101,6 @@ impl PyAttrsList {
                 },
             )?;
             let val = pyo3::types::PyString::new(self_.py(), &value);
-            
 
             let tuple = pyo3::ffi::PyTuple_New(2);
 

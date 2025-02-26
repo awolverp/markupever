@@ -19,7 +19,7 @@ pub struct PyHtmlOptions {
 impl PyHtmlOptions {
     /// Creates a new [`PyHtmlOptions`]
     ///
-    /// - `full_document`: Is this a complete document? (means includes html, head, and body tag). Default: true.
+    /// - `full_document`: Is this a complete document? (means includes html, head, and body tag). Default: false.
     /// - `exact_errors`: Report all parse errors described in the spec, at some performance penalty? Default: false.
     /// - `discard_bom`: Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? Default: true.
     /// - `profile`: Keep a record of how long we spent in each state? Printed when `finish()` is called. Default: false.
@@ -27,7 +27,7 @@ impl PyHtmlOptions {
     /// - `drop_doctype`: Should we drop the DOCTYPE (if any) from the tree? Default: false.
     /// - `quirks_mode`: Initial TreeBuilder quirks mode. Default: QUIRKS_MODE_OFF.
     #[new]
-    #[pyo3(signature=(full_document=true, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, quirks_mode=crate::tools::QUIRKS_MODE_OFF))]
+    #[pyo3(signature=(full_document=false, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, quirks_mode=crate::tools::QUIRKS_MODE_OFF))]
     fn new(
         full_document: bool,
         exact_errors: bool,

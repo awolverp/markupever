@@ -199,7 +199,7 @@ class BaseNode:
         for descendant in self.descendants():
             if not isinstance(descendant, Text):
                 continue
-            
+
             if strip:
                 yield descendant.content.strip()
             else:
@@ -207,6 +207,12 @@ class BaseNode:
 
     def text(self, seperator: str = "", strip: bool = False) -> str:
         return seperator.join(self.strings(strip=strip))
+
+    def serialize_bytes(self, is_xml: bool = False) -> bytes:
+        return _rustlib.serialize(self._raw, is_xml)
+
+    def serialize(self, is_xml: bool = False) -> str:
+        return self.serialize_bytes(is_xml).decode("utf-8")
 
     def __eq__(self, value):
         if isinstance(value, BaseNode):
@@ -471,7 +477,7 @@ class AttrsList:
             index = self._find_by_item(*key)
         else:
             _, index = self._find_by_key(key)
-        
+
         if index == -1:
             raise ValueError(key)
 
@@ -499,7 +505,6 @@ class AttrsList:
     def reverse(self) -> None:
         self.__raw.reverse()
 
-
     def extend(self, m: typing.Union[dict, typing.Iterable[tuple]]):
         if isinstance(m, dict):
             m = m.items()
@@ -523,13 +528,15 @@ class AttrsList:
 
     def __delitem__(self, index: int) -> None:
         self.__raw.remove(index)
-    
-    def __setitem__(self, index: int, val: typing.Tuple[typing.Union[_rustlib.QualName, str], str]) -> None:
+
+    def __setitem__(
+        self, index: int, val: typing.Tuple[typing.Union[_rustlib.QualName, str], str]
+    ) -> None:
         self.__raw.update_item(index, val[0], val[1])
 
     def __getitem__(self, index: int) -> typing.Tuple[_rustlib.QualName, str]:
         return self.__raw.get_by_index(index)
-    
+
     def __repr__(self) -> str:
         return repr(self.__raw)
 

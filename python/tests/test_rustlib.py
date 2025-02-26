@@ -558,3 +558,41 @@ def test_select():
         is_ok = True
 
     assert is_ok
+
+
+def test_serialize():
+    parser = rl.Parser(rl.HtmlOptions(full_document=True))
+    for c in ("<html>", b"<body>Ali</body>", b"</html>"):
+        parser.process(c)
+    parser.finish()
+
+    dom = parser.into_dom()
+
+    assert rl.serialize(dom.root(), False) == b"<html><head></head><body>Ali</body></html>"
+    assert (
+        rl.serialize(dom.root(), True)
+        == b'<html xmlns="http://www.w3.org/1999/xhtml"><head></head><body>Ali</body></html>'
+    )
+
+    parser = rl.Parser(rl.HtmlOptions(full_document=False))
+    for c in ("<hello>", b"Ali", b"</hello>"):
+        parser.process(c)
+    parser.finish()
+
+    dom = parser.into_dom()
+
+    assert rl.serialize(dom.root(), False) == b"<html><hello>Ali</hello></html>"
+    assert (
+        rl.serialize(dom.root(), True)
+        == b'<html xmlns="http://www.w3.org/1999/xhtml"><hello>Ali</hello></html>'
+    )
+
+    parser = rl.Parser(rl.XmlOptions())
+    for c in ("<hello>", b"Ali", b"</hello>"):
+        parser.process(c)
+    parser.finish()
+
+    dom = parser.into_dom()
+
+    assert rl.serialize(dom.root(), False) == b"<hello>Ali</hello>"
+    assert rl.serialize(dom.root(), True) == b"<hello>Ali</hello>"
