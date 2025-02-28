@@ -17,11 +17,11 @@
 MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing library written in Rust.
 
 **KEY FEATURES:**
-* 🚀 **Fast**: Very high performance and fast (thanks to **[html5ever](https://github.com/servo/html5ever)**). About 20x faster than BeautifulSoup and Parsel.
+* 🚀 **Fast**: Very high performance and fast (thanks to **[html5ever](https://github.com/servo/html5ever)** and **[selectors](https://github.com/servo/stylo/tree/main/selectors)**). About 20x faster than BeautifulSoup and Parsel.
 * 🔥 **Easy**: Designed to be easy to use and learn. <abbr title="also known as auto-complete, autocompletion, IntelliSense">Completion</abbr> everywhere.
 * ✨ **Low-Memory**: Written in Rust. Uses low memory. Don't worry about memory leaks. Uses Rust memory allocator.
 * 🧶 **Thread-safe**: Completely thread-safe. 
-
+* 🎯 **Quering**: Use your **CSS** knowledge for selecting elements from a HTML or XML document.
 
 ## Installation
 You can install MarkupEver by using **pip**:
