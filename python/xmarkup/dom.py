@@ -29,15 +29,19 @@ class TreeDom:
         return Document(self._raw.root())
 
     def select(self, expr: str, limit: int = 0, offset: int = 0) -> iterators.Select:
+        """Shorthand for `self.root().select(expr, limit, offset)`"""
         return self.root().select(expr, limit, offset)
 
     def select_one(self, expr: str, offset: int = 0) -> typing.Optional["Element"]:
+        """Shorthand for `self.root().select_one(expr, offset)`"""
         return self.root().select_one(expr, offset)
 
     def serialize_bytes(self, is_xml: bool = False) -> bytes:
+        """Shorthand for `self.root().serialize_bytes(is_xml)`"""
         return self.root().serialize_bytes(is_xml=is_xml)  # pragma: no cover
 
     def serialize(self, is_xml: bool = False) -> str:
+        """Shorthand for `self.root().serialize(is_xml)`"""
         return self.root().serialize(is_xml=is_xml)  # pragma: no cover
 
     def __iter__(self) -> typing.Generator["BaseNode", typing.Any, None]:
@@ -71,10 +75,16 @@ class _ConfigNode:
 
 
 class Ordering:
+    """Enum for `create_*` methods of a node."""
+
     APPEND = 0
+    """Means create and append the node as the `last_child`."""
     PREPEND = 1
+    """Means create and append the node as the `first_child`."""
     AFTER = 2
+    """Means create and insert the node as the `next_sibling`."""
     BEFORE = 3
+    """Means create and insert the node as the `prev_sibling`."""
 
 
 class BaseNode:
@@ -138,80 +148,114 @@ class BaseNode:
 
     @property
     def parent(self) -> typing.Optional["BaseNode"]:
+        """Returns the parent of this node."""
         parent = self._raw.parent()
         return BaseNode._wrap(parent) if parent is not None else None
 
     @property
     def prev_sibling(self) -> typing.Optional["BaseNode"]:
+        """Returns the previous sibling of this node."""
         prev_sibling = self._raw.prev_sibling()
         return BaseNode._wrap(prev_sibling) if prev_sibling is not None else None
 
     @property
     def next_sibling(self) -> typing.Optional["BaseNode"]:
+        """Returns the next sibling of this node."""
         next_sibling = self._raw.next_sibling()
         return BaseNode._wrap(next_sibling) if next_sibling is not None else None
 
     @property
     def first_child(self) -> typing.Optional["BaseNode"]:
+        """Returns the first child of this node."""
         first_child = self._raw.first_child()
         return BaseNode._wrap(first_child) if first_child is not None else None
 
     @property
     def last_child(self) -> typing.Optional["BaseNode"]:
+        """Returns the last child of this node."""
         last_child = self._raw.last_child()
         return BaseNode._wrap(last_child) if last_child is not None else None
 
     @property
     def has_siblings(self) -> bool:
+        """Returns `True` if the node has sibling."""
         return self._raw.has_siblings
 
     @property
     def has_children(self) -> bool:
+        """Returns `True` if the node has children."""
         return self._raw.has_children
 
     def tree(self) -> "TreeDom":
+        """Returns the tree which this node connected to."""
         return TreeDom(raw=self._raw.tree())
 
     def children(self) -> iterators.Children:
+        """Returns an iterator which iterates over children of this node."""
         return iterators.Children(self)
 
     def ancestors(self) -> iterators.Ancestors:
+        """Returns an iterator which iterates over ancestors (parents) of this node."""
         return iterators.Ancestors(self)
 
     def prev_siblings(self) -> iterators.PrevSiblings:
+        """Returns an iterator which iterates over previous siblings of this node."""
         return iterators.PrevSiblings(self)
 
     def next_siblings(self) -> iterators.NextSiblings:
+        """Returns an iterator which iterates over next siblings of this node."""
         return iterators.NextSiblings(self)
 
     def first_children(self) -> iterators.FirstChildren:
+        """Returns an iterator which iterates over first children."""
         return iterators.FirstChildren(self)  # pragma: no cover
 
     def last_children(self) -> iterators.LastChildren:
+        """Returns an iterator which iterates over last children."""
         return iterators.LastChildren(self)  # pragma: no cover
 
     def traverse(self) -> iterators.Traverse:
+        """Returns a traverse iterator."""
         return iterators.Traverse(self)
 
     def descendants(self) -> iterators.Descendants:
+        """Returns an iterator which iterates over this node and its descendants."""
         return iterators.Descendants(self)
 
     def attach(self, node: "BaseNode", *, ordering: int = Ordering.APPEND) -> None:
+        """
+        Attaches and connect `node` to this node depends on `ordering` value.
+
+        This is not important the `node` has detached or not.
+        """
         if isinstance(node._raw, _rustlib.Document):
             raise ValueError("you cannot attach a Document node to another node.")
 
         self._connect_node(ordering, self._raw.tree(), node._raw)
 
     def detach(self) -> None:
+        """
+        Detaches this node from other nodes (means makes it an orphan node).
+
+        Note: you cannot detach a node move it to another tree.
+        """
         if isinstance(self._raw, _rustlib.Document):
             raise ValueError("you cannot detach Document node.")
 
         self._raw.tree().detach(self._raw)
 
     def select(self, expr: str, limit: int = 0, offset: int = 0) -> iterators.Select:
+        """
+        Returns an iterator that uses CSS selectors to match and find nodes.
+
+        You can use a group of CSS selectors (seperated by comma).
+        """
         return iterators.Select(self, expr, limit=limit, offset=offset)
 
     def select_one(self, expr: str, offset: int = 0) -> typing.Optional["Element"]:
+        """
+        Works like `self.select(expr, offset=offset)` but only returns the first match.
+        """
         selector = iterators.Select(self, expr, limit=1, offset=offset)
 
         try:
@@ -222,6 +266,7 @@ class BaseNode:
             return node
 
     def strings(self, strip: bool = False):
+        """Go through this node descendants and yields texts."""
         for descendant in self.descendants():
             if not isinstance(descendant, Text):
                 continue
@@ -232,12 +277,15 @@ class BaseNode:
                 yield descendant.content
 
     def text(self, seperator: str = "", strip: bool = False) -> str:
+        """Returns the text of this node."""
         return seperator.join(self.strings(strip=strip))
 
     def serialize_bytes(self, is_xml: bool = False) -> bytes:
+        """Serialize the tree (starts from this node) to bytes."""
         return _rustlib.serialize(self._raw, is_xml)
 
     def serialize(self, is_xml: bool = False) -> str:
+        """Serialize the tree (starts from this node) to string."""
         return self.serialize_bytes(is_xml).decode("utf-8")
 
     def __eq__(self, value):
@@ -281,6 +329,8 @@ class BaseNode:
 
 
 class Document(BaseNode):
+    """The root of a document."""
+
     _CONFIG = _ConfigNode(_rustlib.Document, (Ordering.AFTER, Ordering.BEFORE))
 
     def create_doctype(
@@ -291,18 +341,27 @@ class Document(BaseNode):
         *,
         ordering: int = Ordering.APPEND,
     ) -> "Doctype":
+        """
+        Create and connect a `Doctype` to this node depends on `ordering` value.
+        """
         dom = self._raw.tree()
         node = _rustlib.Doctype(dom, name, public_id, system_id)
         self._connect_node(ordering, dom, node)
         return Doctype(node)
 
     def create_comment(self, content: str, *, ordering: int = Ordering.APPEND) -> "Comment":
+        """
+        Create and connect a `Comment` to this node depends on `ordering` value.
+        """
         dom = self._raw.tree()
         node = _rustlib.Comment(dom, content)
         self._connect_node(ordering, dom, node)
         return Comment(node)
 
     def create_text(self, content: str, *, ordering: int = Ordering.APPEND) -> "Text":
+        """
+        Create and connect a `Text` to this node depends on `ordering` value.
+        """
         dom = self._raw.tree()
         node = _rustlib.Text(dom, content)
         self._connect_node(ordering, dom, node)
@@ -320,6 +379,9 @@ class Document(BaseNode):
         *,
         ordering: int = Ordering.APPEND,
     ) -> "Element":
+        """
+        Create and connect a `Element` to this node depends on `ordering` value.
+        """
         dom = self._raw.tree()
 
         if isinstance(attrs, dict):
@@ -332,6 +394,9 @@ class Document(BaseNode):
     def create_processing_instruction(
         self, data: str, target: str, *, ordering: int = Ordering.APPEND
     ) -> "ProcessingInstruction":
+        """
+        Create and connect a `ProcessingInstruction` to this node depends on `ordering` value.
+        """
         dom = self._raw.tree()
         node = _rustlib.ProcessingInstruction(dom, data, target)
         self._connect_node(ordering, dom, node)
@@ -339,6 +404,14 @@ class Document(BaseNode):
 
 
 class Doctype(BaseNode):
+    """
+    the doctype is the required <!doctype html> preamble found at the top of all documents.
+    Its sole purpose is to prevent a browser from switching into so-called "quirks mode"
+    when rendering a document; that is, the <!doctype html> doctype ensures that the browser makes
+    a best-effort attempt at following the relevant specifications, rather than using a different
+    rendering mode that is incompatible with some specifications.
+    """
+
     _CONFIG = _ConfigNode(_rustlib.Doctype, (Ordering.APPEND, Ordering.PREPEND))
 
     @property
@@ -367,6 +440,14 @@ class Doctype(BaseNode):
 
 
 class Comment(BaseNode):
+    """
+    The Comment interface represents textual notations within markup; although it is generally not
+    visually shown, such comments are available to be read in the source view.
+
+    Comments are represented in HTML and XML as content between <!-- and -->. In XML,
+    like inside SVG or MathML markup, the character sequence -- cannot be used within a comment.
+    """
+
     _CONFIG = _ConfigNode(_rustlib.Comment, (Ordering.APPEND, Ordering.PREPEND))
 
     @property
@@ -415,6 +496,8 @@ class Comment(BaseNode):
 
 
 class Text(BaseNode):
+    """A text node."""
+
     _CONFIG = _ConfigNode(_rustlib.Text, (Ordering.APPEND, Ordering.PREPEND))
 
     @property
@@ -466,15 +549,26 @@ _D = typing.TypeVar("_D")
 
 
 class AttrsList:
+    """
+    This type is only designed for communicating with element attributes. 
+    
+    Really it's a list, but has a behaviour between dictionary and list to provide you easy-to-use management.
+    """
     __slots__ = ("__raw",)
 
     def __init__(self, attrs: _rustlib.AttrsList):
         self.__raw = attrs
 
     def append(self, key: typing.Union[_rustlib.QualName, str], value: str):
+        """
+        Appends a key-value pair into attributes list.
+        """
         self.__raw.push(key, value)
 
     def insert(self, index: int, key: typing.Union[_rustlib.QualName, str], value: str):
+        """
+        Inserts a key-value pair at position `index` within the list, shifting all elements after it to the right.
+        """
         self.__raw.insert(index, key, value)
 
     def _find_by_key(
@@ -508,6 +602,9 @@ class AttrsList:
     def index(
         self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple], start: int = 0
     ) -> int:
+        """
+        Returns the first match index.
+        """
         if isinstance(key, tuple):
             index = self._find_by_item(*key, start=start)
         else:
@@ -518,9 +615,12 @@ class AttrsList:
 
         return index
 
-    def find(
+    def get(
         self, key: typing.Union[_rustlib.QualName, str], default: _D = None, start: int = 0
-    ) -> typing.Tuple[typing.Union[str, _D], int]:
+    ) -> typing.Union[str, _D]:
+        """
+        Return the value for key if key is in the dictionary, else default.
+        """
         val, index = self._find_by_key(key, start=start)
         if index == -1:
             return default
@@ -528,9 +628,17 @@ class AttrsList:
         return val
 
     def dedup(self) -> None:
+        """
+        Removes consecutive repeated elements in the attributes list.
+        """
         self.__raw.dedup()  # pragma: no cover
 
     def pop(self, index: int = -1) -> typing.Tuple[_rustlib.QualName, str]:
+        """
+        Remove and return item at index (default last).
+
+        Raises `IndexError` if list is empty or index is out of range.
+        """
         if index < 0:
             index = len(self.__raw) + index
 
@@ -539,13 +647,22 @@ class AttrsList:
     def remove(
         self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple], start: int = 0
     ) -> None:
+        """
+        Remove first occurrence of value.
+
+        Raises ValueError if the value is not present.
+        """
         index = self.index(key, start=start)
         self.__raw.remove(index)
 
     def reverse(self) -> None:
+        """Reverses the order of elements in the list."""
         self.__raw.reverse()
 
     def extend(self, m: typing.Union[dict, typing.Iterable[tuple]]):
+        """
+        Extend the attributes list by appending key-value pairs from the iterable or dictionary.
+        """
         if isinstance(m, dict):
             m = m.items()
 
@@ -553,21 +670,29 @@ class AttrsList:
             self.__raw.push(key, val)
 
     def clear(self) -> None:
+        """Clears the attributes list, removing all values."""
         self.__raw.clear()
 
     def keys(self) -> typing.Generator[QualName, None, None]:
+        """Returns a generator of attribute keys."""
         return (i for i, _ in self.__raw.items())
 
     def values(self) -> typing.Generator[str, None, None]:
+        """Returns a generator of attribute values."""
         return (i for _, i in self.__raw.items())
 
     def __len__(self) -> int:
+        """Returns `len(self)`."""
         return len(self.__raw)
 
-    def __iter__(self) -> _rustlib.AttrsListItems:
+    def __iter__(self):
+        """Returns a generator of attribute keys."""
         return self.keys()
 
     def __contains__(self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple]) -> bool:
+        """
+        Returns `True` if the list has the specified key, else `False`.
+        """
         if isinstance(key, tuple):
             index = self._find_by_item(*key)
         else:
@@ -576,6 +701,10 @@ class AttrsList:
         return index > -1
 
     def __delitem__(self, index: typing.Union[int, str, _rustlib.QualName]) -> None:
+        """
+        - If `index` is `str` or `QualName`: Finds and removes the first match from list.
+        - If `index` is `int`: Removes the `index` from list.
+        """
         if not isinstance(index, int):
             _, index = self._find_by_key(index)
             if index == -1:
@@ -617,6 +746,8 @@ class AttrsList:
 
 
 class Element(BaseNode):
+    """An element node."""
+
     _CONFIG = _ConfigNode(_rustlib.Element, ())
 
     @property
@@ -676,6 +807,9 @@ class Element(BaseNode):
         *,
         ordering: int = Ordering.APPEND,
     ) -> "Doctype":  # pragma: no cover # it is a copy of Document.create_doctype
+        """
+        Create and connect a `Doctype` to this node depends on `ordering` value.
+        """
         dom = self._raw.tree()
         node = _rustlib.Doctype(dom, name, public_id, system_id)
         self._connect_node(ordering, dom, node)
@@ -684,6 +818,9 @@ class Element(BaseNode):
     def create_comment(
         self, content: str, *, ordering: int = Ordering.APPEND
     ) -> "Comment":  # pragma: no cover # it is a copy of Document.create_comment
+        """
+        Create and connect a `Comment` to this node depends on `ordering` value.
+        """
         dom = self._raw.tree()
         node = _rustlib.Comment(dom, content)
         self._connect_node(ordering, dom, node)
@@ -692,6 +829,9 @@ class Element(BaseNode):
     def create_text(
         self, content: str, *, ordering: int = Ordering.APPEND
     ) -> "Text":  # pragma: no cover # it is a copy of Document.create_text
+        """
+        Create and connect a `Text` to this node depends on `ordering` value.
+        """
         dom = self._raw.tree()
         node = _rustlib.Text(dom, content)
         self._connect_node(ordering, dom, node)
@@ -709,6 +849,9 @@ class Element(BaseNode):
         *,
         ordering: int = Ordering.APPEND,
     ) -> "Element":  # pragma: no cover # it is a copy of Document.create_element
+        """
+        Create and connect a `Element` to this node depends on `ordering` value.
+        """
         dom = self._raw.tree()
 
         if isinstance(attrs, dict):
@@ -723,6 +866,9 @@ class Element(BaseNode):
     ) -> (
         "ProcessingInstruction"
     ):  # pragma: no cover # it is a copy of Document.create_processing_instruction
+        """
+        Create and connect a `ProcessingInstruction` to this node depends on `ordering` value.
+        """
         dom = self._raw.tree()
         node = _rustlib.ProcessingInstruction(dom, data, target)
         self._connect_node(ordering, dom, node)
@@ -730,6 +876,11 @@ class Element(BaseNode):
 
 
 class ProcessingInstruction(BaseNode):
+    """
+    The ProcessingInstruction interface represents a processing instruction; that is,
+    a Node which embeds an instruction targeting a specific application but that can
+    be ignored by any other applications which don't recognize the instruction.
+    """
     _CONFIG = _ConfigNode(_rustlib.ProcessingInstruction, (Ordering.APPEND, Ordering.PREPEND))
 
     @property

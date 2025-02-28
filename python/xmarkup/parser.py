@@ -83,7 +83,7 @@ def parse(
     options: typing.Union[_rustlib.HtmlOptions, _rustlib.XmlOptions],
 ) -> TreeDom:
     """
-    Parses your HTML (or XML depend on `options` type) content and returns the parsed document tree.
+    Parses your HTML (or XML depends on `options` type) content and returns the parsed document tree.
     """
     parser = Parser(options)
     parser.process(content)
@@ -98,7 +98,7 @@ def parse_file(
     chunk_size: int = 10240,
 ) -> TreeDom:
     """
-    Parses your HTML (or XML depend on `options` type) file and returns the parsed document tree.
+    Parses your HTML (or XML depends on `options` type) file and returns the parsed document tree.
     """
     from pathlib import Path
 

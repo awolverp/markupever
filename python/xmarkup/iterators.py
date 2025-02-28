@@ -7,6 +7,8 @@ if typing.TYPE_CHECKING:  # pragma: no cover
 
 
 class _IteratorMetaClass:
+    """Bridge _rustlib iterators to Python"""
+
     _BASECLASS: typing.Callable[["dom.BaseNode"], typing.Iterable]
 
     __slots__ = ("_raw",)
@@ -15,39 +17,55 @@ class _IteratorMetaClass:
         self._raw = iter(self._BASECLASS(value._raw))
 
     def __iter__(self):
+        """Returns `iter(self)`"""
         return self
 
     def __next__(self) -> "dom.BaseNode":
+        """Returns `next(self)`"""
         from .dom import BaseNode
 
         return BaseNode._wrap(next(self._raw))
 
 
 class Ancestors(_IteratorMetaClass):
+    """Iterates over ancestors (parents)."""
+
     _BASECLASS = _rustlib.iter.Ancestors
 
 
 class PrevSiblings(_IteratorMetaClass):
+    """Iterates over previous siblings."""
+
     _BASECLASS = _rustlib.iter.PrevSiblings
 
 
 class NextSiblings(_IteratorMetaClass):
+    """Iterates over next siblings."""
+
     _BASECLASS = _rustlib.iter.NextSiblings
 
 
 class FirstChildren(_IteratorMetaClass):
+    """Iterates over first children."""
+
     _BASECLASS = _rustlib.iter.FirstChildren
 
 
 class LastChildren(_IteratorMetaClass):
+    """Iterates over last children."""
+
     _BASECLASS = _rustlib.iter.LastChildren
 
 
 class Children(_IteratorMetaClass):
+    """Iterates children of a node."""
+
     _BASECLASS = _rustlib.iter.Children
 
 
 class EdgeTraverse:
+    """Open or close edge of a node (The returning type of `Traverse`)."""
+
     __slots__ = ("node", "closed")
 
     def __init__(self, node: "dom.BaseNode", closed: bool) -> None:
@@ -62,6 +80,8 @@ class EdgeTraverse:
 
 
 class Traverse(_IteratorMetaClass):
+    """Iterator which traverses a tree."""
+
     _BASECLASS = _rustlib.iter.Traverse
 
     def __next__(self) -> EdgeTraverse:
@@ -72,10 +92,14 @@ class Traverse(_IteratorMetaClass):
 
 
 class Descendants(_IteratorMetaClass):
+    """Iterates over a node and its descendants."""
+
     _BASECLASS = _rustlib.iter.Descendants
 
 
 class Select:
+    """An iterator that uses CSS selectors to match and find nodes."""
+
     __slots__ = ("__raw", "__limit", "__offset")
 
     def __init__(

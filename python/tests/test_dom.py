@@ -386,9 +386,9 @@ def test_element():
     html.attrs = [("id", "id1"), ("id", "id2"), ("data-role", "button")]
     assert html.id == "id1"
 
-    assert html.attrs.find("id") == "id1"
-    assert html.attrs.find("id", start=1) == "id2"
-    assert html.attrs.find("dt", start=1, default="h") == "h"
+    assert html.attrs.get("id") == "id1"
+    assert html.attrs.get("id", start=1) == "id2"
+    assert html.attrs.get("dt", start=1, default="h") == "h"
 
     assert html.attrs.index("id") == 0
     assert html.attrs.index("id", start=1) == 1
