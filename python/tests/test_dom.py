@@ -267,3 +267,164 @@ def test_detach():
     root.attach(body)
     assert body.parent == root
     assert root.last_child == body
+
+    html.attach(body)
+    assert body.parent == html
+
+
+def test_select():
+    dom = xmarkup.parse(
+        """<div class="title">
+        <nav class="navbar">
+            <p id="title">Hello World</p><p id="text">Hello World</p>
+        </nav>
+        <nav class="nav2"><p>World</p></nav>
+        </div>""",
+        xmarkup.HtmlOptions(),
+    )
+
+    count = 0
+    for tag in dom.select("p:nth-child(1)"):
+        count += 1
+        assert isinstance(tag, xmarkup.dom.Element)
+        assert tag.name == "p"
+
+    assert count == 2
+
+    count = 0
+    for tag in dom.select("p:nth-child(1)", limit=1):
+        count += 1
+        assert isinstance(tag, xmarkup.dom.Element)
+        assert tag.name == "p"
+
+    assert count == 1
+
+    count = 0
+    for tag in dom.select("p"):
+        count += 1
+        assert isinstance(tag, xmarkup.dom.Element)
+        assert tag.name == "p"
+
+    assert count == 3
+
+    count = 0
+    for tag in dom.select("p", limit=1):
+        count += 1
+        assert isinstance(tag, xmarkup.dom.Element)
+        assert tag.name == "p"
+        assert tag.id == "title"
+
+    assert count == 1
+
+    count = 0
+    for tag in dom.select("p", offset=3):
+        count += 1
+        assert isinstance(tag, xmarkup.dom.Element)
+        assert tag.name == "p"
+        assert tag.id is None
+
+    assert count == 1
+
+    tag = dom.select_one("nav.nav2")
+    assert tag.name == "nav"
+    assert tag.class_list == ["nav2"]
+    assert tag.text() == "World"
+
+    tag = dom.select_one("nav.nav2", offset=3)
+    assert tag is None
+
+
+def test_element():
+    dom = xmarkup.dom.TreeDom()
+    root = dom.root()
+
+    html = root.create_element(
+        "html", {"lang": "en", "class": "hello world"}, mathml_annotation_xml_integration_point=True
+    )
+    assert html.class_list == ["hello", "world"]
+    assert html.template is False
+    assert html.mathml_annotation_xml_integration_point is True
+
+    html.name = xmarkup.dom.QualName("tag", "html")
+    html.template = True
+    html.mathml_annotation_xml_integration_point = False
+
+    assert html.template is True
+    assert html.mathml_annotation_xml_integration_point is False
+    assert html.name == "tag"
+
+    html.attrs["class"] = "hello man"
+    assert html.class_list == ["hello", "man"]
+
+    assert len(html.attrs) == 2
+    del html.attrs[0]
+    assert len(html.attrs) == 1
+
+    assert html.class_list == ["hello", "man"]
+    assert html.id is None
+
+    html.attrs = [("id", "markup"), ("data-role", "button")]
+
+    assert html.class_list == []
+    html.attrs.append("class", "btn border")
+    assert "btn" in html.class_list
+    assert "border" in html.class_list
+    assert html.attrs[0] == (xmarkup.dom.QualName("id"), "markup")
+    assert html.id == "markup"
+    assert html.attrs["id"] == "markup"
+    assert html.attrs[xmarkup.dom.QualName("id")] == "markup"
+
+    with pytest.raises(IndexError):
+        html.attrs[10]
+
+    with pytest.raises(KeyError):
+        html.attrs["ali"]
+
+    html.attrs.insert(0, "onclick", "alert")
+    assert html.attrs[0] == (xmarkup.dom.QualName("onclick"), "alert")
+
+    html.attrs = [("id", "id1"), ("id", "id2"), ("data-role", "button")]
+    assert html.id == "id1"
+
+    assert html.attrs.find("id") == "id1"
+    assert html.attrs.find("id", start=1) == "id2"
+    assert html.attrs.find("dt", start=1, default="h") == "h"
+
+    assert html.attrs.index("id") == 0
+    assert html.attrs.index("id", start=1) == 1
+    assert html.attrs.index(("id", "id1")) == 0
+    assert html.attrs.index(("id", "id2")) == 1
+
+    with pytest.raises(ValueError):
+        html.attrs.index(("id", "id3"))
+
+    html.attrs.reverse()
+
+    html.attrs.pop()
+    assert len(html.attrs) == 2
+
+    html.attrs.remove("data-role")
+    assert len(html.attrs) == 1
+
+    assert list(html.attrs) == [_rustlib.QualName("id")]
+    assert list(html.attrs.values()) == ["id2"]
+
+    with pytest.raises(KeyError):
+        del html.attrs["a"]
+
+    html.attrs["a"] = "b"
+    del html.attrs["a"]
+
+    html.attrs = {"a": "b"}
+
+    assert "a" in html.attrs
+    assert _rustlib.QualName("a") in html.attrs
+    assert (_rustlib.QualName("a"), "b") in html.attrs
+
+    repr(html.attrs)
+
+    html.attrs.clear()
+    assert len(html.attrs) == 0
+
+    html.attrs.extend({"b": "c", "d": "e"})
+    assert len(html.attrs) == 2

@@ -2,7 +2,7 @@ from . import _rustlib
 import typing
 
 
-if typing.TYPE_CHECKING: # pragma: no cover
+if typing.TYPE_CHECKING:  # pragma: no cover
     from . import dom
 
 
@@ -84,7 +84,7 @@ class Select:
         self.__raw = iter(_rustlib.Select(value._raw, expr))
 
         self.__limit = limit or -1
-        self.__offset = offset or -1
+        self.__offset = offset - 1
 
     def __iter__(self):
         return self

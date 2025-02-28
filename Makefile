@@ -24,7 +24,7 @@ test-rs:
 
 .PHONY: test-py
 test-py: build-dev
-	coverage run -m pytest -s -v
+	coverage run -m pytest -s -vv
 	-rm -rf .pytest_cache
 	-ruff check .
 	ruff clean

@@ -1,6 +1,7 @@
 from . import _rustlib, iterators
 from ._rustlib import QualName as QualName
 import typing
+import itertools
 
 
 class TreeDom:
@@ -26,6 +27,18 @@ class TreeDom:
     def root(self) -> "Document":
         """Returns the root node."""
         return Document(self._raw.root())
+
+    def select(self, expr: str, limit: int = 0, offset: int = 0) -> iterators.Select:
+        return self.root().select(expr, limit, offset)
+
+    def select_one(self, expr: str, offset: int = 0) -> typing.Optional["Element"]:
+        return self.root().select_one(expr, offset)
+
+    def serialize_bytes(self, is_xml: bool = False) -> bytes:
+        return self.root().serialize_bytes(is_xml=is_xml)  # pragma: no cover
+
+    def serialize(self, is_xml: bool = False) -> str:
+        return self.root().serialize(is_xml=is_xml)  # pragma: no cover
 
     def __iter__(self) -> typing.Generator["BaseNode", typing.Any, None]:
         """Iterates the nodes in insert order - don't matter which are orphan which not."""
@@ -468,8 +481,9 @@ class AttrsList:
         self,
         key: typing.Union[_rustlib.QualName, str],
         default: _D = None,
+        start: int = 0,
     ) -> typing.Tuple[typing.Union[str, _D], int]:
-        for index, item in enumerate(self.__raw.items()):
+        for index, item in itertools.islice(enumerate(self.__raw.items()), start, None):
             k, v = item
 
             if k == key:
@@ -481,8 +495,9 @@ class AttrsList:
         self,
         key: typing.Union[_rustlib.QualName, str],
         value: str,
+        start: int = 0,
     ) -> int:
-        for index, item in enumerate(self.__raw.items()):
+        for index, item in itertools.islice(enumerate(self.__raw.items()), start, None):
             k, v = item
 
             if k == key and value == v:
@@ -490,11 +505,13 @@ class AttrsList:
 
         return -1
 
-    def index(self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple]) -> int:
+    def index(
+        self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple], start: int = 0
+    ) -> int:
         if isinstance(key, tuple):
-            index = self._find_by_item(*key)
+            index = self._find_by_item(*key, start=start)
         else:
-            _, index = self._find_by_key(key)
+            _, index = self._find_by_key(key, start=start)
 
         if index == -1:
             raise ValueError(key)
@@ -502,22 +519,27 @@ class AttrsList:
         return index
 
     def find(
-        self, key: typing.Union[_rustlib.QualName, str], default: _D = None
+        self, key: typing.Union[_rustlib.QualName, str], default: _D = None, start: int = 0
     ) -> typing.Tuple[typing.Union[str, _D], int]:
-        val, index = self._find_by_key(key)
+        val, index = self._find_by_key(key, start=start)
         if index == -1:
             return default
 
         return val
 
     def dedup(self) -> None:
-        self.__raw.dedup()
+        self.__raw.dedup()  # pragma: no cover
 
     def pop(self, index: int = -1) -> typing.Tuple[_rustlib.QualName, str]:
+        if index < 0:
+            index = len(self.__raw) + index
+
         return self.__raw.remove(index)
 
-    def remove(self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple]) -> None:
-        index = self.index(key)
+    def remove(
+        self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple], start: int = 0
+    ) -> None:
+        index = self.index(key, start=start)
         self.__raw.remove(index)
 
     def reverse(self) -> None:
@@ -533,8 +555,17 @@ class AttrsList:
     def clear(self) -> None:
         self.__raw.clear()
 
+    def keys(self) -> typing.Generator[QualName, None, None]:
+        return (i for i, _ in self.__raw.items())
+
+    def values(self) -> typing.Generator[str, None, None]:
+        return (i for _, i in self.__raw.items())
+
+    def __len__(self) -> int:
+        return len(self.__raw)
+
     def __iter__(self) -> _rustlib.AttrsListItems:
-        return iter(self.__raw)
+        return self.keys()
 
     def __contains__(self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple]) -> bool:
         if isinstance(key, tuple):
@@ -544,15 +575,41 @@ class AttrsList:
 
         return index > -1
 
-    def __delitem__(self, index: int) -> None:
+    def __delitem__(self, index: typing.Union[int, str, _rustlib.QualName]) -> None:
+        if not isinstance(index, int):
+            _, index = self._find_by_key(index)
+            if index == -1:
+                raise KeyError(index)
+
         self.__raw.remove(index)
 
     def __setitem__(
-        self, index: int, val: typing.Tuple[typing.Union[_rustlib.QualName, str], str]
+        self,
+        index: typing.Union[int, str, _rustlib.QualName],
+        val: typing.Union[str, typing.Tuple[typing.Union[_rustlib.QualName, str], str]],
     ) -> None:
+        if not isinstance(index, int):
+            if isinstance(val, str):
+                val = (index, val)
+
+            _, index = self._find_by_key(index)
+            if index == -1:
+                self.__raw.push(*val)
+                return
+
         self.__raw.update_item(index, val[0], val[1])
 
-    def __getitem__(self, index: int) -> typing.Tuple[_rustlib.QualName, str]:
+    def __getitem__(
+        self, index: typing.Union[int, str, _rustlib.QualName]
+    ) -> typing.Tuple[_rustlib.QualName, str]:
+        if not isinstance(index, int):
+            _, index = self._find_by_key(index)
+            if index == -1:
+                raise KeyError(index)
+
+            _, val = self.__raw.get_by_index(index)
+            return val
+
         return self.__raw.get_by_index(index)
 
     def __repr__(self) -> str:
