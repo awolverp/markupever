@@ -3,7 +3,7 @@ use std::sync::atomic;
 use std::sync::Arc;
 
 /// Iterates the nodes in insert order - don't matter which are orphan which not
-#[pyo3::pyclass(name = "Iterator", module = "xmarkup._rustlib", frozen)]
+#[pyo3::pyclass(name = "Iterator", module = "markupever._rustlib", frozen)]
 pub struct PyIterator {
     dom: Arc<parking_lot::Mutex<::treedom::IDTreeDOM>>,
     index: atomic::AtomicUsize,
@@ -61,7 +61,7 @@ macro_rules! axis_iterators {
     ) => {
         $(
             #[$m]
-            #[pyo3::pyclass(name = $pyname, module = "xmarkup._rustlib")]
+            #[pyo3::pyclass(name = $pyname, module = "markupever._rustlib")]
             pub struct $name {
                 guard: Option<crate::nodes::NodeGuard>,
             }
@@ -113,7 +113,7 @@ axis_iterators! {
     PyLastChildren(crate::nodes::NodeGuard::last_child) as "LastChildren";
 }
 
-#[pyo3::pyclass(name = "Children", module = "xmarkup._rustlib")]
+#[pyo3::pyclass(name = "Children", module = "markupever._rustlib")]
 pub struct PyChildren {
     front: Option<crate::nodes::NodeGuard>,
     back: Option<crate::nodes::NodeGuard>,

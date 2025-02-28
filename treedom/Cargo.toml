@@ -1,6 +1,6 @@
 [package]
 name = "treedom"
-description = "A TreeDom based on ego-tree crate and supports markup5ever (optimized for xmarkup library)."
+description = "A TreeDom based on ego-tree crate and supports markup5ever (optimized for markupever library)."
 version.workspace = true
 edition.workspace = true
 readme.workspace = true

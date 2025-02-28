@@ -93,7 +93,7 @@ impl PyHtmlOptions {
 
     fn __repr__(&self) -> String {
         format!(
-            "xmarkup._rustlib.HtmlOptions(full_document={}, exact_errors={}, discard_bom={}, profile={}, iframe_srcdoc={}, drop_doctype={}, quirks_mode={})",
+            "markupever._rustlib.HtmlOptions(full_document={}, exact_errors={}, discard_bom={}, profile={}, iframe_srcdoc={}, drop_doctype={}, quirks_mode={})",
             self.full_document,
             self.exact_errors,
             self.discard_bom,
@@ -146,7 +146,7 @@ impl PyXmlOptions {
 
     fn __repr__(&self) -> String {
         format!(
-            "xmarkup._rustlib.XmlOptions(exact_errors={}, discard_bom={}, profile={})",
+            "markupever._rustlib.XmlOptions(exact_errors={}, discard_bom={}, profile={})",
             self.exact_errors, self.discard_bom, self.profile,
         )
     }
@@ -234,7 +234,7 @@ impl std::fmt::Debug for ParserState {
 ///
 /// This is very easy to use and allows you to stream input using `.process()` method; By this way
 /// you are don't worry about memory usages of huge inputs.
-#[pyo3::pyclass(name = "Parser", module = "xmarkup._rustlib", frozen)]
+#[pyo3::pyclass(name = "Parser", module = "markupever._rustlib", frozen)]
 pub struct PyParser {
     state: parking_lot::Mutex<ParserState>,
 }

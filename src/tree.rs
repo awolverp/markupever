@@ -1,7 +1,7 @@
 use pyo3::types::PyAnyMethods;
 use std::sync::Arc;
 
-#[pyo3::pyclass(name = "TreeDom", module = "xmarkup._rustlib", frozen)]
+#[pyo3::pyclass(name = "TreeDom", module = "markupever._rustlib", frozen)]
 pub struct PyTreeDom {
     pub(super) dom: Arc<parking_lot::Mutex<::treedom::IDTreeDOM>>,
 }

@@ -1,6 +1,6 @@
 [package]
 name = "matching"
-description = "matching implementation which supports selectors crate for treedom crate (optimized for xmarkup library)."
+description = "matching implementation which supports selectors crate for treedom crate (optimized for markupever library)."
 version.workspace = true
 edition.workspace = true
 readme.workspace = true

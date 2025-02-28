@@ -96,7 +96,7 @@ class BaseNode:
     def __init__(self, node: typing.Any):
         if self._CONFIG.basetype is not None and not isinstance(node, self._CONFIG.basetype):
             raise TypeError(
-                "expected {} for node, got {} - It's recommended to use nodes `create_*` methods for creating nodes and don't call directly xmarkup.nodes classes.".format(
+                "expected {} for node, got {} - It's recommended to use nodes `create_*` methods for creating nodes and don't call directly markupever.nodes classes.".format(
                     self._CONFIG.basetype.__name__, type(node).__name__
                 )
             )

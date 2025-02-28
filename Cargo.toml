@@ -1,5 +1,5 @@
 [package]
-name = "xmarkup"
+name = "markupever"
 description = "The fast, most optimal, and correct HTML & XML parsing library."
 version.workspace = true
 edition.workspace = true
@@ -10,7 +10,7 @@ repository.workspace = true
 authors.workspace = true
 
 [lib]
-name = "xmarkup"
+name = "markupever"
 crate-type = ["cdylib"]
 
 [workspace]
@@ -21,8 +21,8 @@ version = "0.1.0-beta.2"
 edition = "2021"
 readme = "README.md"
 license = "MIT"
-homepage = "https://github.com/awolverp/xmarkup"
-repository = "https://github.com/awolverp/xmarkup.git"
+homepage = "https://github.com/awolverp/markupever"
+repository = "https://github.com/awolverp/markupever.git"
 authors = ["awolverp"]
 
 [profile.release]

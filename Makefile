@@ -39,7 +39,7 @@ format:
 .PHONY: clean
 clean:
 	-rm -rf `find . -name __pycache__`
-	-rm -rf python/xmarkup/*.so
+	-rm -rf python/markupever/*.so
 	-rm -rf target/release
 	-rm -rf .pytest_cache
 	-rm -rf .coverage

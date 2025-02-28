@@ -58,7 +58,7 @@ pub(super) fn repr_qualname(q: &treedom::markup5ever::QualName) -> String {
 ///
 /// # Note
 /// This type is immutable.
-#[pyo3::pyclass(name = "QualName", module = "xmarkup._rustlib", frozen)]
+#[pyo3::pyclass(name = "QualName", module = "markupever._rustlib", frozen)]
 pub struct PyQualName {
     pub name: treedom::markup5ever::QualName,
 }

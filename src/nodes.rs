@@ -206,7 +206,7 @@ macro_rules! create_richcmp_notimplemented {
 pub(crate) use create_richcmp_notimplemented;
 
 /// A document node
-#[pyo3::pyclass(name = "Document", module = "xmarkup._rustlib", frozen)]
+#[pyo3::pyclass(name = "Document", module = "markupever._rustlib", frozen)]
 pub struct PyDocument(pub(super) NodeGuard);
 
 #[pyo3::pymethods]
@@ -302,7 +302,7 @@ impl PyDocument {
 }
 
 /// A doctype node
-#[pyo3::pyclass(name = "Doctype", module = "xmarkup._rustlib", frozen)]
+#[pyo3::pyclass(name = "Doctype", module = "markupever._rustlib", frozen)]
 pub struct PyDoctype(pub(super) NodeGuard);
 
 #[pyo3::pymethods]
@@ -465,7 +465,7 @@ impl PyDoctype {
 }
 
 /// A comment node
-#[pyo3::pyclass(name = "Comment", module = "xmarkup._rustlib", frozen)]
+#[pyo3::pyclass(name = "Comment", module = "markupever._rustlib", frozen)]
 pub struct PyComment(pub(super) NodeGuard);
 
 #[pyo3::pymethods]
@@ -588,7 +588,7 @@ impl PyComment {
 }
 
 /// A text node
-#[pyo3::pyclass(name = "Text", module = "xmarkup._rustlib", frozen)]
+#[pyo3::pyclass(name = "Text", module = "markupever._rustlib", frozen)]
 pub struct PyText(pub(super) NodeGuard);
 
 #[pyo3::pymethods]
@@ -710,7 +710,7 @@ impl PyText {
     }
 }
 
-#[pyo3::pyclass(name = "AttrsListItems", module = "xmarkup._rustlib", mapping, frozen)]
+#[pyo3::pyclass(name = "AttrsListItems", module = "markupever._rustlib", mapping, frozen)]
 pub struct PyAttrsListItems {
     guard: NodeGuard,
     index: std::sync::atomic::AtomicUsize,
@@ -810,7 +810,7 @@ fn repr_attrlist(element: &::treedom::interface::ElementInterface) -> String {
 }
 
 /// This type is design for communicating with element attributes.
-#[pyo3::pyclass(name = "AttrsList", module = "xmarkup._rustlib", frozen)]
+#[pyo3::pyclass(name = "AttrsList", module = "markupever._rustlib", frozen)]
 pub struct PyAttrsList(pub(super) NodeGuard);
 
 #[pyo3::pymethods]
@@ -1149,7 +1149,7 @@ impl PyAttrsList {
 }
 
 /// An element node
-#[pyo3::pyclass(name = "Element", module = "xmarkup._rustlib", frozen)]
+#[pyo3::pyclass(name = "Element", module = "markupever._rustlib", frozen)]
 pub struct PyElement(pub(super) NodeGuard);
 
 #[pyo3::pymethods]
@@ -1454,7 +1454,7 @@ impl PyElement {
 }
 
 /// A processing instruction node
-#[pyo3::pyclass(name = "ProcessingInstruction", module = "xmarkup._rustlib", frozen)]
+#[pyo3::pyclass(name = "ProcessingInstruction", module = "markupever._rustlib", frozen)]
 pub struct PyProcessingInstruction(pub(super) NodeGuard);
 
 #[pyo3::pymethods]

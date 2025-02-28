@@ -1,10 +1,10 @@
-from xmarkup import _rustlib
-import xmarkup
+from markupever import _rustlib
+import markupever
 import pytest
 
 
 def test_treedom():
-    dom = xmarkup.dom.TreeDom()
+    dom = markupever.dom.TreeDom()
 
     assert dom.namespaces() == {}
     assert len(dom) == 1
@@ -17,85 +17,85 @@ def test_treedom():
     assert dom == dom
     assert dom != 1
     assert len(lst) == 1
-    assert isinstance(lst[0], xmarkup.dom.Document)
+    assert isinstance(lst[0], markupever.dom.Document)
 
 
-def _test_rustlib_node_convert(typ, expected, dom, *args, **kwargs) -> xmarkup.dom.BaseNode:
-    instance = xmarkup.dom.BaseNode._wrap(typ(dom._raw, *args, **kwargs))
+def _test_rustlib_node_convert(typ, expected, dom, *args, **kwargs) -> markupever.dom.BaseNode:
+    instance = markupever.dom.BaseNode._wrap(typ(dom._raw, *args, **kwargs))
     assert isinstance(instance, expected)
     return instance
 
 
 def test_basenode_init():
-    dom = xmarkup.dom.TreeDom()
+    dom = markupever.dom.TreeDom()
 
-    assert isinstance(dom.root(), xmarkup.dom.Document)
+    assert isinstance(dom.root(), markupever.dom.Document)
 
-    _test_rustlib_node_convert(_rustlib.Doctype, xmarkup.dom.Doctype, dom, "name", "", "")
-    _test_rustlib_node_convert(_rustlib.Comment, xmarkup.dom.Comment, dom, "content")
-    _test_rustlib_node_convert(_rustlib.Text, xmarkup.dom.Text, dom, "content")
-    _test_rustlib_node_convert(_rustlib.Element, xmarkup.dom.Element, dom, "name", [], False, False)
+    _test_rustlib_node_convert(_rustlib.Doctype, markupever.dom.Doctype, dom, "name", "", "")
+    _test_rustlib_node_convert(_rustlib.Comment, markupever.dom.Comment, dom, "content")
+    _test_rustlib_node_convert(_rustlib.Text, markupever.dom.Text, dom, "content")
+    _test_rustlib_node_convert(_rustlib.Element, markupever.dom.Element, dom, "name", [], False, False)
     _test_rustlib_node_convert(
-        _rustlib.ProcessingInstruction, xmarkup.dom.ProcessingInstruction, dom, "name", "data"
+        _rustlib.ProcessingInstruction, markupever.dom.ProcessingInstruction, dom, "name", "data"
     )
 
     with pytest.raises(TypeError):
-        xmarkup.dom.BaseNode("invalid type")
+        markupever.dom.BaseNode("invalid type")
 
-    xmarkup.dom.Doctype(_rustlib.Doctype(dom._raw, "m", "", ""))
-
-    with pytest.raises(TypeError):
-        xmarkup.dom.Element(_rustlib.Doctype(dom._raw, "m", "", ""))
+    markupever.dom.Doctype(_rustlib.Doctype(dom._raw, "m", "", ""))
 
     with pytest.raises(TypeError):
-        xmarkup.dom.BaseNode._wrap(1)
+        markupever.dom.Element(_rustlib.Doctype(dom._raw, "m", "", ""))
+
+    with pytest.raises(TypeError):
+        markupever.dom.BaseNode._wrap(1)
 
 
 def test_connect_node():
-    dom = xmarkup.dom.TreeDom()
+    dom = markupever.dom.TreeDom()
     root = dom.root()
 
-    html = root.create_element(xmarkup.dom.QualName("html", "html"), {"lang": "en"}, False, False)
-    assert isinstance(html, xmarkup.dom.Element)
+    html = root.create_element(markupever.dom.QualName("html", "html"), {"lang": "en"}, False, False)
+    assert isinstance(html, markupever.dom.Element)
     assert html.parent == root
     assert html.name == "html"
 
     head = html.create_element("head")
-    assert isinstance(head, xmarkup.dom.Element)
+    assert isinstance(head, markupever.dom.Element)
     assert head.parent == html
     assert head.name == "head"
 
     meta_viewport = head.create_element(
-        xmarkup.dom.QualName("meta", "html"),
+        markupever.dom.QualName("meta", "html"),
         [("name", "viewport"), ("content", "width=device-width, initial-scale=1.0")],
     )
-    assert isinstance(meta_viewport, xmarkup.dom.Element)
+    assert isinstance(meta_viewport, markupever.dom.Element)
     assert meta_viewport.parent == head
-    assert meta_viewport.name == xmarkup.dom.QualName("meta", "html")
+    assert meta_viewport.name == markupever.dom.QualName("meta", "html")
 
     meta_charset = meta_viewport.create_element(
-        xmarkup.dom.QualName("meta", "html"),
+        markupever.dom.QualName("meta", "html"),
         {"charset": "UTF-8"},
-        ordering=xmarkup.dom.Ordering.BEFORE,
+        ordering=markupever.dom.Ordering.BEFORE,
     )
-    assert isinstance(meta_charset, xmarkup.dom.Element)
+    assert isinstance(meta_charset, markupever.dom.Element)
     assert meta_charset.parent == head
     assert meta_charset.name == "meta"
     assert meta_charset.next_sibling == meta_viewport
 
-    body = head.create_element("body", {"class": "bg-dark"}, ordering=xmarkup.dom.Ordering.AFTER)
-    assert isinstance(body, xmarkup.dom.Element)
+    body = head.create_element("body", {"class": "bg-dark"}, ordering=markupever.dom.Ordering.AFTER)
+    assert isinstance(body, markupever.dom.Element)
     assert body.parent == html
     assert body.name == "body"
 
     with pytest.raises(ValueError):
-        root.create_doctype("html", ordering=xmarkup.dom.Ordering.AFTER)
+        root.create_doctype("html", ordering=markupever.dom.Ordering.AFTER)
 
     with pytest.raises(ValueError):
         root.create_doctype("html", ordering=10)
 
-    doctype = root.create_doctype("html", ordering=xmarkup.dom.Ordering.PREPEND)
-    assert isinstance(doctype, xmarkup.dom.Doctype)
+    doctype = root.create_doctype("html", ordering=markupever.dom.Ordering.PREPEND)
+    assert isinstance(doctype, markupever.dom.Doctype)
     assert doctype.parent == root
     assert doctype.name == "html"
     assert doctype.next_sibling == html
@@ -111,18 +111,18 @@ def test_connect_node():
     assert dom.namespaces() == {"": "http://www.w3.org/1999/xhtml"}
 
     p = body.create_element(
-        xmarkup.dom.QualName("p", "namespace1", "ns1"),
+        markupever.dom.QualName("p", "namespace1", "ns1"),
         {"class": "font-sans"},
-        ordering=xmarkup.dom.Ordering.APPEND,
+        ordering=markupever.dom.Ordering.APPEND,
     )
-    assert isinstance(p, xmarkup.dom.Element)
+    assert isinstance(p, markupever.dom.Element)
     assert p.parent == body
     assert p.name == "p"
 
     assert dom.namespaces() == {"": "http://www.w3.org/1999/xhtml", "ns1": "namespace1"}
 
     comment = p.create_comment("content")
-    assert isinstance(comment, xmarkup.dom.Comment)
+    assert isinstance(comment, markupever.dom.Comment)
     assert comment.parent == p
     assert comment.content == "content"
     assert comment == "content"
@@ -133,7 +133,7 @@ def test_connect_node():
     assert p.text() == ""
 
     text = p.create_text("\ncontent")
-    assert isinstance(text, xmarkup.dom.Text)
+    assert isinstance(text, markupever.dom.Text)
     assert text.parent == p
     assert text.content == "\ncontent"
     assert text == "\ncontent"
@@ -156,23 +156,23 @@ def test_connect_node():
     )
 
     with pytest.raises(ValueError):
-        root.create_comment("content", ordering=xmarkup.dom.Ordering.AFTER)
+        root.create_comment("content", ordering=markupever.dom.Ordering.AFTER)
 
     with pytest.raises(ValueError):
-        root.create_comment("content", ordering=xmarkup.dom.Ordering.BEFORE)
+        root.create_comment("content", ordering=markupever.dom.Ordering.BEFORE)
 
     comment = root.create_comment("content")
-    assert isinstance(comment, xmarkup.dom.Comment)
+    assert isinstance(comment, markupever.dom.Comment)
     assert comment.content == "content"
     assert comment == "content"
 
     text = root.create_text("content")
-    assert isinstance(text, xmarkup.dom.Text)
+    assert isinstance(text, markupever.dom.Text)
     assert text.content == "content"
     assert text == "content"
 
     pi = root.create_processing_instruction("data", "target")
-    assert isinstance(pi, xmarkup.dom.ProcessingInstruction)
+    assert isinstance(pi, markupever.dom.ProcessingInstruction)
     assert pi.data == "data"
     assert pi.target == "target"
 
@@ -186,7 +186,7 @@ def test_connect_node():
 
 
 def test_children():
-    dom = xmarkup.dom.TreeDom()
+    dom = markupever.dom.TreeDom()
     root = dom.root()
 
     testcases = [
@@ -203,7 +203,7 @@ def test_children():
 
 
 def test_ancestors():
-    dom = xmarkup.dom.TreeDom()
+    dom = markupever.dom.TreeDom()
     root = dom.root()
 
     testcases = [root]
@@ -220,7 +220,7 @@ def test_ancestors():
 
 
 def test_siblings():
-    dom = xmarkup.dom.TreeDom()
+    dom = markupever.dom.TreeDom()
     root = dom.root()
 
     testcases = [
@@ -241,19 +241,19 @@ def test_siblings():
     # No need to test traverse - it's tested in Rust
     for edge in root.traverse():
         assert isinstance(edge.closed, bool)
-        assert isinstance(edge.node, xmarkup.dom.BaseNode)
+        assert isinstance(edge.node, markupever.dom.BaseNode)
         repr(edge)
 
 
 def test_detach():
-    dom = xmarkup.dom.TreeDom()
+    dom = markupever.dom.TreeDom()
     root = dom.root()
 
     with pytest.raises(ValueError):
         root.detach()
 
     with pytest.raises(ValueError):
-        tmp_dom = xmarkup.dom.TreeDom()
+        tmp_dom = markupever.dom.TreeDom()
         root.attach(tmp_dom.root())
 
     html = root.create_element("html")
@@ -273,20 +273,20 @@ def test_detach():
 
 
 def test_select():
-    dom = xmarkup.parse(
+    dom = markupever.parse(
         """<div class="title">
         <nav class="navbar">
             <p id="title">Hello World</p><p id="text">Hello World</p>
         </nav>
         <nav class="nav2"><p>World</p></nav>
         </div>""",
-        xmarkup.HtmlOptions(),
+        markupever.HtmlOptions(),
     )
 
     count = 0
     for tag in dom.select("p:nth-child(1)"):
         count += 1
-        assert isinstance(tag, xmarkup.dom.Element)
+        assert isinstance(tag, markupever.dom.Element)
         assert tag.name == "p"
 
     assert count == 2
@@ -294,7 +294,7 @@ def test_select():
     count = 0
     for tag in dom.select("p:nth-child(1)", limit=1):
         count += 1
-        assert isinstance(tag, xmarkup.dom.Element)
+        assert isinstance(tag, markupever.dom.Element)
         assert tag.name == "p"
 
     assert count == 1
@@ -302,7 +302,7 @@ def test_select():
     count = 0
     for tag in dom.select("p"):
         count += 1
-        assert isinstance(tag, xmarkup.dom.Element)
+        assert isinstance(tag, markupever.dom.Element)
         assert tag.name == "p"
 
     assert count == 3
@@ -310,7 +310,7 @@ def test_select():
     count = 0
     for tag in dom.select("p", limit=1):
         count += 1
-        assert isinstance(tag, xmarkup.dom.Element)
+        assert isinstance(tag, markupever.dom.Element)
         assert tag.name == "p"
         assert tag.id == "title"
 
@@ -319,7 +319,7 @@ def test_select():
     count = 0
     for tag in dom.select("p", offset=3):
         count += 1
-        assert isinstance(tag, xmarkup.dom.Element)
+        assert isinstance(tag, markupever.dom.Element)
         assert tag.name == "p"
         assert tag.id is None
 
@@ -335,7 +335,7 @@ def test_select():
 
 
 def test_element():
-    dom = xmarkup.dom.TreeDom()
+    dom = markupever.dom.TreeDom()
     root = dom.root()
 
     html = root.create_element(
@@ -345,7 +345,7 @@ def test_element():
     assert html.template is False
     assert html.mathml_annotation_xml_integration_point is True
 
-    html.name = xmarkup.dom.QualName("tag", "html")
+    html.name = markupever.dom.QualName("tag", "html")
     html.template = True
     html.mathml_annotation_xml_integration_point = False
 
@@ -369,10 +369,10 @@ def test_element():
     html.attrs.append("class", "btn border")
     assert "btn" in html.class_list
     assert "border" in html.class_list
-    assert html.attrs[0] == (xmarkup.dom.QualName("id"), "markup")
+    assert html.attrs[0] == (markupever.dom.QualName("id"), "markup")
     assert html.id == "markup"
     assert html.attrs["id"] == "markup"
-    assert html.attrs[xmarkup.dom.QualName("id")] == "markup"
+    assert html.attrs[markupever.dom.QualName("id")] == "markup"
 
     with pytest.raises(IndexError):
         html.attrs[10]
@@ -381,7 +381,7 @@ def test_element():
         html.attrs["ali"]
 
     html.attrs.insert(0, "onclick", "alert")
-    assert html.attrs[0] == (xmarkup.dom.QualName("onclick"), "alert")
+    assert html.attrs[0] == (markupever.dom.QualName("onclick"), "alert")
 
     html.attrs = [("id", "id1"), ("id", "id2"), ("data-role", "button")]
     assert html.id == "id1"

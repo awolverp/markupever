@@ -1,4 +1,4 @@
-import xmarkup._rustlib as rl
+import markupever._rustlib as rl
 import pytest
 
 

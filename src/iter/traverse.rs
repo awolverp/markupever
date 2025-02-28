@@ -4,7 +4,7 @@ enum EdgeSign {
 }
 
 /// An iterator which traverses a subtree.
-#[pyo3::pyclass(name = "Traverse", module = "xmarkup._rustlib")]
+#[pyo3::pyclass(name = "Traverse", module = "markupever._rustlib")]
 pub struct PyTraverse {
     root: Option<crate::nodes::NodeGuard>,
     edge: Option<EdgeSign>,
@@ -80,7 +80,7 @@ impl PyTraverse {
 }
 
 /// An iterator over a node and its descendants.
-#[pyo3::pyclass(name = "Descendants", module = "xmarkup._rustlib")]
+#[pyo3::pyclass(name = "Descendants", module = "markupever._rustlib")]
 pub struct PyDescendants(PyTraverse);
 
 #[pyo3::pymethods]

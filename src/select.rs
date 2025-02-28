@@ -58,7 +58,7 @@ impl Iterator for PySelectInner {
     }
 }
 
-#[pyo3::pyclass(name = "Select", module = "xmarkup._rustlib", frozen)]
+#[pyo3::pyclass(name = "Select", module = "markupever._rustlib", frozen)]
 pub struct PySelect {
     inner: Arc<parking_lot::Mutex<PySelectInner>>,
 }

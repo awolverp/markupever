@@ -1,14 +1,14 @@
-# XMarkup
+# markupever
 
 **"Low-Level" Target:**
 ```python
-import xmarkup
+import markupever
 
-dom = xmarkup.dom.TreeDom()
+dom = markupever.dom.TreeDom()
 
-body: xmarkup.dom.Element = dom.create_element("body", {"class": "main"})
-text: xmarkup.dom.Text = body.create_text("Body Text")
-comment: xmarkup.dom.Comment = body.create_comment("Comment")
+body: markupever.dom.Element = dom.create_element("body", {"class": "main"})
+text: markupever.dom.Text = body.create_text("Body Text")
+comment: markupever.dom.Comment = body.create_comment("Comment")
 # other elements ...
 
 dom.serialize(is_xml=False)
@@ -22,22 +22,22 @@ dom.serialize(is_xml=False)
 
 **"Parsing" Target:**
 ```python
-import xmarkup
+import markupever
 
-parser = xmarkup.parse("... content ...", xmarkup.HTMLOptions(...)) # or xmarkup.XMLOptions(...)
+parser = markupever.parse("... content ...", markupever.HTMLOptions(...)) # or markupever.XMLOptions(...)
 parser.errors # errors in content
 parser.lineno # number of lines
 
-dom: xmarkup.dom.DOMTree = parser.into_dom()
+dom: markupever.dom.DOMTree = parser.into_dom()
 
 dom.select_one("h1.title")
 ```
 
 **"Streaming" Target:**
 ```python
-import xmarkup
+import markupever
 
-parser = xmarkup.Parser(xmarkup.HTMLOptions(...))
+parser = markupever.Parser(markupever.HTMLOptions(...))
 parser.process("... content part 1 ...")
 parser.process("... content part 2 ...")
 parser.finish()
@@ -45,14 +45,14 @@ parser.finish()
 parser.errors # errors in content
 parser.lineno # number of lines
 
-dom: xmarkup.dom.DOMTree = parser.into_dom()
+dom: markupever.dom.DOMTree = parser.into_dom()
 
 dom.select("h1.title")
 ```
 
 **"\_rustlib" Target:**
 ```python
-import xmarkup._rustlib as rl
+import markupever._rustlib as rl
 
 dom = rl.TreeDom()
 
