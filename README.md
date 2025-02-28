@@ -16,8 +16,6 @@
 
 MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing library written in Rust.
 
-FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints.
-
 **KEY FEATURES:**
 * 🚀 **Fast**: Very high performance and fast (thanks to **[html5ever](https://github.com/servo/html5ever)**). About 20x faster than BeautifulSoup and Parsel.
 * 🔥 **Easy**: Designed to be easy to use and learn. <abbr title="also known as auto-complete, autocompletion, IntelliSense">Completion</abbr> everywhere.
