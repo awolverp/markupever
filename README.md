@@ -1,67 +1,71 @@
-# markupever
-![Untitled](https://github.com/user-attachments/assets/4fc58bbf-3fde-47a1-aa42-ae100ba1029a)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/4fc58bbf-3fde-47a1-aa42-ae100ba1029a" alt="MarkupEver">
+</p>
+<p align="center">
+    <em>The fast, most optimal, and correct HTML & XML parsing library</em>
+</p>
 
-**"Low-Level" Target:**
-```python
-import markupever
 
-dom = markupever.dom.TreeDom()
+---
 
-body: markupever.dom.Element = dom.create_element("body", {"class": "main"})
-text: markupever.dom.Text = body.create_text("Body Text")
-comment: markupever.dom.Comment = body.create_comment("Comment")
-# other elements ...
+**DOCUMENTATION**: <a href="https://awolverp.github.com/markupever" target="_blank">https://awolverp.github.com/markupever</a>
 
-dom.serialize(is_xml=False)
-"""
-<body class="main">
-    Body Text
-    <!-- Comment -->
-</body>
-"""
+**SOURCE CODE**: <a href="https://github.com/awolverp/markupever" target="_blank">https://github.com/awolverp/markupever</a>
+
+---
+
+MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing library written in Rust.
+
+FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints.
+
+**KEY FEATURES:**
+* 🚀 **Fast**: Very high performance and fast (thanks to **[html5ever](https://github.com/servo/html5ever)**). About 20x faster than BeautifulSoup and Parsel.
+* 🔥 **Easy**: Designed to be easy to use and learn. <abbr title="also known as auto-complete, autocompletion, IntelliSense">Completion</abbr> everywhere.
+* ✨ **Low-Memory**: Written in Rust. Uses low memory. Don't worry about memory leaks. Uses Rust memory allocator.
+* 🧶 **Thread-safe**: Completely thread-safe. 
+
+
+## Installation
+You can install MarkupEver by using **pip**:
+
+```console
+$ pip3 install markupever
 ```
 
-**"Parsing" Target:**
+> [!NOTE]\
+> Recommended to use virtual environments.
+
+## Example
+
+### Parse
+Parsing a HTML content and selecting elements:
+
 ```python
-import markupever
+import markupever as mr
 
-parser = markupever.parse("... content ...", markupever.HTMLOptions(...)) # or markupever.XMLOptions(...)
-parser.errors # errors in content
-parser.lineno # number of lines
+dom = mr.parse_file("file.html", mr.HtmlOptions())
+# Or parse a HTML content directly:
+# dom = markupever.parse("... content ...", mr.HtmlOptions())
 
-dom: markupever.dom.DOMTree = parser.into_dom()
-
-dom.select_one("h1.title")
+for element in dom.select("div.section > p:child-nth(1)"):
+    print(element.text())
 ```
 
-**"Streaming" Target:**
+### Create DOM
+Creating a DOM from zero:
+
 ```python
-import markupever
+from markupever import dom
 
-parser = markupever.Parser(markupever.HTMLOptions(...))
-parser.process("... content part 1 ...")
-parser.process("... content part 2 ...")
-parser.finish()
+dom = dom.TreeDom()
+root: dom.Document = dom.root()
 
-parser.errors # errors in content
-parser.lineno # number of lines
+root.create_doctype("html")
 
-dom: markupever.dom.DOMTree = parser.into_dom()
+html = root.create_element("html", {"lang": "en"})
+body = html.create_element("body")
+body.create_text("Hello Everyone ...")
 
-dom.select("h1.title")
-```
-
-**"\_rustlib" Target:**
-```python
-import markupever._rustlib as rl
-
-dom = rl.TreeDom()
-
-dom.root() # is rl.Document
-
-element = rl.Element(dom, rl.QualName("body"), {"id": "hello"}) # orphan element on dom
-dom.append(dom.root(), element) # append element as child of root
-
-text = rl.Text(dom, "Hello World") # orphan text on dom
-dom.append(element, text) # append text as child of element
+print(root.serialize())
+# <!DOCTYPE html><html lang="en"><body>Hello Everyone ...</body></html>
 ```
