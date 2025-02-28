@@ -728,9 +728,17 @@ class AttrsList:
 
         self.__raw.update_item(index, val[0], val[1])
 
+    @typing.overload
     def __getitem__(
-        self, index: typing.Union[int, str, _rustlib.QualName]
-    ) -> typing.Tuple[_rustlib.QualName, str]:
+        self, index: typing.Union[str, _rustlib.QualName]
+    ) -> str: ...
+
+    @typing.overload
+    def __getitem__(
+        self, index: int
+    ) -> typing.Tuple[_rustlib.QualName, str]: ...
+
+    def __getitem__(self, index):
         if not isinstance(index, int):
             _, index = self._find_by_key(index)
             if index == -1:
