@@ -23,10 +23,9 @@ MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing li
 * 🧶 **Thread-safe**: Completely thread-safe. 
 * 🎯 **Quering**: Use your **CSS** knowledge for selecting elements from a HTML or XML document.
 
-> [!NOTE]\
-> I askfor your support to continue on this path and make this Python library better and better ...
-> - ⭐ Star this repository
-> - 💡 Tell me in issues your ideas and questions
+> ❤️ I ask for your support to continue on this path and make this Python library better and better ...
+> - Star this repository
+> - Tell me in issues your ideas and questions
 
 ## Installation
 You can install MarkupEver by using **pip**:
