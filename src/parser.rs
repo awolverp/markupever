@@ -19,7 +19,7 @@ pub struct PyHtmlOptions {
 impl PyHtmlOptions {
     /// Creates a new [`PyHtmlOptions`]
     ///
-    /// - `full_document`: Is this a complete document? (means includes html, head, and body tag). Default: false.
+    /// - `full_document`: Is this a complete document? (means includes html, head, and body tag). Default: true.
     /// - `exact_errors`: Report all parse errors described in the spec, at some performance penalty? Default: false.
     /// - `discard_bom`: Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? Default: true.
     /// - `profile`: Keep a record of how long we spent in each state? Printed when `finish()` is called. Default: false.
@@ -27,7 +27,7 @@ impl PyHtmlOptions {
     /// - `drop_doctype`: Should we drop the DOCTYPE (if any) from the tree? Default: false.
     /// - `quirks_mode`: Initial TreeBuilder quirks mode. Default: QUIRKS_MODE_OFF.
     #[new]
-    #[pyo3(signature=(full_document=false, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, quirks_mode=crate::tools::QUIRKS_MODE_OFF))]
+    #[pyo3(signature=(full_document=true, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, quirks_mode=crate::tools::QUIRKS_MODE_OFF))]
     fn new(
         full_document: bool,
         exact_errors: bool,
@@ -428,11 +428,24 @@ pub fn serialize(node: &pyo3::Bound<'_, pyo3::PyAny>, is_xml: bool) -> pyo3::PyR
     let serializer = ::treedom::Serializer::new(&dom, node.id);
 
     if is_xml {
-        ::treedom::xml5ever::serialize::serialize(&mut writer, &serializer, Default::default())
-            .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
+        ::treedom::xml5ever::serialize::serialize(
+            &mut writer,
+            &serializer,
+            ::treedom::xml5ever::serialize::SerializeOpts {
+                traversal_scope: ::treedom::xml5ever::serialize::TraversalScope::IncludeNode,
+            },
+        )
+        .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
     } else {
-        ::treedom::html5ever::serialize::serialize(&mut writer, &serializer, Default::default())
-            .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
+        ::treedom::html5ever::serialize::serialize(
+            &mut writer,
+            &serializer,
+            ::treedom::html5ever::serialize::SerializeOpts {
+                traversal_scope: ::treedom::html5ever::serialize::TraversalScope::IncludeNode,
+                ..Default::default()
+            },
+        )
+        .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
     }
 
     Ok(writer)

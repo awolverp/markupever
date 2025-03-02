@@ -93,27 +93,16 @@ impl<'a> Serializer<'a> {
     pub fn new(dom: &'a IDTreeDOM, id: ego_tree::NodeId) -> Self {
         Self { dom, id }
     }
-}
 
-impl markup5ever::serialize::Serialize for Serializer<'_> {
-    fn serialize<S>(
+    fn serialize_iter<S>(
         &self,
+        iter: impl Iterator<Item=ego_tree::iter::Edge<'a, interface::Interface>>,
         serializer: &mut S,
-        traversal_scope: markup5ever::serialize::TraversalScope,
     ) -> std::io::Result<()>
     where
         S: markup5ever::serialize::Serializer,
     {
-        let mut skipped = false;
-
-        for edge in unsafe { self.dom.tree.get_unchecked(self.id).traverse() } {
-            if let markup5ever::serialize::TraversalScope::ChildrenOnly(_) = traversal_scope {
-                if !skipped {
-                    skipped = true;
-                    continue;
-                }
-            }
-
+        for edge in iter {
             match edge {
                 ego_tree::iter::Edge::Close(x) => {
                     if let Some(element) = x.value().element() {
@@ -153,5 +142,32 @@ impl markup5ever::serialize::Serialize for Serializer<'_> {
         }
 
         Ok(())
+    }
+}
+
+fn skip_last<T>(mut iter: impl Iterator<Item=T>) -> impl Iterator<Item=T> {
+    let last = iter.next();
+    iter.scan(last, |state, item| {
+        std::mem::replace(state, Some(item))
+    })
+}
+
+impl markup5ever::serialize::Serialize for Serializer<'_> {
+    fn serialize<S>(
+        &self,
+        serializer: &mut S,
+        traversal_scope: markup5ever::serialize::TraversalScope,
+    ) -> std::io::Result<()>
+    where
+        S: markup5ever::serialize::Serializer,
+    {
+        let mut traverse = unsafe { self.dom.tree.get_unchecked(self.id).traverse() };
+
+        if let markup5ever::serialize::TraversalScope::ChildrenOnly(_) = traversal_scope {
+            traverse.next();
+            self.serialize_iter(skip_last(traverse), serializer)
+        } else {
+            self.serialize_iter(traverse, serializer)
+        }
     }
 }

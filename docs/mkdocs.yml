@@ -7,6 +7,10 @@ repo_url: https://github.com/awolverp/markupever
 theme:
   name: material
 
+  font:
+    text: Inter
+    code: Fira Code
+
   features:
     - navigation.instant
     - navigation.instant.progress
