@@ -1,0 +1,70 @@
+site_name: MarkupEver Docs
+site_url: https://awolverp.github.io/markupever
+
+repo_name: awolverp/markupever
+repo_url: https://github.com/awolverp/markupever
+
+theme:
+  name: material
+
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.prune
+    - toc.integrate
+    - search
+    - search.suggest
+    - search.share
+    - projects
+    - optimize
+    - content.code.copy
+    - content.code.select
+    - content.code.annotate
+    - navigation.footer
+
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - attr_list
+  - md_in_html
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+  - pymdownx.tabbed:
+      alternate_style: true
+
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - index.md
+  - parser.md
+  - treedom.md
+  - querying.md
+  - reference.md
