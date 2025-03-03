@@ -454,7 +454,7 @@ impl PyTreeDom {
                     let t1 = self_.dom.lock();
                     let t2 = other.dom.lock();
 
-                    Ok(&*t1 == &*t2)
+                    Ok(*t1 == *t2)
                 }
             }
             pyo3::basic::CompareOp::Ne => {
@@ -469,7 +469,7 @@ impl PyTreeDom {
                     let t1 = self_.dom.lock();
                     let t2 = other.dom.lock();
 
-                    Ok(&*t1 != &*t2)
+                    Ok(*t1 != *t2)
                 }
             }
             pyo3::basic::CompareOp::Gt => {
