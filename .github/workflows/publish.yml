@@ -37,6 +37,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      
+      - name: Install Libatomic
+        shell: bash
+        run: apt install libatomic1
+
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -138,6 +143,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
@@ -167,6 +173,7 @@ jobs:
         uses: actions/attest-build-provenance@v1
         with:
           subject-path: 'wheels-*/*'
+
       - name: Publish to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         uses: PyO3/maturin-action@v1
