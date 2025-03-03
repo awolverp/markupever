@@ -30,18 +30,12 @@ Imagine this **`index.html`** file:
     <title>Incomplete Html</title>
 </head>
 <body>
-    <h1>Welcome to My Webpage</h1>
-    
-    <p>This is a paragraph of text. Below is a list of my favorite websites:</p>
-    
     <ul>
         <li><a href="https://www.example.com">Example Website</a></li>
         <li><a href="https://www.wikipedia.org">Wikipedia</a></li>
         <li><a href="https://www.bbc.com">BBC</a></li>
         <li><a href="https://www.microsoft.com">Microsoft</a></li>
     </ul>
-    
-    <p>If you have any questions, feel free to <a href="mailto:example@example.com">contact me</a>.</p>
 ```
 
 We can use `.parse()` and `.parse_file()` functions to parse documents.
@@ -125,7 +119,59 @@ ul.serialize()
     # https://www.microsoft.com
     ```
 
+**Additionaly**, if you serialize the parsed DOM you'll see that the incomplete HTML is repaired:
+```python hl_lines="12"
+root.serialize()
+# <!DOCTYPE html><html><head>
+#     <title>Incomplete Html</title>
+# </head>
+# <body>
+#     <ul>
+#         <li><a href="https://www.example.com">Example Website</a></li>
+#         <li><a href="https://www.wikipedia.org">Wikipedia</a></li>
+#         <li><a href="https://www.bbc.com">BBC</a></li>
+#         <li><a href="https://www.microsoft.com">Microsoft</a></li>
+#     </ul>
+# </body></html>
+```
+
 ## Parsing XML
+Imagine this **`file.xml`** file:
+
+```xml title="file.xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<bookstore xmlns:bk="http://www.example.com/books" xmlns:mag="http://www.example.com/magazines">
+  <bk:book>
+    <bk:title>Programming for Beginners</bk:title>
+    <bk:author>Jane Doe</bk:author>
+    <bk:year>2021</bk:year>
+  </bk:book>
+  <mag:magazine>
+    <mag:title>Technology Monthly</mag:title>
+    <mag:publisher>Tech Publishers</mag:publisher>
+    <mag:month>March</mag:month>
+  </mag:magazine>
+</bookstore>
+```
+
+Let's use `.parse()` / `.parse_file()` function to parse it (we explained them [earlier](#parsing-html)):
+
+=== ".parse() function"
+
+    ```python
+    import markupever
+
+    with open("file.xml", "rb") as fd:
+        dom = markupever.parse(fd.read(), markupever.XmlOptions())
+    ```
+
+=== ".parse_file() function"
+
+    ```python
+    import markupever
+
+    dom = markupever.parse_file("file.xml", markupever.XmlOptions())
+    ```
 
 !!! info "XmlOptions"
 
@@ -134,6 +180,32 @@ ul.serialize()
     * `exact_errors` - Report all parse errors described in the spec, at some performance penalty? default: False.
     * `discard_bom` - Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? default: False.
     * `profile` - Keep a record of how long we spent in each state? Printed when `finish()` is called. default: False.
+
+That's it, we parsed **`file.xml`** file and now have a `TreeDom` class. We can navigate that like what we did in this [section](#parsing-html):
+
+```python
+root = dom.root() # Get root node
+root
+# Document
+
+root.select_one("bookstore")
+# Element(name=QualName(local="bookstore", ns="", prefix=None), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
+
+for i in root.select("mag|*"): # get all elements which has namespace 'mag'
+    print(i)
+# Element(name=QualName(local="magazine", ns="http://www.example.com/magazines", prefix=Some("mag")), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
+# Element(name=QualName(local="title", ns="http://www.example.com/magazines", prefix=Some("mag")), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
+# Element(name=QualName(local="publisher", ns="http://www.example.com/magazines", prefix=Some("mag")), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
+# Element(name=QualName(local="month", ns="http://www.example.com/magazines", prefix=Some("mag")), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
+
+book = root.select_one("book")
+book.serialize(is_xml=True)
+# <bk:book xmlns:bk="http://www.example.com/books">
+#   <bk:title>Programming for Beginners</bk:title>
+#   <bk:author>Jane Doe</bk:author>
+#   <bk:year>2021</bk:year>
+# </bk:book>
+```
 
 ## Using Parser
 
