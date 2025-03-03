@@ -14,6 +14,9 @@
 
 ---
 
+> [!WARNING]\
+> This project is still in development and might be unstable or incomplete. Please use it with caution. Any feedback or contributions are greatly appreciated.
+
 MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing library written in Rust.
 
 **KEY FEATURES:**

@@ -7,6 +7,9 @@ repo_url: https://github.com/awolverp/markupever
 theme:
   name: material
 
+  logo: favicon.png
+  favicon: favicon.png
+
   font:
     text: Inter
     code: Fira Code
