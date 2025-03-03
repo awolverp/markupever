@@ -38,10 +38,6 @@ jobs:
         with:
           python-version: 3.x
       
-      - name: Install Libatomic
-        shell: bash
-        run: apt install libatomic1
-
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
