@@ -199,7 +199,7 @@ for i in root.select("mag|*"): # get all elements which has namespace 'mag'
 # Element(name=QualName(local="month", ns="http://www.example.com/magazines", prefix=Some("mag")), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
 
 book = root.select_one("book")
-book.serialize(is_xml=True)
+book.serialize()
 # <bk:book xmlns:bk="http://www.example.com/books">
 #   <bk:title>Programming for Beginners</bk:title>
 #   <bk:author>Jane Doe</bk:author>

@@ -36,13 +36,13 @@ class TreeDom:
         """Shorthand for `self.root().select_one(expr, offset)`"""
         return self.root().select_one(expr, offset)
 
-    def serialize_bytes(self, is_xml: bool = False) -> bytes:
-        """Shorthand for `self.root().serialize_bytes(is_xml)`"""
-        return self.root().serialize_bytes(is_xml=is_xml)  # pragma: no cover
+    def serialize_bytes(self, is_html: typing.Optional[bool] = None) -> bytes:
+        """Shorthand for `self.root().serialize_bytes(is_html)`"""
+        return self.root().serialize_bytes(is_html=is_html)  # pragma: no cover
 
-    def serialize(self, is_xml: bool = False) -> str:
-        """Shorthand for `self.root().serialize(is_xml)`"""
-        return self.root().serialize(is_xml=is_xml)  # pragma: no cover
+    def serialize(self, is_html: typing.Optional[bool] = None) -> str:
+        """Shorthand for `self.root().serialize(is_html)`"""
+        return self.root().serialize(is_html=is_html)  # pragma: no cover
 
     def __iter__(self) -> typing.Generator["BaseNode", typing.Any, None]:
         """Iterates the nodes in insert order - don't matter which are orphan which not."""
@@ -280,13 +280,13 @@ class BaseNode:
         """Returns the text of this node."""
         return seperator.join(self.strings(strip=strip))
 
-    def serialize_bytes(self, is_xml: bool = False) -> bytes:
+    def serialize_bytes(self, is_html: typing.Optional[bool] = None) -> bytes:
         """Serialize the tree (starts from this node) to bytes."""
-        return _rustlib.serialize(self._raw, is_xml)
+        return _rustlib.serialize(self._raw, is_html)
 
-    def serialize(self, is_xml: bool = False) -> str:
+    def serialize(self, is_html: typing.Optional[bool] = None) -> str:
         """Serialize the tree (starts from this node) to string."""
-        return self.serialize_bytes(is_xml).decode("utf-8")
+        return self.serialize_bytes(is_html).decode("utf-8")
 
     def __eq__(self, value):
         if isinstance(value, BaseNode):

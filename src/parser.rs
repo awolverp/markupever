@@ -414,7 +414,11 @@ unsafe impl Send for PyParser {}
 unsafe impl Sync for PyParser {}
 
 #[pyo3::pyfunction]
-pub fn serialize(node: &pyo3::Bound<'_, pyo3::PyAny>, is_xml: bool) -> pyo3::PyResult<Vec<u8>> {
+#[pyo3(signature=(node, is_html=None))]
+pub fn serialize(
+    node: &pyo3::Bound<'_, pyo3::PyAny>,
+    is_html: Option<bool>,
+) -> pyo3::PyResult<Vec<u8>> {
     let node = super::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
         pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
             "expected an node (such as Element, Text, Comment, ...) for node, got {}",
@@ -422,12 +426,28 @@ pub fn serialize(node: &pyo3::Bound<'_, pyo3::PyAny>, is_xml: bool) -> pyo3::PyR
         ))
     })?;
 
+    let is_html = match is_html {
+        Some(x) => x,
+        None => {
+            let tree = node.tree.lock();
+            let ns = tree.namespaces();
+
+            if ns.is_empty() {
+                false
+            } else if let Some(x) = ns.get(&::treedom::markup5ever::Prefix::from("")) {
+                x == &::treedom::markup5ever::namespace_url!("http://www.w3.org/1999/xhtml")
+            } else {
+                false
+            }
+        }
+    };
+
     let mut writer = Vec::with_capacity(10);
     let dom = node.tree.lock();
 
     let serializer = ::treedom::Serializer::new(&dom, node.id);
 
-    if is_xml {
+    if !is_html {
         ::treedom::xml5ever::serialize::serialize(
             &mut writer,
             &serializer,
