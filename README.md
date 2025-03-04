@@ -74,3 +74,13 @@ body.create_text("Hello Everyone ...")
 print(root.serialize())
 # <!DOCTYPE html><html lang="en"><body>Hello Everyone ...</body></html>
 ```
+
+# TODO List
+- [ ] Rewrite TreeDom `__repr__` and `__str__`
+- [ ] Add benchmarks
+- [ ] Add memory usage report
+- [ ] Add PyPI version, downloads, test coverage, and python versions badges
+- [ ] Complete docs
+- [ ] Add prettier feature
+- [ ] Provide more control on serializer
+- [ ] Add advanced examples to docs (such as socket and http streams)
