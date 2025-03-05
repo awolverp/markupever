@@ -76,7 +76,7 @@ print(root.serialize())
 ```
 
 # TODO List
-- [ ] Rewrite TreeDom `__repr__` and `__str__`
+- [x] Rewrite TreeDom `__repr__` and `__str__`
 - [ ] Add benchmarks
 - [ ] Add memory usage report
 - [ ] Add PyPI version, downloads, test coverage, and python versions badges

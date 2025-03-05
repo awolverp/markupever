@@ -56,7 +56,9 @@ def test_parser():  # this is a copy of test_rustlib.test_parser for markupever.
 
 
 def test_parse_function():
-    assert isinstance(markupever.parse("<html></html>", markupever.XmlOptions()), markupever.dom.TreeDom)
+    assert isinstance(
+        markupever.parse("<html></html>", markupever.XmlOptions()), markupever.dom.TreeDom
+    )
 
 
 def test_parse_file_function(tmp_path):
@@ -78,6 +80,8 @@ def test_parse_file_function(tmp_path):
         markupever.parse_file(str(file), markupever.HtmlOptions())
 
     file.write_bytes(b"<body></body>")
-    assert isinstance(markupever.parse_file(str(file), markupever.HtmlOptions()), markupever.dom.TreeDom)
+    assert isinstance(
+        markupever.parse_file(str(file), markupever.HtmlOptions()), markupever.dom.TreeDom
+    )
 
     markupever.parse_file(file, markupever.HtmlOptions())

@@ -17,7 +17,7 @@ crate-type = ["cdylib"]
 members = ["treedom", "matching"]
 
 [workspace.package]
-version = "0.1.0-beta1"
+version = "0.1.0"
 edition = "2021"
 readme = "README.md"
 license = "MIT"
@@ -28,7 +28,7 @@ authors = ["awolverp"]
 [profile.release]
 codegen-units = 1
 debug = false
-# incremental = false
+incremental = false
 lto = "fat"
 panic = "abort"
 strip = "symbols"

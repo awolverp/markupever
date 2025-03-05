@@ -710,7 +710,12 @@ impl PyText {
     }
 }
 
-#[pyo3::pyclass(name = "AttrsListItems", module = "markupever._rustlib", mapping, frozen)]
+#[pyo3::pyclass(
+    name = "AttrsListItems",
+    module = "markupever._rustlib",
+    mapping,
+    frozen
+)]
 pub struct PyAttrsListItems {
     guard: NodeGuard,
     index: std::sync::atomic::AtomicUsize,

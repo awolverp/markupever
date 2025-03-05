@@ -96,7 +96,7 @@ impl<'a> Serializer<'a> {
 
     fn serialize_iter<S>(
         &self,
-        iter: impl Iterator<Item=ego_tree::iter::Edge<'a, interface::Interface>>,
+        iter: impl Iterator<Item = ego_tree::iter::Edge<'a, interface::Interface>>,
         serializer: &mut S,
     ) -> std::io::Result<()>
     where
@@ -145,11 +145,9 @@ impl<'a> Serializer<'a> {
     }
 }
 
-fn skip_last<T>(mut iter: impl Iterator<Item=T>) -> impl Iterator<Item=T> {
+fn skip_last<T>(mut iter: impl Iterator<Item = T>) -> impl Iterator<Item = T> {
     let last = iter.next();
-    iter.scan(last, |state, item| {
-        std::mem::replace(state, Some(item))
-    })
+    iter.scan(last, |state, item| std::mem::replace(state, Some(item)))
 }
 
 impl markup5ever::serialize::Serialize for Serializer<'_> {

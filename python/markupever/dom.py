@@ -60,10 +60,32 @@ class TreeDom:
         return len(self._raw)
 
     def __str__(self) -> str:
-        return str(self._raw)
+        from ._display import _Indentation
 
-    def __repr__(self) -> str:
-        return repr(self._raw)
+        res = ""
+
+        indent = _Indentation(True)
+
+        for edge in self.root().traverse():
+            if edge.closed:
+                if edge.node.has_children:
+                    indent.deindent()
+
+                continue
+
+            if edge.node.has_children:
+                indent.indent(edge.node.next_sibling is not None)
+                res += str(indent) + str(edge.node) + "\n"
+
+            else:
+                indent.indent(edge.node.next_sibling is not None)
+                res += str(indent) + str(edge.node) + "\n"
+                indent.deindent()
+
+        return res[:-1]  # remove the last '\n'
+
+    def __repr__(self):
+        return f"TreeDom(len={len(self)}, namespaces={self.namespaces()})"
 
 
 class _ConfigNode:
@@ -550,10 +572,11 @@ _D = typing.TypeVar("_D")
 
 class AttrsList:
     """
-    This type is only designed for communicating with element attributes. 
-    
+    This type is only designed for communicating with element attributes.
+
     Really it's a list, but has a behaviour between dictionary and list to provide you easy-to-use management.
     """
+
     __slots__ = ("__raw",)
 
     def __init__(self, attrs: _rustlib.AttrsList):
@@ -729,14 +752,10 @@ class AttrsList:
         self.__raw.update_item(index, val[0], val[1])
 
     @typing.overload
-    def __getitem__(
-        self, index: typing.Union[str, _rustlib.QualName]
-    ) -> str: ...
+    def __getitem__(self, index: typing.Union[str, _rustlib.QualName]) -> str: ...
 
     @typing.overload
-    def __getitem__(
-        self, index: int
-    ) -> typing.Tuple[_rustlib.QualName, str]: ...
+    def __getitem__(self, index: int) -> typing.Tuple[_rustlib.QualName, str]: ...
 
     def __getitem__(self, index):
         if not isinstance(index, int):
@@ -889,6 +908,7 @@ class ProcessingInstruction(BaseNode):
     a Node which embeds an instruction targeting a specific application but that can
     be ignored by any other applications which don't recognize the instruction.
     """
+
     _CONFIG = _ConfigNode(_rustlib.ProcessingInstruction, (Ordering.APPEND, Ordering.PREPEND))
 
     @property

@@ -34,7 +34,9 @@ def test_basenode_init():
     _test_rustlib_node_convert(_rustlib.Doctype, markupever.dom.Doctype, dom, "name", "", "")
     _test_rustlib_node_convert(_rustlib.Comment, markupever.dom.Comment, dom, "content")
     _test_rustlib_node_convert(_rustlib.Text, markupever.dom.Text, dom, "content")
-    _test_rustlib_node_convert(_rustlib.Element, markupever.dom.Element, dom, "name", [], False, False)
+    _test_rustlib_node_convert(
+        _rustlib.Element, markupever.dom.Element, dom, "name", [], False, False
+    )
     _test_rustlib_node_convert(
         _rustlib.ProcessingInstruction, markupever.dom.ProcessingInstruction, dom, "name", "data"
     )
@@ -55,7 +57,9 @@ def test_connect_node():
     dom = markupever.dom.TreeDom()
     root = dom.root()
 
-    html = root.create_element(markupever.dom.QualName("html", "html"), {"lang": "en"}, False, False)
+    html = root.create_element(
+        markupever.dom.QualName("html", "html"), {"lang": "en"}, False, False
+    )
     assert isinstance(html, markupever.dom.Element)
     assert html.parent == root
     assert html.name == "html"
