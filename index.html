@@ -616,7 +616,7 @@
 <li>
 <p><span class="twemoji lg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15 4a8 8 0 0 1 8 8 8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 8-8m0 2a6 6 0 0 0-6 6 6 6 0 0 0 6 6 6 6 0 0 0 6-6 6 6 0 0 0-6-6m-1 2h1.5v3.78l2.33 2.33-1.06 1.06L14 12.4zM2 18a1 1 0 0 1-1-1 1 1 0 0 1 1-1h3.83c.31.71.71 1.38 1.17 2zm1-5a1 1 0 0 1-1-1 1 1 0 0 1 1-1h2.05L5 12l.05 1zm1-5a1 1 0 0 1-1-1 1 1 0 0 1 1-1h3c-.46.62-.86 1.29-1.17 2z"/></svg></span> - <strong>Fast</strong></p>
 <hr />
-<p>Very high performance and fast (thanks to <a href="https://github.com/servo/html5ever">html5ever</a> and <a href="https://github.com/servo/stylo/tree/main/selectors">selectors</a>). <strong>About 20x faster than BeautifulSoup and Parsel.</strong></p>
+<p>Very high performance and fast (thanks to <a href="https://github.com/servo/html5ever">html5ever</a> and <a href="https://github.com/servo/stylo/tree/main/selectors">selectors</a>).</p>
 <p><a href="#benchmarks">Benchmarks <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 17.59 15.59 7H9V5h10v10h-2V8.41L6.41 19z"/></svg></span></a></p>
 </li>
 <li>
@@ -791,10 +791,125 @@ you are don't worry about memory usages of huge inputs.</p>
 </div>
 <h2 id="performance">Performance</h2>
 <p>This library is designed by focusing on performance and speed. It's written in <strong>Rust</strong> and avoids unsafe code blocks.</p>
+<p>I compared <strong>MarkupEver</strong> with <strong>BeautifulSoup</strong> and <strong>Parsel</strong> (which is directly using <strong>lxml</strong>):</p>
 <h4 id="benchmarks">Benchmarks</h4>
-<p>Comming Soon ...</p>
+<div class="admonition info">
+<p class="admonition-title">System</p>
+<p>The system on which the benchmarks are done: <strong>Manjaro Linux x86_64, 8G, Intel i3-1115G4</strong></p>
+</div>
+<table>
+<thead>
+<tr>
+<th>Parsing</th>
+<th>Min</th>
+<th>Max</th>
+<th>Avg</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>markupever</td>
+<td>4907µs</td>
+<td>4966µs</td>
+<td>4927µs</td>
+</tr>
+<tr>
+<td>markupever (exact_errors)</td>
+<td>8920µs</td>
+<td>9172µs</td>
+<td>8971µs</td>
+</tr>
+<tr>
+<td>beautifulsoup4 (html.parser)</td>
+<td>35283µs</td>
+<td>36460µs</td>
+<td>35828µs</td>
+</tr>
+<tr>
+<td>beautifulsoup4 (lxml)</td>
+<td>22576µs</td>
+<td>23092µs</td>
+<td>22809µs</td>
+</tr>
+<tr>
+<td>parsel</td>
+<td>3937µs</td>
+<td>4147µs</td>
+<td>4072µs</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Selecting (CSS)</th>
+<th>Min</th>
+<th>Max</th>
+<th>Avg</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>markupever</td>
+<td>308µs</td>
+<td>314µs</td>
+<td>310µs</td>
+</tr>
+<tr>
+<td>beautifulsoup4</td>
+<td>2936µs</td>
+<td>3074µs</td>
+<td>2995µs</td>
+</tr>
+<tr>
+<td>parsel</td>
+<td>159µs</td>
+<td>165µs</td>
+<td>161µs</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Serializing</th>
+<th>Min</th>
+<th>Max</th>
+<th>Avg</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>markupever</td>
+<td>1932µs</td>
+<td>1973µs</td>
+<td>1952µs</td>
+</tr>
+<tr>
+<td>beautifulsoup4</td>
+<td>14705µs</td>
+<td>15021µs</td>
+<td>14900µs</td>
+</tr>
+<tr>
+<td>parsel</td>
+<td>1264µs</td>
+<td>1290µs</td>
+<td>1276µs</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition abstract">
+<p class="admonition-title">Summary</p>
+<p>The <strong>Parsel</strong> is the fastest library (Actually <code>lxml</code> is) and is specially designed for scraping,
+but it offers less control over the document.
+The <strong>BeautifulSoup</strong> is the slowest (and oldest) library which provides full control over the document.</p>
+<p>The <strong>MarkupEver</strong> sites between these two. It is extremely fast, close to Parsel, and offers full control over
+the document.</p>
+</div>
 <h4 id="memory-usage">Memory Usage</h4>
-<p>Comming Soon ...</p>
+<p>As you know this library is written by <strong>Rust</strong>, and uses Rust allocator; Like other libraries which are written in <strong>C</strong> and
+other low-level languages, It uses very low memory and you don't have to worry about memory usage. <strong>Manage big documents without worry ...</strong></p>
 <h2 id="license">License</h2>
 <p>This project is licensed under the terms of the MPL-2.0 license.</p>
 
@@ -872,7 +987,7 @@ you are don't worry about memory usages of huge inputs.</p>
       <div class="md-progress" data-md-component="progress" role="progressbar"></div>
     
     
-    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.prune", "toc.integrate", "search", "search.suggest", "search.share", "projects", "optimize", "content.code.copy", "content.code.select", "content.code.annotate", "navigation.footer"], "search": "assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": ".", "features": ["table", "navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.prune", "toc.integrate", "search", "search.suggest", "search.share", "projects", "optimize", "content.code.copy", "content.code.select", "content.code.annotate", "navigation.footer"], "search": "assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
       <script src="assets/javascripts/bundle.c8b220af.min.js"></script>
