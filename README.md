@@ -14,9 +14,6 @@
 
 ---
 
-> [!WARNING]\
-> This project is still in development and might be unstable or incomplete. Please use it with caution. Any feedback or contributions are greatly appreciated.
-
 MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing library written in Rust.
 
 **KEY FEATURES:**
@@ -77,8 +74,8 @@ print(root.serialize())
 
 # TODO List
 - [x] Rewrite TreeDom `__repr__` and `__str__`
-- [ ] Add benchmarks
-- [ ] Add memory usage report
+- [x] Write benchmarks
+- [x] Write memory usage
 - [ ] Add PyPI version, downloads, test coverage, and python versions badges
 - [ ] Complete docs
 - [ ] Add prettier feature
