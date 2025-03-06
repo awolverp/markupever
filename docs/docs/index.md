@@ -268,7 +268,8 @@ I compared **MarkupEver** with **BeautifulSoup** and **Parsel** (which is direct
     the document.
 
 #### Memory Usage
-Comming Soon ...
+As you know this library is written by **Rust**, and uses Rust allocator; Like other libraries which are written in **C** and
+other low-level languages, It uses very low memory and you don't have to worry about memory usage. **Manage big documents without worry ...**
 
 ## License
 This project is licensed under the terms of the MPL-2.0 license.
