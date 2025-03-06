@@ -15,6 +15,7 @@ theme:
     code: Fira Code
 
   features:
+    - table
     - navigation.instant
     - navigation.instant.progress
     - navigation.tabs

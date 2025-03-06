@@ -30,7 +30,7 @@ MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing li
 
     ---
 
-    Very high performance and fast (thanks to [html5ever](https://github.com/servo/html5ever) and [selectors](https://github.com/servo/stylo/tree/main/selectors)). **About 20x faster than BeautifulSoup and Parsel.**
+    Very high performance and fast (thanks to [html5ever](https://github.com/servo/html5ever) and [selectors](https://github.com/servo/stylo/tree/main/selectors)).
 
     [Benchmarks :material-arrow-top-right:](#benchmarks)
 
@@ -230,8 +230,42 @@ $ pip3 install markupever
 ## Performance
 This library is designed by focusing on performance and speed. It's written in **Rust** and avoids unsafe code blocks.
 
+I compared **MarkupEver** with **BeautifulSoup** and **Parsel** (which is directly using **lxml**):
+
 #### Benchmarks
-Comming Soon ...
+
+!!! info "System"
+
+    The system on which the benchmarks are done: **Manjaro Linux x86_64, 8G, Intel i3-1115G4**
+
+| Parsing                   |  Min   |  Max   |  Avg   |
+|---------------------------|--------|--------|--------|
+| markupever                | 4907µs | 4966µs | 4927µs |
+| markupever (exact_errors) | 8920µs | 9172µs | 8971µs |
+| beautifulsoup4 (html.parser)| 35283µs| 36460µs| 35828µs|
+| beautifulsoup4 (lxml)     | 22576µs| 23092µs| 22809µs|
+| parsel                    | 3937µs | 4147µs | 4072µs |
+
+| Selecting (CSS)           |  Min   |  Max   |  Avg   |
+|---------------------------|--------|--------|--------|
+| markupever                | 308µs | 314µs | 310µs |
+| beautifulsoup4            | 2936µs| 3074µs| 2995µs|
+| parsel                    | 159µs | 165µs | 161µs |
+
+| Serializing               |  Min   |  Max   |  Avg   |
+|---------------------------|--------|--------|--------|
+| markupever                | 1932µs | 1973µs | 1952µs |
+| beautifulsoup4            | 14705µs| 15021µs| 14900µs|
+| parsel                    | 1264µs | 1290µs | 1276µs |
+
+!!! abstract "Summary"
+
+    The **Parsel** is the fastest library (Actually `lxml` is) and is specially designed for scraping,
+    but it offers less control over the document.
+    The **BeautifulSoup** is the slowest (and oldest) library which provides full control over the document.
+
+    The **MarkupEver** sites between these two. It is extremely fast, close to Parsel, and offers full control over
+    the document.
 
 #### Memory Usage
 Comming Soon ...
