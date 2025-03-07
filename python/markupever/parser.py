@@ -56,7 +56,11 @@ class Parser:
 
     @property
     def quirks_mode(self) -> int:
-        """Returns the quirks mode (always is QUIRKS_MODE_OFF for XML)."""
+        """
+        Returns the quirks mode (always is QUIRKS_MODE_OFF for XML).
+        
+        See quirks mode on [wikipedia](https://en.wikipedia.org/wiki/Quirks_mode) for more information.
+        """
         return self.__raw.quirks_mode()
 
     @property

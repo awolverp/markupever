@@ -21,6 +21,10 @@ description: The fast, most optimal, and correct HTML & XML parsing library
 
 ---
 
+!!! warning
+
+    **This documentation is incomplete**. Documenting everything take a while.
+
 MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing library written in Rust.
 
 
@@ -46,7 +50,7 @@ MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing li
 
     ---
 
-    Written in Rust. Uses low memory. Don't worry about memory leaks. Uses Rust memory allocator.
+    It boasts efficient memory usage, thanks to Rust's memory allocator, ensuring no memory leaks. 
 
     [Memory Usage :material-arrow-top-right:](#memory-usage)
 
@@ -54,19 +58,52 @@ MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing li
 
     ---
 
-    Use your **CSS** knowledge for selecting elements from a HTML or XML document.
+    Leverage your **CSS** knowledge to select elements from HTML or XML documents effortlessly.
 
     [Querying :material-arrow-top-right:](querying.md)
 
 </div>
 
 
-!!! note annotate "Support"
+## Installation
+You can install MarkupEver using **pip**:
 
-    I ask for your support to continue on this path and make this Python library better and better (1)
+```console
+$ pip3 install markupever
+```
 
-1.  Star github repository and tell me in issues your ideas and questions
+!!! tip "Use Virtual Environments"
+
+    It's recommended to use virtual environments for installing and managing libraries in Python.
+
+    === "Linux (venv)"
+
+        ```console
+        $ python3 -m venv venv
+        $ source venv/bin/activate
+        ```
     
+    === "Linux (virtualenv)"
+
+        ```console
+        $ virtualenv venv
+        $ source venv/bin/activate
+        ```
+
+    === "Windows (venv)"
+
+        ```cmd
+        $ python3 -m venv venv
+        $ venv\Scripts\activate
+        ```
+    
+    === "Windows (virtualenv)"
+
+        ```cmd
+        $ virtualenv venv
+        $ venv\Scripts\activate
+        ```
+
 
 ## Examples
 
@@ -94,7 +131,7 @@ Imagine this **`index.html`** file:
 </html>
 ```
 
-We want to extract `href` attributes from this file - We have 3 ways:
+We want to extract the `href` attributes from it, and we have three ways to achieve this:
 
 === "Parse Content"
 
@@ -109,7 +146,7 @@ We want to extract `href` attributes from this file - We have 3 ways:
         print(element.attrs["href"])
     ```
 
-    1.  Use `HtmlOptions()` for HTML documents and `XmlOptions()` for XML documents. If you used it incorrectly, don't worry; it won't disrupt the process. These options specify namespaces and such differences between XML and HTML. Additionally, each provides you with different features.
+    1.  Use `HtmlOptions()` for HTML documents and `XmlOptions()` for XML documents. If used incorrectly, don't worry—it won't disrupt the process. These options specify namespaces and other differences between XML and HTML, while also providing distinct features for each type.
 
     2.  It's recommended to open files with `"rb"` mode, but not required; you can use `"r"` mode also.
 
@@ -125,13 +162,11 @@ We want to extract `href` attributes from this file - We have 3 ways:
         print(element.attrs["href"])
     ```
 
-    1.  Use `HtmlOptions()` for HTML documents and `XmlOptions()` for XML documents. If you used it incorrectly, don't worry; it won't disrupt the process. These options specify namespaces and such differences between XML and HTML. Additionally, each provides you with different features.
+    1.  Use `HtmlOptions()` for HTML documents and `XmlOptions()` for XML documents. If used incorrectly, don't worry—it won't disrupt the process. These options specify namespaces and other differences between XML and HTML, while also providing distinct features for each type.
 
 === "Use Parser Directly"
 
-    These `.parse()` and `.parse_file()` function is a shorthand for using `.Parser` class.
-    But you can use it directly. It's designed to allow you to stream input using `.process()` method; By this way
-    you are don't worry about memory usages of huge inputs.
+    The .parse() and .parse_file() functions are shorthand for using the .Parser class. However, you can also use the class directly. It's designed to allow you to stream input using the .process() method, so you don't have to worry about the memory usage of large inputs.
 
     ```python title="main.py"
     import markupever
@@ -148,7 +183,7 @@ We want to extract `href` attributes from this file - We have 3 ways:
         print(element.attrs["href"])
     ```
 
-    1.  Use `HtmlOptions()` for HTML documents and `XmlOptions()` for XML documents. If you used it incorrectly, don't worry; it won't disrupt the process. These options specify namespaces and such differences between XML and HTML. Additionally, each provides you with different features.
+    1.  Use `HtmlOptions()` for HTML documents and `XmlOptions()` for XML documents. If used incorrectly, don't worry—it won't disrupt the process. These options specify namespaces and other differences between XML and HTML, while also providing distinct features for each type.
 
     2.  It's recommended to open files with `"rb"` mode, but not required; you can use `"r"` mode also.
 
@@ -186,53 +221,12 @@ print(root.serialize())
 # <!DOCTYPE html><html lang="en"><body>Hello Everyone ...</body></html>
 ```
 
-
-## Installation
-You can install MarkupEver by using **pip**:
-
-```console
-$ pip3 install markupever
-```
-
-!!! tip "Use Virtual Environments"
-
-    It is recommended to use virtual environments for installing and using libraries in Python.
-
-    === "Linux (venv)"
-
-        ```console
-        $ python3 -m venv venv
-        $ source venv/bin/activate
-        ```
-    
-    === "Linux (virtualenv)"
-
-        ```console
-        $ virtualenv venv
-        $ source venv/bin/activate
-        ```
-
-    === "Windows (venv)"
-
-        ```cmd
-        $ python3 -m venv venv
-        $ venv\Scripts\activate
-        ```
-    
-    === "Windows (virtualenv)"
-
-        ```cmd
-        $ virtualenv venv
-        $ venv\Scripts\activate
-        ```
-
-
 ## Performance
-This library is designed by focusing on performance and speed. It's written in **Rust** and avoids unsafe code blocks.
+This library is designed with a strong focus on performance and speed. It's written in **Rust** and avoids the use of unsafe code blocks.
 
-I compared **MarkupEver** with **BeautifulSoup** and **Parsel** (which is directly using **lxml**):
+I have compared **MarkupEver** with **BeautifulSoup** and **Parsel** (which directly uses `lxml`):
 
-#### Benchmarks
+### Benchmarks
 
 !!! info "System"
 
@@ -267,9 +261,8 @@ I compared **MarkupEver** with **BeautifulSoup** and **Parsel** (which is direct
     The **MarkupEver** sites between these two. It is extremely fast, close to Parsel, and offers full control over
     the document.
 
-#### Memory Usage
-As you know this library is written by **Rust**, and uses Rust allocator; Like other libraries which are written in **C** and
-other low-level languages, It uses very low memory and you don't have to worry about memory usage. **Manage big documents without worry ...**
+### Memory Usage
+As you know, this library is written in Rust and uses the Rust allocator. Like other libraries written in **C** and other low-level languages, it uses very low memory, so you don't have to worry about memory usage. Manage huge documents with ease...
 
 ## License
 This project is licensed under the terms of the MPL-2.0 license.
