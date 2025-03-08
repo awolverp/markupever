@@ -3,10 +3,7 @@ use std::hash::Hasher;
 #[inline(always)]
 pub(super) fn repr_qualname(q: &treedom::markup5ever::QualName) -> String {
     if q.ns.is_empty() && q.prefix.is_none() {
-        format!(
-            "QualName(local={:?})",
-            q.local.as_ref(),
-        )
+        format!("QualName(local={:?})", q.local.as_ref(),)
     } else {
         format!(
             "QualName(local={:?}, ns={:?}, prefix={:?})",
