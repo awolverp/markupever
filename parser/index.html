@@ -286,23 +286,6 @@
   
 
       
-        
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../reference/" class="md-tabs__link">
-        
-  
-    
-  
-  Reference
-
-      </a>
-    </li>
-  
-
-      
     </ul>
   </div>
 </nav>
@@ -458,6 +441,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="More about options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#htmloptions-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      HtmlOptions parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xmloptions-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      XmlOptions parameters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -510,27 +517,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Reference
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -562,7 +548,7 @@
 <ul>
 <li>You don't worry about <strong>huge memory</strong> usage.</li>
 <li>You can read and parse documents <strong>part by part</strong> (such as files, streams, ...).</li>
-<li>You can specify some <strong>options</strong> by parsing which are help you (with <code>HtmlOptions()</code> ans <code>XmlOptions()</code> classes).</li>
+<li>You can specify some <strong>options</strong> for parsing which can help you (with <code>HtmlOptions()</code> and <code>XmlOptions()</code> classes).</li>
 <li>You can <strong>repair</strong> invalid documents automatically.</li>
 </ul>
 <h2 id="parsing-html">Parsing Html</h2>
@@ -605,16 +591,7 @@
 </div>
 <div class="admonition info">
 <p class="admonition-title">HtmlOptions</p>
-<p>Let's see what options we have ...</p>
-<ul>
-<li><code>full_document</code> - Specifies that is this a complete document? default: True.</li>
-<li><code>exact_errors</code> - Report all parse errors described in the spec, at some performance penalty? default: False.</li>
-<li><code>discard_bom</code> - Discard a <code>U+FEFF BYTE ORDER MARK</code> if we see one at the beginning of the stream? default: False.</li>
-<li><code>profile</code> - Keep a record of how long we spent in each state? Printed when <code>finish()</code> is called. default: False.</li>
-<li><code>iframe_srcdoc</code> - Is this an <code>iframe srcdoc</code> document? default: False.</li>
-<li><code>drop_doctype</code> - Should we drop the DOCTYPE (if any) from the tree? default: False.</li>
-<li><code>quirks_mode</code> - Initial TreeBuilder quirks mode. default: <code>markupever.QUIRKS_MODE_OFF</code>.</li>
-</ul>
+<p>See <a href="#htmloptions-parameters">HtmlOptions parameters</a>.</p>
 </div>
 <p>That's it, we parsed <strong><code>index.html</code></strong> file and now have a <code>TreeDom</code> class. We can navigate that:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">root</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">root</span><span class="p">()</span> <span class="c1"># Get root node</span>
@@ -705,12 +682,7 @@
 </div>
 <div class="admonition info">
 <p class="admonition-title">XmlOptions</p>
-<p>Let's see what options we have ...</p>
-<ul>
-<li><code>exact_errors</code> - Report all parse errors described in the spec, at some performance penalty? default: False.</li>
-<li><code>discard_bom</code> - Discard a <code>U+FEFF BYTE ORDER MARK</code> if we see one at the beginning of the stream? default: False.</li>
-<li><code>profile</code> - Keep a record of how long we spent in each state? Printed when <code>finish()</code> is called. default: False.</li>
-</ul>
+<p>See <a href="#xmloptions-parameters">XmlOptions parameters</a>.</p>
 </div>
 <p>That's it, we parsed <strong><code>file.xml</code></strong> file and now have a <code>TreeDom</code> class. We can navigate that like what we did in this <a href="#parsing-html">section</a>:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">root</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">root</span><span class="p">()</span> <span class="c1"># Get root node</span>
@@ -718,7 +690,7 @@
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1"># Document</span>
 </span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
 </span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">root</span><span class="o">.</span><span class="n">select_one</span><span class="p">(</span><span class="s2">&quot;bookstore&quot;</span><span class="p">)</span>
-</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="c1"># Element(name=QualName(local=&quot;bookstore&quot;, ns=&quot;&quot;, prefix=None), attrs=[], template=false, mathml_annotation_xml_integration_point=false)</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="c1"># Element(name=QualName(local=&quot;bookstore&quot;), attrs=[], template=false, mathml_annotation_xml_integration_point=false)</span>
 </span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>
 </span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;mag|*&quot;</span><span class="p">):</span> <span class="c1"># get all elements which has namespace &#39;mag&#39;</span>
 </span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
@@ -736,9 +708,240 @@
 </span><span id="__span-9-21"><a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a><span class="c1"># &lt;/bk:book&gt;</span>
 </span></code></pre></div>
 <h2 id="using-parser">Using Parser</h2>
-<p>Comming Soon ...</p>
+<p>The functions <code>.parse()</code> and <code>.parse_file()</code>, which you became familiar with earlier, internally use <code>Parser</code> class
+which actually does the parsing. In this part we want to learn the <code>Parser</code> class.</p>
+<p>The <code>Parser</code> class is an HTML/XML parser, ready to receive Unicode input. It is very easy to use and allows you to stream input using the <code>.process()</code> method. This way, you don't have to worry about the memory usage of large inputs.</p>
+<p>As we said about <em>options</em> parameter in <code>.parse()</code> and <code>.parse_file()</code>,
+if your input is an HTML document, pass a <code>HtmlOptions()</code>; if your input is an XML document, pass <code>XmlOptions()</code></p>
+<p>To start, create an instance of the <code>Parser</code> class. Then, use the <code>Parser.process()</code> method to send content for parsing. You can call this method as many times as you want (it's thread-safe). When your inputs are finished, call the <code>Parser.finish()</code> method to mark the parser as finished.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># Create Parser</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">parser</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">Parser</span><span class="p">(</span><span class="n">options</span><span class="o">=</span><span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">())</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="c1"># Process contents</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="n">parser</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s2">&quot;... content 1 ...&quot;</span><span class="p">)</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="n">parser</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s2">&quot;... content 2 ...&quot;</span><span class="p">)</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="n">parser</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s2">&quot;... content 3 ...&quot;</span><span class="p">)</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="c1"># Mark as finished</span>
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="n">parser</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+</span></code></pre></div>
+<p>That's it! Your HTML document parsing is now finished and complete. The Parser class has several methods and attributes to inform you about the parsed content, such as the <code>lineno</code> property, <code>quirks_mode</code> property, and <code>errors()</code> method. You can see examples:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1"><code>lineno</code> property</label><label for="__tabbed_3_2"><code>quirks_mode</code> property</label><label for="__tabbed_3_3"><code>errors()</code> method</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>Returns the line count of the parsed content (always is <code>1</code> for XML).</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">lineno</span><span class="p">)</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="c1"># 56</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Returns the quirks mode (always is QUIRKS_MODE_OFF for XML).</p>
+<p>See quirks mode on <a href="https://en.wikipedia.org/wiki/Quirks_mode">wikipedia</a> for more information.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">quirks_mode</span><span class="p">)</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="c1"># 2</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Returns the errors which are detected while parsing.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="c1"># [&#39;Unexpected token&#39;]</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<p>You can use these properties and methods before calling the <code>Parser.into_dom()</code> method. The <code>Parser.into_dom()</code> method converts the parser into a <code>TreeDom</code> and releases its allocated memory.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">parser</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">Parser</span><span class="p">(</span><span class="n">options</span><span class="o">=</span><span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">())</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="n">parser</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s2">&quot;... content 1 ...&quot;</span><span class="p">)</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="n">parser</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s2">&quot;... content 2 ...&quot;</span><span class="p">)</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="n">parser</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s2">&quot;... content 3 ...&quot;</span><span class="p">)</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="n">parser</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="c1"># Use `.errors()`, `.lineno`, or `.quirks_mode` if you want</span>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="hll"><span class="n">dom</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">into_dom</span><span class="p">()</span>
+</span></span></code></pre></div>
 <h2 id="more-about-options">More about options</h2>
-<p>Comming Soon ...</p>
+<p>We have two structures for parsing options: <code>HtmlOptions()</code> and <code>XmlOptions()</code>.</p>
+<p>Use <code>HtmlOptions()</code> for HTML documents and <code>XmlOptions()</code> for XML documents. If used incorrectly, don't worry — it won't disrupt the process. These options specify namespaces and other differences between XML and HTML, while also providing distinct features for each type.</p>
+<h3 id="htmloptions-parameters">HtmlOptions parameters</h3>
+<p>Let's see what parameters we have:</p>
+<ul>
+<li><strong><code>full_document</code></strong> - Specifies that is this a complete document? default: True.</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">True</label><label for="__tabbed_4_2">False</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="n">dom</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;&lt;p&gt;A Text&lt;/p&gt;&quot;</span><span class="p">,</span> <span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">(</span><span class="n">full_document</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="n">dom</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="hll"><span class="c1"># &lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;A Text&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</span>
+</span></span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="n">dom</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;&lt;p&gt;A Text&lt;/p&gt;&quot;</span><span class="p">,</span> <span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">(</span><span class="n">full_document</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="n">dom</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="hll"><span class="c1"># &lt;html&gt;&lt;p&gt;A Text&lt;/p&gt;&lt;/html&gt;</span>
+</span></span></code></pre></div>
+</div>
+</div>
+</div>
+<ul>
+<li><strong><code>exact_errors</code></strong> - Report all parse errors described in the spec, at some performance penalty? default: False.</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">True</label><label for="__tabbed_5_2">False</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">p</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">Parser</span><span class="p">(</span><span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">(</span><span class="n">exact_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="n">p</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s2">&quot;&lt;p&gt;A Text&lt;/p&gt;&quot;</span><span class="p">)</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="n">p</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="n">p</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="hll"><span class="c1"># [&quot;Unexpected token TagToken(Tag { kind: StartTag, name: Atom(\\&#39;p\\&#39; type=inline), self_closing: false, attrs: [] }) in insertion mode Initial&quot;]</span>
+</span></span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="n">p</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">Parser</span><span class="p">(</span><span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">(</span><span class="n">exact_errors</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="n">p</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s2">&quot;&lt;p&gt;A Text&lt;/p&gt;&quot;</span><span class="p">)</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="n">p</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="n">p</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="hll"><span class="c1"># [&quot;Unexpected token&quot;]</span>
+</span></span></code></pre></div>
+</div>
+</div>
+</div>
+<ul>
+<li>
+<p><strong><code>discard_bom</code></strong> - Discard a <code>U+FEFF BYTE ORDER MARK</code> if we see one at the beginning of the stream? default: False.</p>
+</li>
+<li>
+<p><strong><code>profile</code></strong> - Keep a record of how long we spent in each state? Printed when <code>finish()</code> is called. default: False.</p>
+</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">True</label><label for="__tabbed_6_2">False</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="n">markupever</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;&lt;p&gt;A Text&lt;/p&gt;&quot;</span><span class="p">,</span> <span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1">#</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="c1"># Tokenizer profile, in nanoseconds</span>
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="c1">#</span>
+</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="c1">#    93331         total in token sink</span>
+</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="c1">#</span>
+</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="c1">#    46121         total in tokenizer</span>
+</span><span id="__span-19-10"><a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="c1">#    17651  38.3%  Data</span>
+</span><span id="__span-19-11"><a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="c1">#    13640  29.6%  TagName</span>
+</span><span id="__span-19-12"><a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="c1">#    11768  25.5%  TagOpen</span>
+</span><span id="__span-19-13"><a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a><span class="c1">#     3062   6.6%  EndTagOpen</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="n">markupever</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;&lt;p&gt;A Text&lt;/p&gt;&quot;</span><span class="p">,</span> <span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<ul>
+<li>
+<p><strong><code>iframe_srcdoc</code></strong> - Is this an <code>iframe srcdoc</code> document? default: False.</p>
+</li>
+<li>
+<p><strong><code>drop_doctype</code></strong> - Should we drop the DOCTYPE (if any) from the tree? default: False.</p>
+</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">True</label><label for="__tabbed_7_2">False</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="n">dom</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;&lt;!DOCTYPE html&gt;&lt;p&gt;A Text&lt;/p&gt;&quot;</span><span class="p">,</span> <span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">(</span><span class="n">drop_doctype</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="n">dom</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="hll"><span class="c1"># &lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;A Text&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</span>
+</span></span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="n">dom</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;&lt;!DOCTYPE html&gt;&lt;p&gt;A Text&lt;/p&gt;&quot;</span><span class="p">,</span> <span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">(</span><span class="n">drop_doctype</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="n">dom</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="hll"><span class="c1"># &lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;A Text&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</span>
+</span></span></code></pre></div>
+</div>
+</div>
+</div>
+<ul>
+<li><strong><code>quirks_mode</code></strong> - Initial TreeBuilder quirks mode. default: <code>markupever.QUIRKS_MODE_OFF</code>.</li>
+</ul>
+<h3 id="xmloptions-parameters">XmlOptions parameters</h3>
+<p>Let's see what parameters we have:</p>
+<ul>
+<li><strong><code>exact_errors</code></strong> - Report all parse errors described in the spec, at some performance penalty? default: False.</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">True</label><label for="__tabbed_8_2">False</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="n">p</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">Parser</span><span class="p">(</span><span class="n">markupever</span><span class="o">.</span><span class="n">XmlOptions</span><span class="p">(</span><span class="n">exact_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="n">p</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s2">&quot;&lt;p&gt;A Text&lt;/p&gt;&quot;</span><span class="p">)</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="n">p</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="n">p</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="hll"><span class="c1"># [&quot;Unexpected token TagToken(Tag { kind: StartTag, name: Atom(\\&#39;p\\&#39; type=inline), self_closing: false, attrs: [] }) in insertion mode Initial&quot;]</span>
+</span></span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="n">p</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">Parser</span><span class="p">(</span><span class="n">markupever</span><span class="o">.</span><span class="n">XmlOptions</span><span class="p">(</span><span class="n">exact_errors</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="n">p</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s2">&quot;&lt;p&gt;A Text&lt;/p&gt;&quot;</span><span class="p">)</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="n">p</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="n">p</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="hll"><span class="c1"># [&quot;Unexpected token&quot;]</span>
+</span></span></code></pre></div>
+</div>
+</div>
+</div>
+<ul>
+<li>
+<p><strong><code>discard_bom</code></strong> - Discard a <code>U+FEFF BYTE ORDER MARK</code> if we see one at the beginning of the stream? default: False.</p>
+</li>
+<li>
+<p><strong><code>profile</code></strong> - Keep a record of how long we spent in each state? Printed when <code>finish()</code> is called. default: False.</p>
+</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">True</label><label for="__tabbed_9_2">False</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="n">markupever</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;&lt;p&gt;A Text&lt;/p&gt;&quot;</span><span class="p">,</span> <span class="n">markupever</span><span class="o">.</span><span class="n">XmlOptions</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="c1">#</span>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="c1"># Tokenizer profile, in nanoseconds</span>
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="c1">#</span>
+</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="c1">#    93331         total in token sink</span>
+</span><span id="__span-25-8"><a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="c1">#</span>
+</span><span id="__span-25-9"><a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="c1">#    46121         total in tokenizer</span>
+</span><span id="__span-25-10"><a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="c1">#    17651  38.3%  Data</span>
+</span><span id="__span-25-11"><a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a><span class="c1">#    13640  29.6%  TagName</span>
+</span><span id="__span-25-12"><a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a><span class="c1">#    11768  25.5%  TagOpen</span>
+</span><span id="__span-25-13"><a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a><span class="c1">#     3062   6.6%  EndTagOpen</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="n">markupever</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;&lt;p&gt;A Text&lt;/p&gt;&quot;</span><span class="p">,</span> <span class="n">markupever</span><span class="o">.</span><span class="n">XmlOptions</span><span class="p">(</span><span class="n">profile</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
 
 
 

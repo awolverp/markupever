@@ -286,23 +286,6 @@
   
 
       
-        
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="reference/" class="md-tabs__link">
-        
-  
-    
-  
-  Reference
-
-      </a>
-    </li>
-  
-
-      
     </ul>
   </div>
 </nav>
@@ -404,6 +387,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#examples" class="md-nav__link">
     <span class="md-ellipsis">
       Examples
@@ -433,15 +425,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#installation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Installation
-    </span>
-  </a>
   
 </li>
       
@@ -558,27 +541,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="reference/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Reference
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -610,6 +572,10 @@
 <p><strong>DOCUMENTATION</strong>: <a href="https://awolverp.github.io/markupever" target="_blank">https://awolverp.github.io/markupever</a></p>
 <p><strong>SOURCE CODE</strong>: <a href="https://github.com/awolverp/markupever" target="_blank">https://github.com/awolverp/markupever</a></p>
 <hr />
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><strong>This documentation is incomplete</strong>. Documenting everything take a while.</p>
+</div>
 <p>MarkupEver is a modern, fast (high-performance), XML &amp; HTML languages parsing library written in Rust.</p>
 <div class="grid cards">
 <ul>
@@ -628,60 +594,85 @@
 <li>
 <p><span class="twemoji lg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 17H7V7h10m4 4V9h-2V7a2 2 0 0 0-2-2h-2V3h-2v2h-2V3H9v2H7c-1.11 0-2 .89-2 2v2H3v2h2v2H3v2h2v2a2 2 0 0 0 2 2h2v2h2v-2h2v2h2v-2h2a2 2 0 0 0 2-2v-2h2v-2h-2v-2m-6 2h-2v-2h2m2-2H9v6h6z"/></svg></span> - <strong>Low Memory Usage</strong></p>
 <hr />
-<p>Written in Rust. Uses low memory. Don't worry about memory leaks. Uses Rust memory allocator.</p>
+<p>It boasts efficient memory usage, thanks to Rust's memory allocator, ensuring no memory leaks. </p>
 <p><a href="#memory-usage">Memory Usage <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 17.59 15.59 7H9V5h10v10h-2V8.41L6.41 19z"/></svg></span></a></p>
 </li>
 <li>
 <p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M1.5 0h21l-1.91 21.563L11.977 24l-8.565-2.438zm17.09 4.413L5.41 4.41l.213 2.622 10.125.002-.255 2.716h-6.64l.24 2.573h6.182l-.366 3.523-2.91.804-2.956-.81-.188-2.11h-2.61l.29 3.855L12 19.288l5.373-1.53z"/></svg></span> - <strong>Your CSS Knowledge</strong></p>
 <hr />
-<p>Use your <strong>CSS</strong> knowledge for selecting elements from a HTML or XML document.</p>
+<p>Leverage your <strong>CSS</strong> knowledge to select elements from HTML or XML documents effortlessly.</p>
 <p><a href="querying/">Querying <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 17.59 15.59 7H9V5h10v10h-2V8.41L6.41 19z"/></svg></span></a></p>
 </li>
 </ul>
 </div>
-<div class="admonition note annotate">
-<p class="admonition-title">Support</p>
-<p>I ask for your support to continue on this path and make this Python library better and better (1)</p>
+<h2 id="installation">Installation</h2>
+<p>You can install MarkupEver using <strong>pip</strong>:</p>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>pip3<span class="w"> </span>install<span class="w"> </span>markupever
+</span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Use Virtual Environments</p>
+<p>It's recommended to use virtual environments for installing and managing libraries in Python.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Linux (venv)</label><label for="__tabbed_1_2">Linux (virtualenv)</label><label for="__tabbed_1_3">Windows (venv)</label><label for="__tabbed_1_4">Windows (virtualenv)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-console highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="gp">$ </span><span class="nb">source</span><span class="w"> </span>venv/bin/activate
+</span></code></pre></div>
 </div>
-<ol>
-<li>Star github repository and tell me in issues your ideas and questions</li>
-</ol>
+<div class="tabbed-block">
+<div class="language-console highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>virtualenv<span class="w"> </span>venv
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="gp">$ </span><span class="nb">source</span><span class="w"> </span>venv/bin/activate
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>$ python3 -m venv venv
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>$ venv\Scripts\activate
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$ virtualenv venv
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>$ venv\Scripts\activate
+</span></code></pre></div>
+</div>
+</div>
+</div>
+</div>
 <h2 id="examples">Examples</h2>
 <h3 id="parsing-scraping">Parsing &amp; Scraping</h3>
 <p>Parsing a HTML content and selecting elements:</p>
 <p>Imagine this <strong><code>index.html</code></strong> file:</p>
-<div class="language-html highlight"><span class="filename">index.html</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="cp">&lt;!DOCTYPE html&gt;</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p">&gt;</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">charset</span><span class="o">=</span><span class="s">&quot;UTF-8&quot;</span><span class="p">&gt;</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>Example Document<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="p">&lt;</span><span class="nt">h1</span> <span class="na">id</span><span class="o">=</span><span class="s">&quot;title&quot;</span><span class="p">&gt;</span>Welcome to My Page<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>This page has a link and an image.<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;https://www.example.com&quot;</span><span class="p">&gt;</span>Visit Example.com<span class="p">&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="p">&lt;</span><span class="nt">br</span><span class="p">&gt;</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="p">&lt;</span><span class="nt">img</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;https://www.example.com/image.jpg&quot;</span> <span class="na">alt</span><span class="o">=</span><span class="s">&quot;My Image&quot;</span><span class="p">&gt;</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;https://www.google.com&quot;</span><span class="p">&gt;</span>Visit Google<span class="p">&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="p">&lt;</span><span class="nt">a</span><span class="p">&gt;</span>No Link<span class="p">&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+<div class="language-html highlight"><span class="filename">index.html</span><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="cp">&lt;!DOCTYPE html&gt;</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p">&gt;</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="p">&lt;</span><span class="nt">meta</span> <span class="na">charset</span><span class="o">=</span><span class="s">&quot;UTF-8&quot;</span><span class="p">&gt;</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>Example Document<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="p">&lt;</span><span class="nt">h1</span> <span class="na">id</span><span class="o">=</span><span class="s">&quot;title&quot;</span><span class="p">&gt;</span>Welcome to My Page<span class="p">&lt;/</span><span class="nt">h1</span><span class="p">&gt;</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="p">&lt;</span><span class="nt">p</span><span class="p">&gt;</span>This page has a link and an image.<span class="p">&lt;/</span><span class="nt">p</span><span class="p">&gt;</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    <span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;https://www.example.com&quot;</span><span class="p">&gt;</span>Visit Example.com<span class="p">&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    <span class="p">&lt;</span><span class="nt">br</span><span class="p">&gt;</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    <span class="p">&lt;</span><span class="nt">img</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;https://www.example.com/image.jpg&quot;</span> <span class="na">alt</span><span class="o">=</span><span class="s">&quot;My Image&quot;</span><span class="p">&gt;</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    <span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;https://www.google.com&quot;</span><span class="p">&gt;</span>Visit Google<span class="p">&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>    <span class="p">&lt;</span><span class="nt">a</span><span class="p">&gt;</span>No Link<span class="p">&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
 </span></code></pre></div>
-<p>We want to extract <code>href</code> attributes from this file - We have 3 ways:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Parse Content</label><label for="__tabbed_1_2">Read From File</label><label for="__tabbed_1_3">Use Parser Directly</label></div>
+<p>We want to extract the <code>href</code> attributes from it, and we have three ways to achieve this:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Parse Content</label><label for="__tabbed_2_2">Read From File</label><label for="__tabbed_2_3">Use Parser Directly</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <p>You can parse HTML/XML content with <code>parse()</code> function.</p>
-<div class="language-python highlight"><span class="filename">main.py</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;index.html&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fd</span><span class="p">:</span> <span class="c1"># (2)!</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">dom</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">fd</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">())</span> <span class="c1"># (1)!</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">dom</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;a[href]&quot;</span><span class="p">):</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;href&quot;</span><span class="p">])</span>
+<div class="language-python highlight"><span class="filename">main.py</span><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;index.html&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fd</span><span class="p">:</span> <span class="c1"># (2)!</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">dom</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">fd</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">())</span> <span class="c1"># (1)!</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">dom</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;a[href]&quot;</span><span class="p">):</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;href&quot;</span><span class="p">])</span>
 </span></code></pre></div>
 <ol>
 <li>
-<p>Use <code>HtmlOptions()</code> for HTML documents and <code>XmlOptions()</code> for XML documents. If you used it incorrectly, don't worry; it won't disrupt the process. These options specify namespaces and such differences between XML and HTML. Additionally, each provides you with different features.</p>
+<p>Use <code>HtmlOptions()</code> for HTML documents and <code>XmlOptions()</code> for XML documents. If used incorrectly, don't worry—it won't disrupt the process. These options specify namespaces and other differences between XML and HTML, while also providing distinct features for each type.</p>
 </li>
 <li>
 <p>It's recommended to open files with <code>"rb"</code> mode, but not required; you can use <code>"r"</code> mode also.</p>
@@ -690,36 +681,34 @@
 </div>
 <div class="tabbed-block">
 <p>You can parse HTML/XML content from files with <code>.parse_file()</code> function.</p>
-<div class="language-python highlight"><span class="filename">main.py</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">dom</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">parse_file</span><span class="p">(</span><span class="s2">&quot;index.html&quot;</span><span class="p">,</span> <span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">())</span> <span class="c1"># (1)!</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">dom</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;a[href]&quot;</span><span class="p">):</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;href&quot;</span><span class="p">])</span>
+<div class="language-python highlight"><span class="filename">main.py</span><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">dom</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">parse_file</span><span class="p">(</span><span class="s2">&quot;index.html&quot;</span><span class="p">,</span> <span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">())</span> <span class="c1"># (1)!</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">dom</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;a[href]&quot;</span><span class="p">):</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;href&quot;</span><span class="p">])</span>
 </span></code></pre></div>
 <ol>
-<li>Use <code>HtmlOptions()</code> for HTML documents and <code>XmlOptions()</code> for XML documents. If you used it incorrectly, don't worry; it won't disrupt the process. These options specify namespaces and such differences between XML and HTML. Additionally, each provides you with different features.</li>
+<li>Use <code>HtmlOptions()</code> for HTML documents and <code>XmlOptions()</code> for XML documents. If used incorrectly, don't worry—it won't disrupt the process. These options specify namespaces and other differences between XML and HTML, while also providing distinct features for each type.</li>
 </ol>
 </div>
 <div class="tabbed-block">
-<p>These <code>.parse()</code> and <code>.parse_file()</code> function is a shorthand for using <code>.Parser</code> class.
-But you can use it directly. It's designed to allow you to stream input using <code>.process()</code> method; By this way
-you are don't worry about memory usages of huge inputs.</p>
-<div class="language-python highlight"><span class="filename">main.py</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">parser</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">Parser</span><span class="p">(</span><span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">())</span> <span class="c1"># (1)!</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;index.html&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fd</span><span class="p">:</span> <span class="c1"># (2)!</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fd</span><span class="p">:</span> <span class="c1"># Read line by line (3)</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>        <span class="n">parser</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">parser</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="n">dom</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">into_dom</span><span class="p">()</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">dom</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;a[href]&quot;</span><span class="p">):</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;href&quot;</span><span class="p">])</span>
+<p>The .parse() and .parse_file() functions are shorthand for using the .Parser class. However, you can also use the class directly. It's designed to allow you to stream input using the .process() method, so you don't have to worry about the memory usage of large inputs.</p>
+<div class="language-python highlight"><span class="filename">main.py</span><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">parser</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">Parser</span><span class="p">(</span><span class="n">markupever</span><span class="o">.</span><span class="n">HtmlOptions</span><span class="p">())</span> <span class="c1"># (1)!</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;index.html&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fd</span><span class="p">:</span> <span class="c1"># (2)!</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fd</span><span class="p">:</span> <span class="c1"># Read line by line (3)</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>        <span class="n">parser</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="n">parser</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="n">dom</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">into_dom</span><span class="p">()</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">dom</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;a[href]&quot;</span><span class="p">):</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;href&quot;</span><span class="p">])</span>
 </span></code></pre></div>
 <ol>
 <li>
-<p>Use <code>HtmlOptions()</code> for HTML documents and <code>XmlOptions()</code> for XML documents. If you used it incorrectly, don't worry; it won't disrupt the process. These options specify namespaces and such differences between XML and HTML. Additionally, each provides you with different features.</p>
+<p>Use <code>HtmlOptions()</code> for HTML documents and <code>XmlOptions()</code> for XML documents. If used incorrectly, don't worry—it won't disrupt the process. These options specify namespaces and other differences between XML and HTML, while also providing distinct features for each type.</p>
 </li>
 <li>
 <p>It's recommended to open files with <code>"rb"</code> mode, but not required; you can use <code>"r"</code> mode also.</p>
@@ -732,9 +721,9 @@ you are don't worry about memory usages of huge inputs.</p>
 </div>
 </div>
 <p>Then run <strong><code>main.py</code></strong> to see result:</p>
-<div class="language-console highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>python3<span class="w"> </span>main.py
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="go">https://www.example.com</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="go">https://www.google.com</span>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">$ </span>python3<span class="w"> </span>main.py
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">https://www.example.com</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="go">https://www.google.com</span>
 </span></code></pre></div>
 <h3 id="creating-documents">Creating Documents</h3>
 <p class="annotate">Also there's a structure called <code>TreeDom</code> (1). You can directly work with it and generate documents (such as HTML and XML) very easy.</p>
@@ -743,56 +732,24 @@ you are don't worry about memory usages of huge inputs.</p>
     The memory consumed by the <code>TreeDom</code> is dynamic and depends on the number of tokens stored in the tree.
     The allocated memory is never reduced and is only released when it is dropped.</li>
 </ol>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">markupever</span><span class="w"> </span><span class="kn">import</span> <span class="n">dom</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">dom</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">TreeDom</span><span class="p">()</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">root</span><span class="p">:</span> <span class="n">dom</span><span class="o">.</span><span class="n">Document</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">root</span><span class="p">()</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="n">root</span><span class="o">.</span><span class="n">create_doctype</span><span class="p">(</span><span class="s2">&quot;html&quot;</span><span class="p">)</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="n">html</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;html&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;lang&quot;</span><span class="p">:</span> <span class="s2">&quot;en&quot;</span><span class="p">})</span>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="n">body</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;body&quot;</span><span class="p">)</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="n">body</span><span class="o">.</span><span class="n">create_text</span><span class="p">(</span><span class="s2">&quot;Hello Everyone ...&quot;</span><span class="p">)</span>
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>
-</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="nb">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">serialize</span><span class="p">())</span>
-</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="c1"># &lt;!DOCTYPE html&gt;&lt;html lang=&quot;en&quot;&gt;&lt;body&gt;Hello Everyone ...&lt;/body&gt;&lt;/html&gt;</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">markupever</span><span class="w"> </span><span class="kn">import</span> <span class="n">dom</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">dom</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">TreeDom</span><span class="p">()</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">root</span><span class="p">:</span> <span class="n">dom</span><span class="o">.</span><span class="n">Document</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">root</span><span class="p">()</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">root</span><span class="o">.</span><span class="n">create_doctype</span><span class="p">(</span><span class="s2">&quot;html&quot;</span><span class="p">)</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="n">html</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;html&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;lang&quot;</span><span class="p">:</span> <span class="s2">&quot;en&quot;</span><span class="p">})</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="n">body</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;body&quot;</span><span class="p">)</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="n">body</span><span class="o">.</span><span class="n">create_text</span><span class="p">(</span><span class="s2">&quot;Hello Everyone ...&quot;</span><span class="p">)</span>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="nb">print</span><span class="p">(</span><span class="n">root</span><span class="o">.</span><span class="n">serialize</span><span class="p">())</span>
+</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="c1"># &lt;!DOCTYPE html&gt;&lt;html lang=&quot;en&quot;&gt;&lt;body&gt;Hello Everyone ...&lt;/body&gt;&lt;/html&gt;</span>
 </span></code></pre></div>
-<h2 id="installation">Installation</h2>
-<p>You can install MarkupEver by using <strong>pip</strong>:</p>
-<div class="language-console highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>pip3<span class="w"> </span>install<span class="w"> </span>markupever
-</span></code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">Use Virtual Environments</p>
-<p>It is recommended to use virtual environments for installing and using libraries in Python.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:4"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><input id="__tabbed_2_4" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Linux (venv)</label><label for="__tabbed_2_2">Linux (virtualenv)</label><label for="__tabbed_2_3">Windows (venv)</label><label for="__tabbed_2_4">Windows (virtualenv)</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="language-console highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="gp">$ </span><span class="nb">source</span><span class="w"> </span>venv/bin/activate
-</span></code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-console highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>virtualenv<span class="w"> </span>venv
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="gp">$ </span><span class="nb">source</span><span class="w"> </span>venv/bin/activate
-</span></code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>$ python3 -m venv venv
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>$ venv\Scripts\activate
-</span></code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>$ virtualenv venv
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>$ venv\Scripts\activate
-</span></code></pre></div>
-</div>
-</div>
-</div>
-</div>
 <h2 id="performance">Performance</h2>
-<p>This library is designed by focusing on performance and speed. It's written in <strong>Rust</strong> and avoids unsafe code blocks.</p>
-<p>I compared <strong>MarkupEver</strong> with <strong>BeautifulSoup</strong> and <strong>Parsel</strong> (which is directly using <strong>lxml</strong>):</p>
-<h4 id="benchmarks">Benchmarks</h4>
+<p>This library is designed with a strong focus on performance and speed. It's written in <strong>Rust</strong> and avoids the use of unsafe code blocks.</p>
+<p>I have compared <strong>MarkupEver</strong> with <strong>BeautifulSoup</strong> and <strong>Parsel</strong> (which directly uses <code>lxml</code>):</p>
+<h3 id="benchmarks">Benchmarks</h3>
 <div class="admonition info">
 <p class="admonition-title">System</p>
 <p>The system on which the benchmarks are done: <strong>Manjaro Linux x86_64, 8G, Intel i3-1115G4</strong></p>
@@ -907,9 +864,8 @@ The <strong>BeautifulSoup</strong> is the slowest (and oldest) library which pro
 <p>The <strong>MarkupEver</strong> sites between these two. It is extremely fast, close to Parsel, and offers full control over
 the document.</p>
 </div>
-<h4 id="memory-usage">Memory Usage</h4>
-<p>As you know this library is written by <strong>Rust</strong>, and uses Rust allocator; Like other libraries which are written in <strong>C</strong> and
-other low-level languages, It uses very low memory and you don't have to worry about memory usage. <strong>Manage big documents without worry ...</strong></p>
+<h3 id="memory-usage">Memory Usage</h3>
+<p>As you know, this library is written in Rust and uses the Rust allocator. Like other libraries written in <strong>C</strong> and other low-level languages, it uses very low memory, so you don't have to worry about memory usage. Manage huge documents with ease...</p>
 <h2 id="license">License</h2>
 <p>This project is licensed under the terms of the MPL-2.0 license.</p>
 

@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#treedom" class="md-skip">
+        <a href="#dom-usage" class="md-skip">
           Skip to content
         </a>
       
@@ -286,23 +286,6 @@
   
 
       
-        
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../reference/" class="md-tabs__link">
-        
-  
-    
-  
-  Reference
-
-      </a>
-    </li>
-  
-
-      
     </ul>
   </div>
 </nav>
@@ -407,6 +390,18 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    DOM Usage
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -417,6 +412,76 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#navigating-the-tree" class="md-nav__link">
+    <span class="md-ellipsis">
+      Navigating the tree
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-a-document" class="md-nav__link">
+    <span class="md-ellipsis">
+      Build a document
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Build a document">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#start" class="md-nav__link">
+    <span class="md-ellipsis">
+      Start
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ordering" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ordering
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -434,27 +499,6 @@
   
   <span class="md-ellipsis">
     Querying
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reference/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Reference
     
   </span>
   
@@ -483,8 +527,269 @@
   
 
 
-<h1 id="treedom">TreeDom</h1>
-<p>Comming Soon ...</p>
+<h1 id="dom-usage">DOM Usage</h1>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m23.613 8.143-7.668-3.856v7.712zM8.166 15.857V8.143L.387 4.287V12l7.78 3.857zM.183 3.958a.38.38 0 0 1 .377-.017l7.606 3.771 7.607-3.771a.39.39 0 0 1 .346 0l7.668 3.857a.39.39 0 0 1 .213.345v7.71a.39.39 0 0 1-.213.346l-7.668 3.86a.39.39 0 0 1-.562-.345v-7.09l-7.219 3.58a.4.4 0 0 1-.344 0L.215 12.346A.39.39 0 0 1 0 12V4.287a.39.39 0 0 1 .183-.329"/></svg></span> - <strong>Build A Document</strong></p>
+<hr />
+<p>In <strong>MarkupEver</strong>, we use a class named <code>TreeDom</code> (1) as a tree structure. This class allows you to ...</p>
+<p><a href="#build-a-document">More <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 17.59 15.59 7H9V5h10v10h-2V8.41L6.41 19z"/></svg></span></a></p>
+</li>
+<li>
+<p><span class="twemoji lg"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.27 6.73-4.24 10.13-1.32-3.42-.32-.83-.82-.32-3.43-1.33zM21 3 3 10.53v.97l6.84 2.66L12.5 21h.96z"/></svg></span> - <strong>Navigating the tree</strong></p>
+<hr />
+<p>The most important thing in trees is navigating between elements and how to interact with them ...</p>
+<p><a href="#navigating-the-tree">More <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 17.59 15.59 7H9V5h10v10h-2V8.41L6.41 19z"/></svg></span></a></p>
+</li>
+</ul>
+</div>
+<h2 id="navigating-the-tree">Navigating the tree</h2>
+<p>The most important thing in trees is navigating between elements and how to interact with them — specially after parsing a document.</p>
+<p>Each node may contain text and other nodes. <strong>MarkupEver</strong> provides numerous properties, methods, and iterators to help you work with and navigate between them.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We won't discuss .select and .select_one here. They are introduced in <a href="../parser/">Parsing</a> and <a href="../querying/">Querying</a>.</p>
+</div>
+<p>Imagine this to start:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">markupever</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">dom</span><span class="p">:</span> <span class="n">markupever</span><span class="o">.</span><span class="n">dom</span><span class="o">.</span><span class="n">TreeDom</span> <span class="o">=</span> <span class="n">markupever</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="sd">    &lt;note&gt;&lt;to&gt;Tove&lt;/to&gt;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="sd">        &lt;from&gt;Jani&lt;/from&gt;</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="sd">        &lt;heading&gt;Reminder&lt;/heading&gt;</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="sd">        &lt;body&gt;Don&#39;t forget me this weekend!&lt;/body&gt;&lt;/note&gt;</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="sd">    &quot;&quot;&quot;</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">markupever</span><span class="o">.</span><span class="n">XmlOptions</span><span class="p">()</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">)</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">root</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">root</span><span class="p">()</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1"># Document</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="c1"># └── Element(name=QualName(local=&quot;note&quot;), attrs=[], template=false, integration_point=false)</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="c1">#     ├── Element(name=QualName(local=&quot;to&quot;), attrs=[], template=false, integration_point=false)</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="c1">#     │   └── Text(content=&quot;Tove&quot;)</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="c1">#     ├── Text(content=&quot;\n        &quot;)</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="c1">#     ├── Element(name=QualName(local=&quot;from&quot;), attrs=[], template=false, integration_point=false)</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="c1">#     │   └── Text(content=&quot;Jani&quot;)</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="c1">#     ├── Text(content=&quot;\n        &quot;)</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="c1">#     ├── Element(name=QualName(local=&quot;heading&quot;), attrs=[], template=false, integration_point=false)</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="c1">#     │   └── Text(content=&quot;Reminder&quot;)</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="c1">#     ├── Text(content=&quot;\n        &quot;)</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="c1">#     └── Element(name=QualName(local=&quot;body&quot;), attrs=[], template=false, integration_point=false)</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="c1">#         └── Text(content=&quot;Don&#39;t forget me this weekend!&quot;)</span>
+</span></code></pre></div>
+<p>Let's discuss about <code>first_child</code>, <code>last_child</code>, <code>parent</code>, <code>next_sibling</code> and <code>prev_sibling</code> properties:</p>
+<ul>
+<li>
+<p><strong>first_child</strong>: This property retrieves the first child node of the given element. If the element has no children, it returns <code>None</code>.</p>
+</li>
+<li>
+<p><strong>last_child</strong>: This property retrieves the last child node of the given element. If the element has no children, it returns <code>None</code>.</p>
+</li>
+<li>
+<p><strong>parent</strong>: This property retrieves the parent node of the given element. If the element has no parent (e.g., it's the root), it returns <code>None</code>.</p>
+</li>
+<li>
+<p><strong>next_sibling</strong>: This property retrieves the next sibling node of the given element. If there is no next sibling, it returns <code>None</code>.</p>
+</li>
+<li>
+<p><strong>prev_sibling</strong>: This property retrieves the previous sibling node of the given element. If there is no previous sibling, it returns <code>None</code>.</p>
+</li>
+</ul>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:5"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><input id="__tabbed_1_5" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1"><code>first_child</code></label><label for="__tabbed_1_2"><code>last_child</code></label><label for="__tabbed_1_3"><code>parent</code></label><label for="__tabbed_1_4"><code>next_sibling</code></label><label for="__tabbed_1_5"><code>prev_sibling</code></label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">root</span><span class="o">.</span><span class="n">first_child</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># Element(name=QualName(local=&quot;note&quot;), attrs=[], template=false, integration_point=false)</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">root</span><span class="o">.</span><span class="n">first_child</span><span class="o">.</span><span class="n">first_child</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># Element(name=QualName(local=&quot;to&quot;), attrs=[], template=false, integration_point=false)</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">root</span><span class="o">.</span><span class="n">last_child</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># Element(name=QualName(local=&quot;note&quot;), attrs=[], template=false, integration_point=false)</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">root</span><span class="o">.</span><span class="n">last_child</span><span class="o">.</span><span class="n">last_child</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Element(name=QualName(local=&quot;body&quot;), attrs=[], template=false, integration_point=false)</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">note_element</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">first_child</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># Element(name=QualName(local=&quot;note&quot;), attrs=[], template=false, integration_point=false)</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">note_element</span><span class="o">.</span><span class="n">parent</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># Document</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">note_element</span><span class="o">.</span><span class="n">parent</span> <span class="o">==</span> <span class="n">root</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="c1"># True</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">root</span><span class="o">.</span><span class="n">next_sibling</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># None</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">root</span><span class="o">.</span><span class="n">first_child</span><span class="o">.</span><span class="n">next_sibling</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># None</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">root</span><span class="o">.</span><span class="n">first_child</span><span class="o">.</span><span class="n">first_child</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># Element(name=QualName(local=&quot;body&quot;), attrs=[], template=false, integration_point=false)</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="n">root</span><span class="o">.</span><span class="n">first_child</span><span class="o">.</span><span class="n">first_child</span><span class="o">.</span><span class="n">next_sibling</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="c1"># Text(content=&quot;\n        &quot;)</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">root</span><span class="o">.</span><span class="n">next_sibling</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># None</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">root</span><span class="o">.</span><span class="n">first_child</span><span class="o">.</span><span class="n">prev_sibling</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="c1"># None</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="n">root</span><span class="o">.</span><span class="n">first_child</span><span class="o">.</span><span class="n">last_children</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="c1"># Element(name=QualName(local=&quot;to&quot;), attrs=[], template=false, integration_point=false)</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="n">root</span><span class="o">.</span><span class="n">first_child</span><span class="o">.</span><span class="n">first_child</span><span class="o">.</span><span class="n">prev_sibling</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="c1"># Text(content=&quot;\n        &quot;)</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<p>"While these properties are useful, they might not always meet our needs. In such cases, methods like <code>.children()</code>, <code>.ancestors()</code>, <code>.prev_siblings()</code>, <code>.next_siblings()</code>, <code>.first_children()</code>, <code>.last_children()</code>, <code>.traverse()</code>, and <code>.descendants()</code> can provide additional functionality.</p>
+<p>...</p>
+<h2 id="build-a-document">Build a document</h2>
+<p class="annotate">In <strong>MarkupEver</strong>, we use a class named <code>TreeDom</code> (1) as a tree structure. This class allows you to work with the document — move, create, remove, select, serialize, and more. In this tutorial, <u>we'll create a document without using the <code>Parser</code> class</u>. We'll focus on <code>TreeDom</code> properties and methods.</p>
+<ol>
+<li>A tree structure which specialy designed for HTML and XML documents. Uses Rust's <code>Vec</code> type in backend.
+    The memory consumed by the <code>TreeDom</code> is dynamic and depends on the number of tokens stored in the tree.
+    The allocated memory is never reduced and is only released when it is dropped.</li>
+</ol>
+<h3 id="start">Start</h3>
+<p>To start creating a document, we first need to create a <code>TreeDom</code>.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">markupever</span><span class="w"> </span><span class="kn">import</span> <span class="n">dom</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">tree</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">TreeDom</span><span class="p">()</span>
+</span></code></pre></div>
+<p>Each <code>TreeDom</code> always has a root node of the <code>dom.Document</code> type. We can access it using the <code>.root()</code> method.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">markupever</span><span class="w"> </span><span class="kn">import</span> <span class="n">dom</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">tree</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">TreeDom</span><span class="p">()</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="o">&gt;&gt;&gt;</span> 
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="hll"><span class="o">&gt;&gt;&gt;</span> <span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">root</span><span class="p">()</span> <span class="c1"># type is dom.Document</span>
+</span></span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">root</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">Document</span>
+</span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Be Careful</p>
+<p>Avoid using <code>is</code> for node types in <code>markupever.dom</code> (such as <code>Document</code>, <code>Element</code>, <code>Text</code>, etc.) because they are not alive and serve only as a bridge for you to communicate with the core written in <strong>Rust</strong>.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">root</span><span class="p">()</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">root</span> <span class="ow">is</span> <span class="n">tree</span><span class="o">.</span><span class="n">root</span><span class="p">()</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="kc">False</span>
+</span></code></pre></div>
+</div>
+<h3 id="adding-nodes">Adding nodes</h3>
+<p><code>dom.Document</code> and <code>dom.Element</code> types have methods start with <code>create_</code>. These are help you to create and add new nodes to
+document. Let's add a DOCTYPE to our document:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span><span class="w"> </span><span class="nn">markupever</span><span class="w"> </span><span class="kn">import</span> <span class="n">dom</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">tree</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">TreeDom</span><span class="p">()</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="o">&gt;&gt;&gt;</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="hll"><span class="o">&gt;&gt;&gt;</span> <span class="n">tree</span><span class="o">.</span><span class="n">root</span><span class="p">()</span><span class="o">.</span><span class="n">create_doctype</span><span class="p">(</span><span class="s2">&quot;html&quot;</span><span class="p">)</span>
+</span></span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">Doctype</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;html&quot;</span><span class="p">,</span> <span class="n">public_id</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">system_id</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Let's check what we did by printing or serializing the tree:
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">Document</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="err">└──</span> <span class="n">Doctype</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;html&quot;</span><span class="p">,</span> <span class="n">public_id</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">system_id</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">tree</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">is_html</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="s1">&#39;&lt;!DOCTYPE html&gt;&#39;</span>
+</span></code></pre></div></p>
+<p>OK. Let's add some elements and check again:
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">html</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">root</span><span class="p">()</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;html&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;lang&quot;</span><span class="p">:</span> <span class="s2">&quot;en&quot;</span><span class="p">})</span> <span class="c1"># type is dom.Element</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">html</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;body&quot;</span><span class="p">)</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="n">Element</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">QualName</span><span class="p">(</span><span class="n">local</span><span class="o">=</span><span class="s2">&quot;body&quot;</span><span class="p">,</span> <span class="n">ns</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span> <span class="n">attrs</span><span class="o">=</span><span class="p">[],</span> <span class="n">template</span><span class="o">=</span><span class="n">false</span><span class="p">,</span> <span class="n">integration_point</span><span class="o">=</span><span class="n">false</span><span class="p">)</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="n">Document</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="err">└──</span> <span class="n">Element</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">QualName</span><span class="p">(</span><span class="n">local</span><span class="o">=</span><span class="s2">&quot;html&quot;</span><span class="p">,</span> <span class="n">ns</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span> <span class="n">attrs</span><span class="o">=</span><span class="p">[(</span><span class="n">QualName</span><span class="p">(</span><span class="n">local</span><span class="o">=</span><span class="s2">&quot;lang&quot;</span><span class="p">,</span> <span class="n">ns</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;en&quot;</span><span class="p">)],</span> <span class="n">template</span><span class="o">=</span><span class="n">false</span><span class="p">,</span> <span class="n">integration_point</span><span class="o">=</span><span class="n">false</span><span class="p">)</span>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>    <span class="err">└──</span> <span class="n">Element</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">QualName</span><span class="p">(</span><span class="n">local</span><span class="o">=</span><span class="s2">&quot;body&quot;</span><span class="p">,</span> <span class="n">ns</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span> <span class="n">attrs</span><span class="o">=</span><span class="p">[],</span> <span class="n">template</span><span class="o">=</span><span class="n">false</span><span class="p">,</span> <span class="n">integration_point</span><span class="o">=</span><span class="n">false</span><span class="p">)</span>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">tree</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">is_html</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="s1">&#39;&lt;!DOCTYPE html&gt;&lt;html lang=&quot;en&quot;&gt;&lt;body&gt;&lt;/body&gt;&lt;/html&gt;&#39;</span>
+</span></code></pre></div></p>
+<p>This is very easy as you can see ...</p>
+<h3 id="ordering">Ordering</h3>
+<p>The <code>create_*</code> methods allow you to perform append, prepend, insert after, and insert before operations within the document.</p>
+<ul>
+<li><strong>append</strong> means adding a child as the last child of a node (default).</li>
+<li><strong>prepend</strong> means adding a child as the first child of a node.</li>
+<li><strong>insert after</strong> means adding a node as the next sibling of another node.</li>
+<li><strong>insert before</strong> means adding a node as the previous sibling of another node.</li>
+</ul>
+<p>You can specify the operation with <code>dom.Ordering</code> class and the <code>ordering</code> parameter in the <code>create_*</code> methods.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:4"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><input id="__tabbed_2_4" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Append</label><label for="__tabbed_2_2">Prepend</label><label for="__tabbed_2_3">Insert After</label><label for="__tabbed_2_4">Insert Before</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">markupever</span><span class="w"> </span><span class="kn">import</span> <span class="n">dom</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">tree</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">TreeDom</span><span class="p">()</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">root</span><span class="p">()</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">root</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;child1&quot;</span><span class="p">)</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="c1"># document</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="c1"># └── child1</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="hll"><span class="n">root</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;child2&quot;</span><span class="p">,</span> <span class="n">ordering</span><span class="o">=</span><span class="n">dom</span><span class="o">.</span><span class="n">Ordering</span><span class="o">.</span><span class="n">APPEND</span><span class="p">)</span>
+</span></span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="c1"># document</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="c1"># ├── child1</span>
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="c1"># └── child2</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">markupever</span><span class="w"> </span><span class="kn">import</span> <span class="n">dom</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">tree</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">TreeDom</span><span class="p">()</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">root</span><span class="p">()</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">root</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;child1&quot;</span><span class="p">)</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="c1"># document</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="c1"># └── child1</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="hll"><span class="n">root</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;child2&quot;</span><span class="p">,</span> <span class="n">ordering</span><span class="o">=</span><span class="n">dom</span><span class="o">.</span><span class="n">Ordering</span><span class="o">.</span><span class="n">PREPEND</span><span class="p">)</span>
+</span></span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="c1"># document</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="c1"># ├── child2</span>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="c1"># └── child1</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">markupever</span><span class="w"> </span><span class="kn">import</span> <span class="n">dom</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">tree</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">TreeDom</span><span class="p">()</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">root</span><span class="p">()</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="n">child</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;child&quot;</span><span class="p">)</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="c1"># document</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="c1"># └── child</span>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="hll"><span class="n">child</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;sibling&quot;</span><span class="p">,</span> <span class="n">ordering</span><span class="o">=</span><span class="n">dom</span><span class="o">.</span><span class="n">Ordering</span><span class="o">.</span><span class="n">AFTER</span><span class="p">)</span>
+</span></span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="c1"># document</span>
+</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="c1"># ├── child</span>
+</span><span id="__span-14-12"><a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="c1"># └── sibling</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-python highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">markupever</span><span class="w"> </span><span class="kn">import</span> <span class="n">dom</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">tree</span> <span class="o">=</span> <span class="n">dom</span><span class="o">.</span><span class="n">TreeDom</span><span class="p">()</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">root</span><span class="p">()</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="n">child</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;child&quot;</span><span class="p">)</span>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="c1"># document</span>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="c1"># └── child</span>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="hll"><span class="n">child</span><span class="o">.</span><span class="n">create_element</span><span class="p">(</span><span class="s2">&quot;sibling&quot;</span><span class="p">,</span> <span class="n">ordering</span><span class="o">=</span><span class="n">dom</span><span class="o">.</span><span class="n">Ordering</span><span class="o">.</span><span class="n">BEFORE</span><span class="p">)</span>
+</span></span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="c1"># document</span>
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="c1"># ├── sibling</span>
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="c1"># └── child</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
 
 
 
