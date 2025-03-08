@@ -2,12 +2,19 @@ use std::hash::Hasher;
 
 #[inline(always)]
 pub(super) fn repr_qualname(q: &treedom::markup5ever::QualName) -> String {
-    format!(
-        "QualName(local={:?}, ns={:?}, prefix={:?})",
-        q.local.as_ref(),
-        q.ns.as_ref(),
-        q.prefix.as_ref().map(|x| x.as_ref())
-    )
+    if q.ns.is_empty() && q.prefix.is_none() {
+        format!(
+            "QualName(local={:?})",
+            q.local.as_ref(),
+        )
+    } else {
+        format!(
+            "QualName(local={:?}, ns={:?}, prefix={:?})",
+            q.local.as_ref(),
+            q.ns.as_ref(),
+            q.prefix.as_ref().map(|x| x.as_ref())
+        )
+    }
 }
 
 /// A fully qualified name (with a namespace), used to depict names of tags and attributes.

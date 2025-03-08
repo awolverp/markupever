@@ -177,7 +177,7 @@ root
 # Document
 
 root.select_one("bookstore")
-# Element(name=QualName(local="bookstore", ns="", prefix=None), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
+# Element(name=QualName(local="bookstore"), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
 
 for i in root.select("mag|*"): # get all elements which has namespace 'mag'
     print(i)

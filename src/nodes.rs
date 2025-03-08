@@ -1449,7 +1449,7 @@ impl PyElement {
         let elem = node.value().element().unwrap();
 
         format!(
-            "Element(name={}, attrs={}, template={}, mathml_annotation_xml_integration_point={})",
+            "Element(name={}, attrs={}, template={}, integration_point={})",
             super::qualname::repr_qualname(&elem.name),
             repr_attrlist(elem),
             elem.template,
