@@ -279,7 +279,7 @@
   
     
   
-  Querying
+  CSS Selectors
 
       </a>
     </li>
@@ -498,7 +498,7 @@
         
   
   <span class="md-ellipsis">
-    Querying
+    CSS Selectors
     
   </span>
   
@@ -656,8 +656,17 @@
 </div>
 </div>
 </div>
-<p>"While these properties are useful, they might not always meet our needs. In such cases, methods like <code>.children()</code>, <code>.ancestors()</code>, <code>.prev_siblings()</code>, <code>.next_siblings()</code>, <code>.first_children()</code>, <code>.last_children()</code>, <code>.traverse()</code>, and <code>.descendants()</code> can provide additional functionality.</p>
-<p>...</p>
+<p>While these properties are useful, they might not always meet our needs. In such cases, methods like <code>.children()</code>, <code>.ancestors()</code>, <code>.prev_siblings()</code>, <code>.next_siblings()</code>, <code>.first_children()</code>, <code>.last_children()</code>, <code>.traverse()</code>, and <code>.descendants()</code> can provide additional functionality.</p>
+<ul>
+<li><strong>children()</strong> - Returns an iterator which iterates over children of node.</li>
+<li><strong>ancestors()</strong> - Returns an iterator which iterates over ancestors (parents) of node.</li>
+<li><strong>prev_siblings()</strong> - Returns an iterator which iterates over previous siblings of node.</li>
+<li><strong>next_siblings()</strong> - Returns an iterator which iterates over next siblings of node.</li>
+<li><strong>first_children()</strong> - Returns an iterator which iterates over first children.</li>
+<li><strong>last_children()</strong> - Returns an iterator which iterates over last children.</li>
+<li><strong>traverse()</strong> - Returns a traverse iterator.</li>
+<li><strong>descendants()</strong> - Returns an iterator which iterates over a node and its descendants.</li>
+</ul>
 <h2 id="build-a-document">Build a document</h2>
 <p class="annotate">In <strong>MarkupEver</strong>, we use a class named <code>TreeDom</code> (1) as a tree structure. This class allows you to work with the document — move, create, remove, select, serialize, and more. In this tutorial, <u>we'll create a document without using the <code>Parser</code> class</u>. We'll focus on <code>TreeDom</code> properties and methods.</p>
 <ol>
@@ -839,13 +848,13 @@ document. Let's add a DOCTYPE to our document:</p>
         
         
           
-          <a href="../querying/" class="md-footer__link md-footer__link--next" aria-label="Next: Querying">
+          <a href="../querying/" class="md-footer__link md-footer__link--next" aria-label="Next: CSS Selectors">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Querying
+                CSS Selectors
               </div>
             </div>
             <div class="md-footer__button md-icon">
