@@ -143,9 +143,16 @@ Let's discuss about `first_child`, `last_child`, `parent`, `next_sibling` and `p
     # Text(content="\n        ")
     ```
 
-"While these properties are useful, they might not always meet our needs. In such cases, methods like `.children()`, `.ancestors()`, `.prev_siblings()`, `.next_siblings()`, `.first_children()`, `.last_children()`, `.traverse()`, and `.descendants()` can provide additional functionality.
+While these properties are useful, they might not always meet our needs. In such cases, methods like `.children()`, `.ancestors()`, `.prev_siblings()`, `.next_siblings()`, `.first_children()`, `.last_children()`, `.traverse()`, and `.descendants()` can provide additional functionality.
 
-...
+* **children()** - Returns an iterator which iterates over children of node.
+* **ancestors()** - Returns an iterator which iterates over ancestors (parents) of node.
+* **prev_siblings()** - Returns an iterator which iterates over previous siblings of node.
+* **next_siblings()** - Returns an iterator which iterates over next siblings of node.
+* **first_children()** - Returns an iterator which iterates over first children.
+* **last_children()** - Returns an iterator which iterates over last children.
+* **traverse()** - Returns a traverse iterator.
+* **descendants()** - Returns an iterator which iterates over a node and its descendants.
 
 ## Build a document
 In **MarkupEver**, we use a class named `TreeDom` (1) as a tree structure. This class allows you to work with the document — move, create, remove, select, serialize, and more. In this tutorial, <u>we'll create a document without using the `Parser` class</u>. We'll focus on `TreeDom` properties and methods.

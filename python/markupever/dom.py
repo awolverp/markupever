@@ -77,7 +77,7 @@ class TreeDom:
                 indent.indent(edge.node.next_sibling is not None)
                 res += str(indent) + str(edge.node) + "\n"
 
-            else:
+            else: # pragma: no cover
                 indent.indent(edge.node.next_sibling is not None)
                 res += str(indent) + str(edge.node) + "\n"
                 indent.deindent()

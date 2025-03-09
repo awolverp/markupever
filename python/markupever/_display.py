@@ -1,7 +1,7 @@
 import typing
 
 
-class _DisplayCharacterToken:
+class _DisplayCharacterToken: # pragma: no cover
     __slots__ = ("siblings", "children")
 
     def __init__(self, siblings: bool):
@@ -24,7 +24,7 @@ class _DisplayCharacterToken:
         return "└── "
 
 
-class _Indentation:
+class _Indentation: # pragma: no cover
     __slots__ = ("tokens", "ignore_root")
 
     def __init__(self, ignore_root: bool):
