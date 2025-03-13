@@ -437,7 +437,7 @@ mod tests {
         let mut buf: Vec<u8> = Vec::new();
         html5ever::serialize::serialize(
             &mut buf,
-            &Serializer::new(&dom, dom.root().id()),
+            &Serializer::new(&dom, dom.root().id(), 0),
             Default::default(),
         )
         .unwrap();
@@ -456,7 +456,7 @@ mod tests {
         let mut buf: Vec<u8> = Vec::new();
         xml5ever::serialize::serialize(
             &mut buf,
-            &Serializer::new(&dom, dom.root().id()),
+            &Serializer::new(&dom, dom.root().id(), 0),
             Default::default(),
         )
         .unwrap();

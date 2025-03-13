@@ -414,9 +414,10 @@ unsafe impl Send for PyParser {}
 unsafe impl Sync for PyParser {}
 
 #[pyo3::pyfunction]
-#[pyo3(signature=(node, is_html=None))]
+#[pyo3(signature=(node, indent=4, is_html=None))]
 pub fn serialize(
     node: &pyo3::Bound<'_, pyo3::PyAny>,
+    indent: usize,
     is_html: Option<bool>,
 ) -> pyo3::PyResult<Vec<u8>> {
     let node = super::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
@@ -445,7 +446,7 @@ pub fn serialize(
     let mut writer = Vec::with_capacity(10);
     let dom = node.tree.lock();
 
-    let serializer = ::treedom::Serializer::new(&dom, node.id);
+    let serializer = ::treedom::Serializer::new(&dom, node.id, indent);
 
     if !is_html {
         ::treedom::xml5ever::serialize::serialize(
