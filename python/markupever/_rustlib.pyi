@@ -1,5 +1,8 @@
 import typing
 
+__version__: str
+__author__: str
+
 QUIRKS_MODE_FULL: typing.Literal[0]
 QUIRKS_MODE_LIMITED: typing.Literal[1]
 QUIRKS_MODE_OFF: typing.Literal[2]
