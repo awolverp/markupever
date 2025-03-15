@@ -13,13 +13,11 @@ description: The fast, most optimal, and correct HTML & XML parsing library
 </p>
 
 
----
-
-**DOCUMENTATION**: <a href="https://awolverp.github.io/markupever" target="_blank">https://awolverp.github.io/markupever</a>
-
-**SOURCE CODE**: <a href="https://github.com/awolverp/markupever" target="_blank">https://github.com/awolverp/markupever</a>
-
----
+![text](https://img.shields.io/badge/coverage-100-08000)
+![image](https://img.shields.io/pypi/v/markupever.svg)
+![image](https://img.shields.io/pypi/l/markupever.svg)
+![image](https://img.shields.io/pypi/pyversions/markupever.svg)
+![python-test](https://github.com/awolverp/markupever/actions/workflows/test.yml/badge.svg)
 
 !!! warning
 
