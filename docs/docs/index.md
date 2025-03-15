@@ -107,6 +107,11 @@ $ pip3 install markupever
 
 ## Examples
 
+!!! tip "More Examples"
+
+    There are some good and basic examples to how to use `markupever` library.
+    Even if you need more examples, see this page: [More Examples :material-arrow-top-right:](more-examples.md)
+
 ### Parsing & Scraping
 Parsing a HTML content and selecting elements:
 
