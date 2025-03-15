@@ -19,10 +19,6 @@ description: The fast, most optimal, and correct HTML & XML parsing library
 ![image](https://img.shields.io/pypi/pyversions/markupever.svg)
 ![python-test](https://github.com/awolverp/markupever/actions/workflows/test.yml/badge.svg)
 
-!!! warning
-
-    **This documentation is incomplete**. Documenting everything take a while.
-
 MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing library written in Rust.
 
 

@@ -6,6 +6,12 @@ description: Parsing HTML/XML documents using markupever in Python
 # More Examples
 There's a collection of examples for markupever library.
 
+
+!!! warning
+
+    **This documentation is incomplete**. Documenting everything take a while.
+
+
 ### Using markupever alongside HTTP clients
 
 === "httpx (traditional)"
