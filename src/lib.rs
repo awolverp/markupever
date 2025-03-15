@@ -26,6 +26,9 @@ fn _is_node_impl(object: &pyo3::Bound<'_, pyo3::PyAny>) -> bool {
 #[pymodule(gil_used = false)]
 #[cold]
 fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add("__author__", env!("CARGO_PKG_AUTHORS"))?;
+    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+
     m.add("QUIRKS_MODE_FULL", tools::QUIRKS_MODE_FULL)?;
     m.add("QUIRKS_MODE_LIMITED", tools::QUIRKS_MODE_LIMITED)?;
     m.add("QUIRKS_MODE_OFF", tools::QUIRKS_MODE_OFF)?;

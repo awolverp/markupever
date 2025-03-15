@@ -1,6 +1,6 @@
 use super::interface;
 use hashbrown::HashMap;
-use std::ops::Deref;
+use std::{fmt::Write, ops::Deref};
 
 pub type NamespaceMap = HashMap<markup5ever::Prefix, markup5ever::Namespace>;
 
@@ -83,15 +83,92 @@ impl std::fmt::Display for IDTreeDOM {
     }
 }
 
+struct IndentToken {
+    indent: usize,
+    nested: usize,
+    ignore_end: usize,
+    newline: bool,
+}
+
+impl IndentToken {
+    fn new(indent: usize) -> Self {
+        Self {
+            indent,
+            nested: 0,
+            ignore_end: 0,
+            newline: false,
+        }
+    }
+
+    fn write_to<S>(&mut self, serializer: &mut S) -> std::io::Result<()>
+    where
+        S: markup5ever::serialize::Serializer,
+    {
+        if self.ignore_end > 0 {
+            self.ignore_end -= 1;
+            return Ok(());
+        }
+
+        let count = self.indent * self.nested;
+
+        if count == 0 {
+            if self.newline {
+                serializer.write_text("\n")?;
+                self.newline = false;
+            }
+
+            return Ok(());
+        }
+
+        let mut f = String::from("\n");
+
+        let mut m = 0;
+        while m < count {
+            f.write_char(' ').unwrap();
+            m += 1;
+        }
+
+        serializer.write_text(&f)
+    }
+
+    fn start<S: markup5ever::serialize::Serializer>(
+        &mut self,
+        serializer: &mut S,
+    ) -> std::io::Result<()> {
+        if self.ignore_end > 0 {
+            self.ignore_end -= 1;
+        }
+
+        self.write_to(serializer)?;
+
+        self.nested += 1;
+        self.newline = self.indent > 0;
+        Ok(())
+    }
+
+    fn end<S: markup5ever::serialize::Serializer>(
+        &mut self,
+        serializer: &mut S,
+    ) -> std::io::Result<()> {
+        self.nested -= 1;
+        self.write_to(serializer)
+    }
+
+    fn ignore_end(&mut self) {
+        self.ignore_end += 1;
+    }
+}
+
 /// A serializer for [`IDTreeDOM`]
 pub struct Serializer<'a> {
     dom: &'a IDTreeDOM,
     id: ego_tree::NodeId,
+    indent: usize,
 }
 
 impl<'a> Serializer<'a> {
-    pub fn new(dom: &'a IDTreeDOM, id: ego_tree::NodeId) -> Self {
-        Self { dom, id }
+    pub fn new(dom: &'a IDTreeDOM, id: ego_tree::NodeId, indent: usize) -> Self {
+        Self { dom, id, indent }
     }
 
     fn serialize_iter<S>(
@@ -102,16 +179,24 @@ impl<'a> Serializer<'a> {
     where
         S: markup5ever::serialize::Serializer,
     {
+        let mut indentation = IndentToken::new(self.indent);
+        let mut last_element_name = markup5ever::LocalName::from("");
+
         for edge in iter {
             match edge {
                 ego_tree::iter::Edge::Close(x) => {
-                    if let Some(element) = x.value().element() {
+                    if let interface::Interface::Element(element) = x.value() {
+                        if last_element_name == element.name.local && indentation.ignore_end == 0 {
+                            indentation.ignore_end();
+                        }
+
+                        indentation.end(serializer)?;
                         serializer.end_elem(element.name.clone())?;
                     }
                 }
                 ego_tree::iter::Edge::Open(x) => match x.value() {
                     interface::Interface::Comment(comment) => {
-                        serializer.write_comment(&comment.contents)?
+                        serializer.write_comment(&comment.contents)?;
                     }
                     interface::Interface::Doctype(doctype) => {
                         let mut docname = String::from(&doctype.name);
@@ -126,16 +211,29 @@ impl<'a> Serializer<'a> {
                             docname.push('"');
                         }
 
-                        serializer.write_doctype(&docname)?
+                        serializer.write_doctype(&docname)?;
+
+                        indentation.newline = indentation.indent > 0;
+                        indentation.write_to(serializer)?;
+                        indentation.newline = false;
                     }
-                    interface::Interface::Element(element) => serializer.start_elem(
-                        element.name.clone(),
-                        element.attrs.iter().map(|at| (at.0.deref(), &at.1[..])),
-                    )?,
+                    interface::Interface::Element(element) => {
+                        last_element_name = element.name.local.clone();
+
+                        indentation.start(serializer)?;
+                        serializer.start_elem(
+                            element.name.clone(),
+                            element.attrs.iter().map(|at| (at.0.deref(), &at.1[..])),
+                        )?;
+                    }
                     interface::Interface::ProcessingInstruction(pi) => {
                         serializer.write_processing_instruction(&pi.target, &pi.data)?
                     }
-                    interface::Interface::Text(text) => serializer.write_text(&text.contents)?,
+                    interface::Interface::Text(text) => {
+                        if !text.contents.trim_ascii().is_empty() {
+                            serializer.write_text(text.contents.trim_ascii_end())?;
+                        }
+                    }
                     interface::Interface::Document(_) => (),
                 },
             }

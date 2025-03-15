@@ -23,7 +23,7 @@ class Parser:
         # 2 - converted
         self.__state = 0
 
-    def process(self, content: typing.Union[str, bytes]) -> None:
+    def process(self, content: typing.Union[str, bytes]) -> "Parser":
         """
         Processes an input.
 
@@ -32,8 +32,9 @@ class Parser:
         Raises `RuntimeError` if `.finish()` method is called.
         """
         self.__raw.process(content)
+        return self
 
-    def finish(self) -> None:
+    def finish(self) -> "Parser":
         """
         Finishes the parser and marks it as finished.
 
@@ -41,6 +42,7 @@ class Parser:
         """
         self.__raw.finish()
         self.__state = 1
+        return self
 
     def into_dom(self) -> TreeDom:
         """Converts the self into `TreeDom`. after calling this method, this object is unusable and you cannot use it."""
@@ -91,8 +93,7 @@ def parse(
     """
     parser = Parser(options)
     parser.process(content)
-    parser.finish()
-    return parser.into_dom()
+    return parser.finish().into_dom()
 
 
 def parse_file(
@@ -125,8 +126,7 @@ def parse_file(
 
             parser.process(content)
 
-        parser.finish()
-        return parser.into_dom()
+        return parser.finish().into_dom()
     finally:
         if close:
             path.close()

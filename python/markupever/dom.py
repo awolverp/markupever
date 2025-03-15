@@ -36,13 +36,13 @@ class TreeDom:
         """Shorthand for `self.root().select_one(expr, offset)`"""
         return self.root().select_one(expr, offset)
 
-    def serialize_bytes(self, is_html: typing.Optional[bool] = None) -> bytes:
+    def serialize_bytes(self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True) -> bytes:
         """Shorthand for `self.root().serialize_bytes(is_html)`"""
-        return self.root().serialize_bytes(is_html=is_html)  # pragma: no cover
+        return self.root().serialize_bytes(indent=indent, is_html=is_html, include_self=include_self)  # pragma: no cover
 
-    def serialize(self, is_html: typing.Optional[bool] = None) -> str:
+    def serialize(self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True) -> str:
         """Shorthand for `self.root().serialize(is_html)`"""
-        return self.root().serialize(is_html=is_html)  # pragma: no cover
+        return self.root().serialize(indent=indent, is_html=is_html, include_self=include_self)  # pragma: no cover
 
     def __iter__(self) -> typing.Generator["BaseNode", typing.Any, None]:
         """Iterates the nodes in insert order - don't matter which are orphan which not."""
@@ -77,7 +77,7 @@ class TreeDom:
                 indent.indent(edge.node.next_sibling is not None)
                 res += str(indent) + str(edge.node) + "\n"
 
-            else: # pragma: no cover
+            else:  # pragma: no cover
                 indent.indent(edge.node.next_sibling is not None)
                 res += str(indent) + str(edge.node) + "\n"
                 indent.deindent()
@@ -302,13 +302,13 @@ class BaseNode:
         """Returns the text of this node."""
         return seperator.join(self.strings(strip=strip))
 
-    def serialize_bytes(self, is_html: typing.Optional[bool] = None) -> bytes:
+    def serialize_bytes(self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True) -> bytes:
         """Serialize the tree (starts from this node) to bytes."""
-        return _rustlib.serialize(self._raw, is_html)
+        return _rustlib.serialize(self._raw, indent, include_self, is_html)
 
-    def serialize(self, is_html: typing.Optional[bool] = None) -> str:
+    def serialize(self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True) -> str:
         """Serialize the tree (starts from this node) to string."""
-        return self.serialize_bytes(is_html).decode("utf-8")
+        return self.serialize_bytes(indent, is_html=is_html, include_self=include_self).decode("utf-8")
 
     def __eq__(self, value):
         if isinstance(value, BaseNode):

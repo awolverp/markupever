@@ -1,5 +1,6 @@
 ---
 title: CSS Selectors
+description: Selecting elements using CSS selectors using markupever in Python
 ---
 
 # CSS Selectors

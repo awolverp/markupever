@@ -568,9 +568,9 @@ def test_serialize():
 
     dom = parser.into_dom()
 
-    assert rl.serialize(dom.root()) == b"<html><head></head><body>Ali</body></html>"
+    assert rl.serialize(dom.root(), 0) == b"<html><head></head><body>Ali</body></html>"
     assert (
-        rl.serialize(dom.root(), False)
+        rl.serialize(dom.root(), 0, is_html=False)
         == b'<html xmlns="http://www.w3.org/1999/xhtml"><head></head><body>Ali</body></html>'
     )
 
@@ -581,9 +581,9 @@ def test_serialize():
 
     dom = parser.into_dom()
 
-    assert rl.serialize(dom.root(), True) == b"<html><hello>Ali</hello></html>"
+    assert rl.serialize(dom.root(), 0, is_html=True) == b"<html><hello>Ali</hello></html>"
     assert (
-        rl.serialize(dom.root(), False)
+        rl.serialize(dom.root(), 0, is_html=False)
         == b'<html xmlns="http://www.w3.org/1999/xhtml"><hello>Ali</hello></html>'
     )
 
@@ -594,5 +594,5 @@ def test_serialize():
 
     dom = parser.into_dom()
 
-    assert rl.serialize(dom.root()) == b"<hello>Ali</hello>"
-    assert rl.serialize(dom.root(), False) == b"<hello>Ali</hello>"
+    assert rl.serialize(dom.root(), 0) == b"<hello>Ali</hello>"
+    assert rl.serialize(dom.root(), 0, is_html=False) == b"<hello>Ali</hello>"

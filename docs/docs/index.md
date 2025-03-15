@@ -13,13 +13,11 @@ description: The fast, most optimal, and correct HTML & XML parsing library
 </p>
 
 
----
-
-**DOCUMENTATION**: <a href="https://awolverp.github.io/markupever" target="_blank">https://awolverp.github.io/markupever</a>
-
-**SOURCE CODE**: <a href="https://github.com/awolverp/markupever" target="_blank">https://github.com/awolverp/markupever</a>
-
----
+![text](https://img.shields.io/badge/coverage-100-08000)
+![image](https://img.shields.io/pypi/v/markupever.svg)
+![image](https://img.shields.io/pypi/l/markupever.svg)
+![image](https://img.shields.io/pypi/pyversions/markupever.svg)
+![python-test](https://github.com/awolverp/markupever/actions/workflows/test.yml/badge.svg)
 
 !!! warning
 
@@ -106,6 +104,11 @@ $ pip3 install markupever
 
 
 ## Examples
+
+!!! tip "More Examples"
+
+    There are some good and basic examples to how to use `markupever` library.
+    Even if you need more examples, see this page: [More Examples :material-arrow-top-right:](more-examples.md)
 
 ### Parsing & Scraping
 Parsing a HTML content and selecting elements:
@@ -239,27 +242,31 @@ I have compared **MarkupEver** with **BeautifulSoup** and **Parsel** (which dire
 | beautifulsoup4 (html.parser)| 35283µs| 36460µs| 35828µs|
 | beautifulsoup4 (lxml)     | 22576µs| 23092µs| 22809µs|
 | parsel                    | 3937µs | 4147µs | 4072µs |
+| html5lib (etree)          | 63214µs | 63844µs | 63489µs |
+| html5lib (dom)            | 88111µs | 90721µs | 89580µs |
 
 | Selecting (CSS)           |  Min   |  Max   |  Avg   |
 |---------------------------|--------|--------|--------|
 | markupever                | 308µs | 314µs | 310µs |
 | beautifulsoup4            | 2936µs| 3074µs| 2995µs|
 | parsel                    | 159µs | 165µs | 161µs |
+| html5lib                  | N/A | N/A | N/A |
 
 | Serializing               |  Min   |  Max   |  Avg   |
 |---------------------------|--------|--------|--------|
 | markupever                | 1932µs | 1973µs | 1952µs |
 | beautifulsoup4            | 14705µs| 15021µs| 14900µs|
 | parsel                    | 1264µs | 1290µs | 1276µs |
+| html5lib                  | 17557µs | 18097µs | 17831µs |
 
 !!! abstract "Summary"
 
     The **Parsel** is the fastest library (Actually `lxml` is) and is specially designed for scraping,
     but it offers less control over the document.
-    The **BeautifulSoup** is the slowest (and oldest) library which provides full control over the document.
+    The **html5lib** is the slowest library and does not support selecting elements by **CSS Selectors**.
+    The **BeautifulSoup** library's speed is also slow which provides full control over the document.
 
-    The **MarkupEver** sites between these two. It is extremely fast, close to Parsel, and offers full control over
-    the document.
+    The **MarkupEver** sites between **BeautifulSoup** and **Parsel** library. It is extremely fast - close to Parsel, and offers full control over the document.
 
 ### Memory Usage
 As you know, this library is written in Rust and uses the Rust allocator. Like other libraries written in **C** and other low-level languages, it uses very low memory, so you don't have to worry about memory usage. Manage huge documents with ease...

@@ -1,4 +1,5 @@
 from markupever import _rustlib
+from collections import namedtuple
 import markupever
 import pytest
 
@@ -155,7 +156,7 @@ def test_connect_node():
     assert p.tree() == dom
 
     assert (
-        root.serialize()
+        root.serialize(0)
         == '<!DOCTYPE HTML PUBLIC "public" SYSTEM "system"><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body class="bg-dark"><p class="font-sans"><!--contenttestme-->\ncontent 1\ncontent 2</p></body></html>'
     )
 
@@ -432,3 +433,47 @@ def test_element():
 
     html.attrs.extend({"b": "c", "d": "e"})
     assert len(html.attrs) == 2
+
+
+_SerializerIndent = namedtuple("_SerializerIndent", "content is_xml indent expected")
+
+
+def test_serializer():
+    testcases = [
+        _SerializerIndent(
+            "<html><head><title>Test</title></head><body><h1>Hello, World!</h1></body></html>",
+            False,
+            2,
+            "<html>\n  <head>\n    <title>Test</title>\n  </head>\n  <body>\n    <h1>Hello, World!</h1>\n  </body>\n</html>",
+        ),
+        _SerializerIndent(
+            '<div class="container" id="main"><a href="https://example.com" target="_blank">Click me</a></div>',
+            False,
+            4,
+            '<html>\n    <head></head>\n    <body>\n        <div class="container" id="main">\n            <a href="https://example.com" target="_blank">Click me</a>\n        </div>\n    </body>\n</html>',
+        ),
+        _SerializerIndent(
+            '<img src="image.png" alt="Image" />\n<br />\n<input type="text" placeholder="Enter text" />',
+            False,
+            1,
+            '<html>\n <head></head>\n <body>\n  <img src="image.png" alt="Image">\n  <br>\n  <input type="text" placeholder="Enter text">\n </body>\n</html>',
+        ),
+        _SerializerIndent(
+            '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Complex Test</title>\n  <style>\n    body { font-family: Arial, sans-serif; }\n    .highlight { background-color: yellow; }\n  </style>\n</head>\n<body>\n  <header>\n    <h1>Welcome to the Test Page</h1>\n  </header>\n  <nav>\n    <ul>\n      <li><a href="#home">Home</a></li>\n      <li><a href="#about">About</a></li>\n      <li><a href="#contact">Contact</a></li>\n    </ul>\n  </nav>\n  <main>\n    <section id="home">\n      <p>Home content goes here.</p>\n    </section>\n    <section id="about">\n      <p>About content goes here.</p>\n    </section>\n    <section id="contact">\n      <p>Contact content goes here.</p>\n    </section>\n  </main>\n  <footer>\n    <p>&copy; 2025 Test Page. All rights reserved.</p>\n  </footer>\n</body>\n</html>\n',
+            False,
+            0,
+            '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Complex Test</title><style>\n    body { font-family: Arial, sans-serif; }\n    .highlight { background-color: yellow; }</style></head><body><header><h1>Welcome to the Test Page</h1></header><nav><ul><li><a href="#home">Home</a></li><li><a href="#about">About</a></li><li><a href="#contact">Contact</a></li></ul></nav><main><section id="home"><p>Home content goes here.</p></section><section id="about"><p>About content goes here.</p></section><section id="contact"><p>Contact content goes here.</p></section></main><footer><p>© 2025 Test Page. All rights reserved.</p></footer></body></html>',
+        ),
+        _SerializerIndent(
+            '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Complex Test</title>\n  <style>\n    body { font-family: Arial, sans-serif; }\n    .highlight { background-color: yellow; }\n  </style>\n</head>\n<body>\n  <header>\n    <h1>Welcome to the Test Page</h1>\n  </header>\n  <nav>\n    <ul>\n      <li><a href="#home">Home</a></li>\n      <li><a href="#about">About</a></li>\n      <li><a href="#contact">Contact</a></li>\n    </ul>\n  </nav>\n  <main>\n    <section id="home">\n      <p>Home content goes here.</p>\n    </section>\n    <section id="about">\n      <p>About content goes here.</p>\n    </section>\n    <section id="contact">\n      <p>Contact content goes here.</p>\n    </section>\n  </main>\n  <footer>\n    <p>&copy; 2025 Test Page. All rights reserved.</p>\n  </footer>\n</body>\n</html>\n',
+            False,
+            4,
+            '<!DOCTYPE html>\n<html lang="en">\n    <head>\n        <meta charset="UTF-8">\n        <meta name="viewport" content="width=device-width, initial-scale=1.0">\n        <title>Complex Test</title>\n        <style>\n    body { font-family: Arial, sans-serif; }\n    .highlight { background-color: yellow; }</style>\n    </head>\n    <body>\n        <header>\n            <h1>Welcome to the Test Page</h1>\n        </header>\n        <nav>\n            <ul>\n                <li>\n                    <a href="#home">Home</a>\n                </li>\n                <li>\n                    <a href="#about">About</a>\n                </li>\n                <li>\n                    <a href="#contact">Contact</a>\n                </li>\n            </ul>\n        </nav>\n        <main>\n            <section id="home">\n                <p>Home content goes here.</p>\n            </section>\n            <section id="about">\n                <p>About content goes here.</p>\n            </section>\n            <section id="contact">\n                <p>Contact content goes here.</p>\n            </section>\n        </main>\n        <footer>\n            <p>© 2025 Test Page. All rights reserved.</p>\n        </footer>\n    </body>\n</html>',
+        ),
+    ]
+
+    for case in testcases:
+        dom = markupever.parse(
+            case.content, markupever.XmlOptions() if case.is_xml else markupever.HtmlOptions()
+        )
+        assert dom.serialize(case.indent) == case.expected

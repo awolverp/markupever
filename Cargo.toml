@@ -34,7 +34,7 @@ panic = "abort"
 strip = "symbols"
 
 [dependencies]
-pyo3 = { version = "0.23", default-features = false, features = [
+pyo3 = { version = "0.24", default-features = false, features = [
     "macros",
     "extension-module",
 ] }
@@ -47,7 +47,7 @@ hashbrown = { version = "0.15", default-features = false, features = [
 ] }
 
 [build-dependencies]
-pyo3-build-config = { version = "0.23", features = ["resolve-config"] }
+pyo3-build-config = { version = "0.24", features = ["resolve-config"] }
 
 [lints.clippy]
 dbg_macro = "warn"

@@ -414,9 +414,11 @@ unsafe impl Send for PyParser {}
 unsafe impl Sync for PyParser {}
 
 #[pyo3::pyfunction]
-#[pyo3(signature=(node, is_html=None))]
+#[pyo3(signature=(node, indent=4, include_self=true, is_html=None))]
 pub fn serialize(
     node: &pyo3::Bound<'_, pyo3::PyAny>,
+    indent: usize,
+    include_self: bool,
     is_html: Option<bool>,
 ) -> pyo3::PyResult<Vec<u8>> {
     let node = super::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
@@ -445,15 +447,19 @@ pub fn serialize(
     let mut writer = Vec::with_capacity(10);
     let dom = node.tree.lock();
 
-    let serializer = ::treedom::Serializer::new(&dom, node.id);
+    let serializer = ::treedom::Serializer::new(&dom, node.id, indent);
+
+    let traversal_scope = if include_self {
+        ::treedom::markup5ever::serialize::TraversalScope::IncludeNode
+    } else {
+        ::treedom::markup5ever::serialize::TraversalScope::ChildrenOnly(None)
+    };
 
     if !is_html {
         ::treedom::xml5ever::serialize::serialize(
             &mut writer,
             &serializer,
-            ::treedom::xml5ever::serialize::SerializeOpts {
-                traversal_scope: ::treedom::xml5ever::serialize::TraversalScope::IncludeNode,
-            },
+            ::treedom::xml5ever::serialize::SerializeOpts { traversal_scope },
         )
         .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
     } else {
@@ -461,7 +467,7 @@ pub fn serialize(
             &mut writer,
             &serializer,
             ::treedom::html5ever::serialize::SerializeOpts {
-                traversal_scope: ::treedom::html5ever::serialize::TraversalScope::IncludeNode,
+                traversal_scope,
                 ..Default::default()
             },
         )
