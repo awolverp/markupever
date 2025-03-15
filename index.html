@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.8">
     
     
       
@@ -286,6 +286,23 @@
   
 
       
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="more-examples/" class="md-tabs__link">
+        
+  
+    
+  
+  More Examples
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -541,6 +558,27 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="more-examples/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    More Examples
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -568,10 +606,11 @@
     <em>The fast, most optimal, and correct HTML & XML parsing library</em>
 </p>
 
-<hr />
-<p><strong>DOCUMENTATION</strong>: <a href="https://awolverp.github.io/markupever" target="_blank">https://awolverp.github.io/markupever</a></p>
-<p><strong>SOURCE CODE</strong>: <a href="https://github.com/awolverp/markupever" target="_blank">https://github.com/awolverp/markupever</a></p>
-<hr />
+<p><img alt="text" src="https://img.shields.io/badge/coverage-100-08000" />
+<img alt="image" src="https://img.shields.io/pypi/v/markupever.svg" />
+<img alt="image" src="https://img.shields.io/pypi/l/markupever.svg" />
+<img alt="image" src="https://img.shields.io/pypi/pyversions/markupever.svg" />
+<img alt="python-test" src="https://github.com/awolverp/markupever/actions/workflows/test.yml/badge.svg" /></p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p><strong>This documentation is incomplete</strong>. Documenting everything take a while.</p>
@@ -638,6 +677,11 @@
 </div>
 </div>
 <h2 id="examples">Examples</h2>
+<div class="admonition tip">
+<p class="admonition-title">More Examples</p>
+<p>There are some good and basic examples to how to use <code>markupever</code> library.
+Even if you need more examples, see this page: <a href="more-examples/">More Examples <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 17.59 15.59 7H9V5h10v10h-2V8.41L6.41 19z"/></svg></span></a></p>
+</div>
 <h3 id="parsing-scraping">Parsing &amp; Scraping</h3>
 <p>Parsing a HTML content and selecting elements:</p>
 <p>Imagine this <strong><code>index.html</code></strong> file:</p>
@@ -794,6 +838,18 @@
 <td>4147µs</td>
 <td>4072µs</td>
 </tr>
+<tr>
+<td>html5lib (etree)</td>
+<td>63214µs</td>
+<td>63844µs</td>
+<td>63489µs</td>
+</tr>
+<tr>
+<td>html5lib (dom)</td>
+<td>88111µs</td>
+<td>90721µs</td>
+<td>89580µs</td>
+</tr>
 </tbody>
 </table>
 <table>
@@ -823,6 +879,12 @@
 <td>159µs</td>
 <td>165µs</td>
 <td>161µs</td>
+</tr>
+<tr>
+<td>html5lib</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
 </tr>
 </tbody>
 </table>
@@ -854,15 +916,21 @@
 <td>1290µs</td>
 <td>1276µs</td>
 </tr>
+<tr>
+<td>html5lib</td>
+<td>17557µs</td>
+<td>18097µs</td>
+<td>17831µs</td>
+</tr>
 </tbody>
 </table>
 <div class="admonition abstract">
 <p class="admonition-title">Summary</p>
 <p>The <strong>Parsel</strong> is the fastest library (Actually <code>lxml</code> is) and is specially designed for scraping,
 but it offers less control over the document.
-The <strong>BeautifulSoup</strong> is the slowest (and oldest) library which provides full control over the document.</p>
-<p>The <strong>MarkupEver</strong> sites between these two. It is extremely fast, close to Parsel, and offers full control over
-the document.</p>
+The <strong>html5lib</strong> is the slowest library and does not support selecting elements by <strong>CSS Selectors</strong>.
+The <strong>BeautifulSoup</strong> library's speed is also slow which provides full control over the document.</p>
+<p>The <strong>MarkupEver</strong> sites between <strong>BeautifulSoup</strong> and <strong>Parsel</strong> library. It is extremely fast - close to Parsel, and offers full control over the document.</p>
 </div>
 <h3 id="memory-usage">Memory Usage</h3>
 <p>As you know, this library is written in Rust and uses the Rust allocator. Like other libraries written in <strong>C</strong> and other low-level languages, it uses very low memory, so you don't have to worry about memory usage. Manage huge documents with ease...</p>
