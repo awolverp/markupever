@@ -93,8 +93,7 @@ def parse(
     """
     parser = Parser(options)
     parser.process(content)
-    parser.finish()
-    return parser.into_dom()
+    return parser.finish().into_dom()
 
 
 def parse_file(
@@ -127,8 +126,7 @@ def parse_file(
 
             parser.process(content)
 
-        parser.finish()
-        return parser.into_dom()
+        return parser.finish().into_dom()
     finally:
         if close:
             path.close()
