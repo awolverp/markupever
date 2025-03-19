@@ -9,10 +9,10 @@ class TreeDom:
 
     def __init__(self, *, raw: typing.Optional[_rustlib.TreeDom] = None):
         """
-        A tree structure which specialy designed for HTML and XML documents. Uses Rust's `Vec` type in backend.
+        A tree structure specialized for HTML and XML documents, utilizing Rust's `Vec` type as its backend.
 
-        The memory consumed by the `TreeDom` is dynamic and depends on the number of tokens stored in the tree.
-        The allocated memory is never reduced and is only released when it is dropped.
+        The memory consumption of `TreeDom` is dynamically scaled based on the number of tokens in the tree.
+        Memory allocation is persistent and only freed when the object is dropped.
         """
         if raw is None:
             self._raw = _rustlib.TreeDom()
@@ -21,7 +21,9 @@ class TreeDom:
             self._raw = raw
 
     def namespaces(self) -> typing.Dict[str, str]:
-        """Returns the DOM namespaces."""
+        """
+        Returns a dictionary of namespace prefixes and their corresponding namespace URIs defined in the DOM.
+        """
         return self._raw.namespaces()
 
     def root(self) -> "Document":
@@ -36,13 +38,21 @@ class TreeDom:
         """Shorthand for `self.root().select_one(expr, offset)`"""
         return self.root().select_one(expr, offset)
 
-    def serialize_bytes(self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True) -> bytes:
+    def serialize_bytes(
+        self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True
+    ) -> bytes:
         """Shorthand for `self.root().serialize_bytes(is_html)`"""
-        return self.root().serialize_bytes(indent=indent, is_html=is_html, include_self=include_self)  # pragma: no cover
+        return self.root().serialize_bytes(
+            indent=indent, is_html=is_html, include_self=include_self
+        )  # pragma: no cover
 
-    def serialize(self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True) -> str:
+    def serialize(
+        self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True
+    ) -> str:
         """Shorthand for `self.root().serialize(is_html)`"""
-        return self.root().serialize(indent=indent, is_html=is_html, include_self=include_self)  # pragma: no cover
+        return self.root().serialize(
+            indent=indent, is_html=is_html, include_self=include_self
+        )  # pragma: no cover
 
     def __iter__(self) -> typing.Generator["BaseNode", typing.Any, None]:
         """Iterates the nodes in insert order - don't matter which are orphan which not."""
@@ -110,6 +120,19 @@ class Ordering:
 
 
 class BaseNode:
+    """
+    Base class for DOM nodes, providing core tree navigation, manipulation, and serialization methods.
+
+    This class serves as the fundamental building block for DOM node interactions, offering methods to:
+    - Navigate the document tree (parent, siblings, children)
+    - Attach and detach nodes
+    - Select nodes using CSS selectors
+    - Extract text content
+    - Serialize nodes to string or bytes
+
+    Subclasses should define their specific node type configuration via _CONFIG.
+    """
+
     __slots__ = ("_raw",)
 
     _CONFIG: _ConfigNode = _ConfigNode(None, ())
@@ -209,7 +232,7 @@ class BaseNode:
         return self._raw.has_children
 
     def tree(self) -> "TreeDom":
-        """Returns the tree which this node connected to."""
+        """Returns the TreeDom instance representing the tree to which this node is connected."""
         return TreeDom(raw=self._raw.tree())
 
     def children(self) -> iterators.Children:
@@ -246,9 +269,14 @@ class BaseNode:
 
     def attach(self, node: "BaseNode", *, ordering: int = Ordering.APPEND) -> None:
         """
-        Attaches and connect `node` to this node depends on `ordering` value.
+        Attaches a node to the current node with a specified ordering.
 
-        This is not important the `node` has detached or not.
+        - node (BaseNode): The node to attach to the current node.
+        - ordering (int, optional): Determines how the node is attached. Defaults to Ordering.APPEND.
+
+        Raises `ValueError` If attempting to attach a Document node to another node.
+
+        Note: The node's previous attachment status is irrelevant to this operation.
         """
         if isinstance(node._raw, _rustlib.Document):
             raise ValueError("you cannot attach a Document node to another node.")
@@ -257,9 +285,10 @@ class BaseNode:
 
     def detach(self) -> None:
         """
-        Detaches this node from other nodes (means makes it an orphan node).
+        Detaches this node from its parent, making it an orphan node.
+        Raises `ValueError` If attempting to detach a Document node.
 
-        Note: you cannot detach a node move it to another tree.
+        Note: This method cannot be used to move a node to another tree.
         """
         if isinstance(self._raw, _rustlib.Document):
             raise ValueError("you cannot detach Document node.")
@@ -270,13 +299,22 @@ class BaseNode:
         """
         Returns an iterator that uses CSS selectors to match and find nodes.
 
-        You can use a group of CSS selectors (seperated by comma).
+        - expr (str): CSS selector(s) expression to match nodes.
+        - limit (int, optional): Maximum number of nodes to return. Defaults to 0 (no limit).
+        - offset (int, optional): Number of initial matches to skip. Defaults to 0.
+
+        Note: Supports multiple CSS selectors separated by comma.
         """
         return iterators.Select(self, expr, limit=limit, offset=offset)
 
     def select_one(self, expr: str, offset: int = 0) -> typing.Optional["Element"]:
         """
-        Works like `self.select(expr, offset=offset)` but only returns the first match.
+        Returns the first node matching the given CSS selector expression.
+
+        - expr (str): CSS selector(s) expression to match nodes.
+        - offset (int, optional): Number of initial matches to skip. Defaults to 0.
+
+        Note: Supports multiple CSS selectors separated by comma.
         """
         selector = iterators.Select(self, expr, limit=1, offset=offset)
 
@@ -288,7 +326,11 @@ class BaseNode:
             return node
 
     def strings(self, strip: bool = False):
-        """Go through this node descendants and yields texts."""
+        """
+        Retrieve text content from descendant text nodes.
+
+        - strip (bool, optional): Whether to remove leading and trailing whitespace from text nodes. Defaults to False.
+        """
         for descendant in self.descendants():
             if not isinstance(descendant, Text):
                 continue
@@ -299,16 +341,39 @@ class BaseNode:
                 yield descendant.content
 
     def text(self, seperator: str = "", strip: bool = False) -> str:
-        """Returns the text of this node."""
+        """
+        Concatenates text from all descendant text nodes into a single string.
+
+        - seperator (str, optional): String used to join text nodes. Defaults to an empty string.
+        - strip (bool, optional): Whether to strip whitespace from text nodes. Defaults to False.
+        """
         return seperator.join(self.strings(strip=strip))
 
-    def serialize_bytes(self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True) -> bytes:
-        """Serialize the tree (starts from this node) to bytes."""
+    def serialize_bytes(
+        self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True
+    ) -> bytes:
+        """
+        Serialize the current node and its subtree to bytes.
+
+        - indent (int, optional): Number of spaces for indentation. Defaults to 4.
+        - is_html (bool, optional): Whether to serialize as HTML. Defaults to None.
+        - include_self (bool, optional): Whether to include the current node in serialization. Defaults to True.
+        """
         return _rustlib.serialize(self._raw, indent, include_self, is_html)
 
-    def serialize(self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True) -> str:
-        """Serialize the tree (starts from this node) to string."""
-        return self.serialize_bytes(indent, is_html=is_html, include_self=include_self).decode("utf-8")
+    def serialize(
+        self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True
+    ) -> str:
+        """
+        Serialize the current node and its subtree to string.
+
+        - indent (int, optional): Number of spaces for indentation. Defaults to 4.
+        - is_html (bool, optional): Whether to serialize as HTML. Defaults to None.
+        - include_self (bool, optional): Whether to include the current node in serialization. Defaults to True.
+        """
+        return self.serialize_bytes(indent, is_html=is_html, include_self=include_self).decode(
+            "utf-8"
+        )
 
     def __eq__(self, value):
         if isinstance(value, BaseNode):
@@ -572,9 +637,13 @@ _D = typing.TypeVar("_D")
 
 class AttrsList:
     """
-    This type is only designed for communicating with element attributes.
+    A list-like container for managing element attributes with dictionary-like behavior.
 
-    Really it's a list, but has a behaviour between dictionary and list to provide you easy-to-use management.
+    Provides an interface for manipulating attributes with methods for adding, removing,
+    finding, and modifying key-value pairs while maintaining the underlying attribute list.
+    Supports both list-style and dictionary-style access and modification of attributes.
+
+    Note: This type is only designed for communicating with element attributes.
     """
 
     __slots__ = ("__raw",)
@@ -626,7 +695,12 @@ class AttrsList:
         self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple], start: int = 0
     ) -> int:
         """
-        Returns the first match index.
+        Find the index of a key or key-value pair in the attributes list.
+
+        - key: A key to search for, or a tuple of (key, value) to find a specific key-value pair.
+        - start: Optional starting index for the search (default is 0).
+
+        Raises `ValueError` if no matching key or key-value pair is found.
         """
         if isinstance(key, tuple):
             index = self._find_by_item(*key, start=start)
@@ -642,7 +716,12 @@ class AttrsList:
         self, key: typing.Union[_rustlib.QualName, str], default: _D = None, start: int = 0
     ) -> typing.Union[str, _D]:
         """
-        Return the value for key if key is in the dictionary, else default.
+        Retrieve the value associated with a given key in the attributes list. Returns the value
+        associated with the key if found, otherwise the default value.
+
+        - key: The key to search for, which can be a QualName or string.
+        - default: The value to return if the key is not found (defaults to None).
+        - start: Optional starting index for the search (defaults to 0).
         """
         val, index = self._find_by_key(key, start=start)
         if index == -1:
@@ -671,9 +750,12 @@ class AttrsList:
         self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple], start: int = 0
     ) -> None:
         """
-        Remove first occurrence of value.
+        Remove the first occurrence of a key or key-value pair from the attributes list.
 
-        Raises ValueError if the value is not present.
+        - key: A key to remove, which can be a QualName, string, or a (key, value) tuple.
+        - start: Optional starting index for the search (defaults to 0).
+
+        Raises `ValueError` if the specified key or key-value pair is not found in the list.
         """
         index = self.index(key, start=start)
         self.__raw.remove(index)
@@ -725,8 +807,11 @@ class AttrsList:
 
     def __delitem__(self, index: typing.Union[int, str, _rustlib.QualName]) -> None:
         """
-        - If `index` is `str` or `QualName`: Finds and removes the first match from list.
-        - If `index` is `int`: Removes the `index` from list.
+        Remove an item from the list by its index or key.
+
+        - index: An integer index or a string/QualName key to remove from the list.
+
+        Raises `KeyError` if the specified key is not found in the list.
         """
         if not isinstance(index, int):
             _, index = self._find_by_key(index)
@@ -740,6 +825,16 @@ class AttrsList:
         index: typing.Union[int, str, _rustlib.QualName],
         val: typing.Union[str, typing.Tuple[typing.Union[_rustlib.QualName, str], str]],
     ) -> None:
+        """
+        Set an attribute by index or key.
+
+        If the index is not an integer, the method allows setting an attribute by its key.
+        If the value is a string, it is paired with the key. If the key does not exist,
+        a new attribute is pushed. If the key exists, the attribute is updated.
+
+        - index: An integer index or a string/QualName key to set.
+        - val: A value to set, either as a string or a (key, value) tuple.
+        """
         if not isinstance(index, int):
             if isinstance(val, str):
                 val = (index, val)

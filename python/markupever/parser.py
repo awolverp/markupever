@@ -89,7 +89,14 @@ def parse(
     options: typing.Union[_rustlib.HtmlOptions, _rustlib.XmlOptions],
 ) -> TreeDom:
     """
-    Parses your HTML (or XML depends on `options` type) content and returns the parsed document tree.
+    Parses HTML or XML content and returns the parsed document tree.
+
+    Args:
+        content: The HTML or XML content to parse, either as a string or bytes.
+        options: Parsing options that specify whether to parse as HTML or XML.
+
+    Returns:
+        A TreeDom object representing the parsed document tree.
     """
     parser = Parser(options)
     parser.process(content)
@@ -103,7 +110,18 @@ def parse_file(
     chunk_size: int = 10240,
 ) -> TreeDom:
     """
-    Parses your HTML (or XML depends on `options` type) file and returns the parsed document tree.
+    Parses an HTML or XML file and returns the parsed document tree.
+
+    Args:
+        path: A file path, file-like object, or Path object to be parsed.
+        options: HTML or XML parsing options that control the parsing behavior.
+        chunk_size: Size of chunks to read from the file during parsing (default is 10240 bytes).
+
+    Returns:
+        A TreeDom object representing the parsed document tree.
+
+    The function supports parsing files of different types (string paths, Path objects,
+    file-like objects) and handles file opening and closing automatically.
     """
     from pathlib import Path
 

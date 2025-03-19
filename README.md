@@ -40,11 +40,11 @@ $ pip3 install markupever
 Parsing a HTML content and selecting elements:
 
 ```python
-import markupever as mr
+import markupever
 
-dom = mr.parse_file("file.html", mr.HtmlOptions())
+dom = markupever.parse_file("file.html", markupever.HtmlOptions())
 # Or parse a HTML content directly:
-# dom = markupever.parse("... content ...", mr.HtmlOptions())
+# dom = markupever.parse("... content ...", markupever.HtmlOptions())
 
 for element in dom.select("div.section > p:child-nth(1)"):
     print(element.text())

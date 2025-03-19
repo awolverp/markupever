@@ -2,6 +2,13 @@ import typing
 
 
 class _DisplayCharacterToken:  # pragma: no cover
+    """
+    Internal token representing display characters for tree-like indentation visualization.
+
+    Manages rendering of tree-like indentation characters based on sibling and children states,
+    used for generating structured text representations with visual hierarchy.
+    """
+
     __slots__ = ("siblings", "children")
 
     def __init__(self, siblings: bool):
@@ -25,6 +32,13 @@ class _DisplayCharacterToken:  # pragma: no cover
 
 
 class _Indentation:  # pragma: no cover
+    """
+    Internal class for managing tree-like indentation tokens during display rendering.
+
+    Tracks display tokens with optional root ignoring, allowing dynamic indentation
+    and deindentation while maintaining a visual hierarchy of tokens.
+    """
+
     __slots__ = ("tokens", "ignore_root")
 
     def __init__(self, ignore_root: bool):

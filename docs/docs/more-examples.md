@@ -13,6 +13,7 @@ There's a collection of examples for markupever library.
 
 
 ### Using markupever alongside HTTP clients
+How to use markupever alongside HTTP clients such as `httpx`, `requests` and `aiohttp`.
 
 === "httpx (traditional)"
 
