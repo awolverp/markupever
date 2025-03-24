@@ -915,10 +915,22 @@ class Element(BaseNode):
 
     @property
     def id(self) -> typing.Optional[str]:
+        """
+        Returns the `id` attribute of the element as `str`.
+
+        Important note: this property is read-only. use self.attrs to modify it if you want.
+        """
+        # TODO: make this property writable.
         return self._raw.id()
 
     @property
     def class_list(self) -> typing.List[str]:
+        """
+        Returns the `class` attribute of the element as `list[str]`.
+
+        Important note: this property is read-only. use self.attrs to modify it if you want.
+        """
+        # TODO: Return a ElementClassList type instead of list[str] to have better control.
         return self._raw.class_list()
 
     def create_doctype(
