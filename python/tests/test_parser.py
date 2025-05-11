@@ -54,6 +54,12 @@ def test_parser():  # this is a copy of test_rustlib.test_parser for markupever.
     with pytest.raises(RuntimeError):
         parser.errors()
 
+    _ = markupever.Parser("html")
+    _ = markupever.Parser("xml")
+
+    with pytest.raises(ValueError):
+        _ = markupever.Parser("invalid")
+
 
 def test_parse_function():
     assert isinstance(

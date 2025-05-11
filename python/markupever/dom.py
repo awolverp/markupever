@@ -340,14 +340,14 @@ class BaseNode:
             else:
                 yield descendant.content
 
-    def text(self, seperator: str = "", strip: bool = False) -> str:
+    def text(self, separator: str = "", strip: bool = False) -> str:
         """
         Concatenates text from all descendant text nodes into a single string.
 
-        - seperator (str, optional): String used to join text nodes. Defaults to an empty string.
+        - separator (str, optional): String used to join text nodes. Defaults to an empty string.
         - strip (bool, optional): Whether to strip whitespace from text nodes. Defaults to False.
         """
-        return seperator.join(self.strings(strip=strip))
+        return separator.join(self.strings(strip=strip))
 
     def serialize_bytes(
         self, indent: int = 4, is_html: typing.Optional[bool] = None, include_self: bool = True
@@ -854,11 +854,11 @@ class AttrsList:
 
     def __getitem__(self, index):
         if not isinstance(index, int):
-            _, index = self._find_by_key(index)
-            if index == -1:
+            _, index_i = self._find_by_key(index)
+            if index_i == -1:
                 raise KeyError(index)
 
-            _, val = self.__raw.get_by_index(index)
+            _, val = self.__raw.get_by_index(index_i)
             return val
 
         return self.__raw.get_by_index(index)

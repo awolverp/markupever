@@ -13,6 +13,7 @@
 ![image](https://img.shields.io/pypi/l/markupever.svg)
 ![image](https://img.shields.io/pypi/pyversions/markupever.svg)
 ![python-test](https://github.com/awolverp/markupever/actions/workflows/test.yml/badge.svg)
+![download](https://img.shields.io/pypi/dm/markupever?style=flat-square&color=%23314bb5)
 
 ------
 
@@ -66,5 +67,8 @@ body = html.create_element("body")
 body.create_text("Hello Everyone ...")
 
 print(root.serialize())
-# <!DOCTYPE html><html lang="en"><body>Hello Everyone ...</body></html>
+# <!DOCTYPE html>
+# <html lang="en">
+#   <body>Hello Everyone ...</body>
+# </html>
 ```

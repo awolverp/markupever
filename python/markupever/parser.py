@@ -6,7 +6,7 @@ import typing
 class Parser:
     __slots__ = ("__raw", "__state")
 
-    def __init__(self, options: typing.Union[_rustlib.HtmlOptions, _rustlib.XmlOptions]):
+    def __init__(self, options: typing.Union[_rustlib.HtmlOptions, _rustlib.XmlOptions, typing.Literal["html"], typing.Literal["xml"]] = "html"):
         """
         An HTML/XML parser, ready to receive unicode input.
 
@@ -16,12 +16,39 @@ class Parser:
         for `options`, If your input is a HTML document, pass a `HtmlOptions`;
         If your input is a XML document, pass `XmlOptions`.
         """
+        if isinstance(options, str):
+            if options == "html":
+                options = _rustlib.HtmlOptions()
+            elif options == "xml":
+                options = _rustlib.XmlOptions()
+            else:
+                raise ValueError(f"invalid parser options: {options!r}")
+        
         self.__raw = _rustlib.Parser(options)
 
         # 0 - processing
         # 1 - finished
         # 2 - converted
         self.__state = 0
+
+    def writable(self) -> bool:
+        """
+        Same as `Parser.is_finished`.
+
+        This function exists to make `Parser` like a `BytesIO` and `StringIO`.
+        You can pass the `Parser` to each function which needs a writable buffer or IO.
+        """
+        return self.is_finished
+
+    def write(self, content: typing.Union[str, bytes]) -> int:
+        """
+        Same as `Parser.process`.
+
+        This function exists to make `Parser` like a `BytesIO` and `StringIO`.
+        You can pass the `Parser` to each function which needs a writable buffer or IO.
+        """
+        self.__raw.process(content)
+        return len(content)
 
     def process(self, content: typing.Union[str, bytes]) -> "Parser":
         """
@@ -86,7 +113,7 @@ class Parser:
 
 def parse(
     content: typing.Union[str, bytes],
-    options: typing.Union[_rustlib.HtmlOptions, _rustlib.XmlOptions],
+    options: typing.Union[_rustlib.HtmlOptions, _rustlib.XmlOptions, typing.Literal["html"], typing.Literal["xml"]] = "html",
 ) -> TreeDom:
     """
     Parses HTML or XML content and returns the parsed document tree.
@@ -105,7 +132,7 @@ def parse(
 
 def parse_file(
     path: typing.Union[str, typing.TextIO, typing.BinaryIO],
-    options: typing.Union[_rustlib.HtmlOptions, _rustlib.XmlOptions],
+    options: typing.Union[_rustlib.HtmlOptions, _rustlib.XmlOptions, typing.Literal["html"], typing.Literal["xml"]] = "html",
     *,
     chunk_size: int = 10240,
 ) -> TreeDom:
