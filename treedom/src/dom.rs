@@ -245,7 +245,7 @@ impl<'a> Serializer<'a> {
 
 fn skip_last<T>(mut iter: impl Iterator<Item = T>) -> impl Iterator<Item = T> {
     let last = iter.next();
-    iter.scan(last, |state, item| std::mem::replace(state, Some(item)))
+    iter.scan(last, |state, item| state.replace(item))
 }
 
 impl markup5ever::serialize::Serialize for Serializer<'_> {

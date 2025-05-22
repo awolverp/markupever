@@ -183,6 +183,12 @@ impl PyTreeDom {
             ));
         }
 
+        if parent.id == child.id {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "Cannot append node as a child to itself",
+            ));
+        }
+
         let mut tree = self_.dom.lock();
         let mut parent = tree.get_mut(parent.id).unwrap();
 
@@ -223,6 +229,12 @@ impl PyTreeDom {
         if !Arc::ptr_eq(&self_.dom, &child.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent child is not for this dom",
+            ));
+        }
+
+        if parent.id == child.id {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "Cannot append node as a child to itself",
             ));
         }
 
@@ -269,6 +281,12 @@ impl PyTreeDom {
             ));
         }
 
+        if parent.id == child.id {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "Cannot append node as a child to itself",
+            ));
+        }
+
         let mut tree = self_.dom.lock();
         let mut parent = tree.get_mut(parent.id).unwrap();
 
@@ -309,6 +327,12 @@ impl PyTreeDom {
         if !Arc::ptr_eq(&self_.dom, &child.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent child is not for this dom",
+            ));
+        }
+
+        if parent.id == child.id {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+                "Cannot append node as a child to itself",
             ));
         }
 

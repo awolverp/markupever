@@ -6,7 +6,12 @@ import typing
 class Parser:
     __slots__ = ("__raw", "__state")
 
-    def __init__(self, options: typing.Union[_rustlib.HtmlOptions, _rustlib.XmlOptions, typing.Literal["html"], typing.Literal["xml"]] = "html"):
+    def __init__(
+        self,
+        options: typing.Union[
+            _rustlib.HtmlOptions, _rustlib.XmlOptions, typing.Literal["html"], typing.Literal["xml"]
+        ] = "html",
+    ):
         """
         An HTML/XML parser, ready to receive unicode input.
 
@@ -23,7 +28,7 @@ class Parser:
                 options = _rustlib.XmlOptions()
             else:
                 raise ValueError(f"invalid parser options: {options!r}")
-        
+
         self.__raw = _rustlib.Parser(options)
 
         # 0 - processing
@@ -113,7 +118,9 @@ class Parser:
 
 def parse(
     content: typing.Union[str, bytes],
-    options: typing.Union[_rustlib.HtmlOptions, _rustlib.XmlOptions, typing.Literal["html"], typing.Literal["xml"]] = "html",
+    options: typing.Union[
+        _rustlib.HtmlOptions, _rustlib.XmlOptions, typing.Literal["html"], typing.Literal["xml"]
+    ] = "html",
 ) -> TreeDom:
     """
     Parses HTML or XML content and returns the parsed document tree.
@@ -132,7 +139,9 @@ def parse(
 
 def parse_file(
     path: typing.Union[str, typing.TextIO, typing.BinaryIO],
-    options: typing.Union[_rustlib.HtmlOptions, _rustlib.XmlOptions, typing.Literal["html"], typing.Literal["xml"]] = "html",
+    options: typing.Union[
+        _rustlib.HtmlOptions, _rustlib.XmlOptions, typing.Literal["html"], typing.Literal["xml"]
+    ] = "html",
     *,
     chunk_size: int = 10240,
 ) -> TreeDom:

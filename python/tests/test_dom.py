@@ -477,3 +477,10 @@ def test_serializer():
             case.content, markupever.XmlOptions() if case.is_xml else markupever.HtmlOptions()
         )
         assert dom.serialize(case.indent) == case.expected
+
+
+def test_add_itself():
+    tag = markupever.parse("<p>").root().first_child
+
+    with pytest.raises(RuntimeError):
+        tag.attach(tag)
