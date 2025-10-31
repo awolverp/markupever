@@ -37,6 +37,7 @@ strip = "symbols"
 pyo3 = { version = "0.27", default-features = false, features = [
     "macros",
     "extension-module",
+    "generate-import-lib",
 ] }
 parking_lot = { version = "0.12" }
 treedom = { path = "treedom" }
