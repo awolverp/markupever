@@ -85,7 +85,7 @@ impl PySelect {
         self_
     }
 
-    pub fn __next__(self_: pyo3::PyRef<'_, Self>) -> pyo3::PyResult<pyo3::PyObject> {
+    pub fn __next__(self_: pyo3::PyRef<'_, Self>) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
         let mut lock = self_.inner.lock();
 
         lock.next()

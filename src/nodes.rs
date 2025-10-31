@@ -155,7 +155,7 @@ impl NodeGuard {
         }
     }
 
-    pub fn into_any(self, py: pyo3::Python<'_>) -> pyo3::PyObject {
+    pub fn into_any(self, py: pyo3::Python<'_>) -> pyo3::Py<pyo3::PyAny> {
         match &self.type_ {
             NodeGuardType::Document => pyo3::Py::new(py, PyDocument(self)).unwrap().into_any(),
             NodeGuardType::Comment => pyo3::Py::new(py, PyComment(self)).unwrap().into_any(),
@@ -225,23 +225,23 @@ impl PyDocument {
         self.0.tree()
     }
 
-    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.parent().map(move |x| x.into_any(py))
     }
 
-    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.prev_sibling().map(move |x| x.into_any(py))
     }
 
-    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.next_sibling().map(move |x| x.into_any(py))
     }
 
-    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.first_child().map(move |x| x.into_any(py))
     }
 
-    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.last_child().map(move |x| x.into_any(py))
     }
 
@@ -255,7 +255,7 @@ impl PyDocument {
 
     fn __richcmp__(
         self_: pyo3::PyRef<'_, Self>,
-        other: pyo3::PyObject,
+        other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
         if matches!(cmp, pyo3::basic::CompareOp::Eq)
@@ -381,23 +381,23 @@ impl PyDoctype {
         self.0.tree()
     }
 
-    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.parent().map(move |x| x.into_any(py))
     }
 
-    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.prev_sibling().map(move |x| x.into_any(py))
     }
 
-    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.next_sibling().map(move |x| x.into_any(py))
     }
 
-    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.first_child().map(move |x| x.into_any(py))
     }
 
-    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.last_child().map(move |x| x.into_any(py))
     }
 
@@ -411,7 +411,7 @@ impl PyDoctype {
 
     fn __richcmp__(
         self_: pyo3::PyRef<'_, Self>,
-        other: pyo3::PyObject,
+        other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
         if matches!(cmp, pyo3::basic::CompareOp::Eq)
@@ -507,23 +507,23 @@ impl PyComment {
         self.0.tree()
     }
 
-    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.parent().map(move |x| x.into_any(py))
     }
 
-    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.prev_sibling().map(move |x| x.into_any(py))
     }
 
-    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.next_sibling().map(move |x| x.into_any(py))
     }
 
-    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.first_child().map(move |x| x.into_any(py))
     }
 
-    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.last_child().map(move |x| x.into_any(py))
     }
 
@@ -537,7 +537,7 @@ impl PyComment {
 
     fn __richcmp__(
         self_: pyo3::PyRef<'_, Self>,
-        other: pyo3::PyObject,
+        other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
         if matches!(cmp, pyo3::basic::CompareOp::Eq)
@@ -630,23 +630,23 @@ impl PyText {
         self.0.tree()
     }
 
-    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.parent().map(move |x| x.into_any(py))
     }
 
-    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.prev_sibling().map(move |x| x.into_any(py))
     }
 
-    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.next_sibling().map(move |x| x.into_any(py))
     }
 
-    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.first_child().map(move |x| x.into_any(py))
     }
 
-    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.last_child().map(move |x| x.into_any(py))
     }
 
@@ -660,7 +660,7 @@ impl PyText {
 
     fn __richcmp__(
         self_: pyo3::PyRef<'_, Self>,
-        other: pyo3::PyObject,
+        other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
         if matches!(cmp, pyo3::basic::CompareOp::Eq)
@@ -744,7 +744,7 @@ impl PyAttrsListItems {
     fn __next__(
         self_: pyo3::PyRef<'_, Self>,
         py: pyo3::Python<'_>,
-    ) -> pyo3::PyResult<pyo3::PyObject> {
+    ) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
         let tree = self_.guard.tree.lock();
         let node = tree.get(self_.guard.id).unwrap().value().element().unwrap();
 
@@ -846,8 +846,8 @@ impl PyAttrsList {
         &self,
         py: pyo3::Python<'_>,
         index: usize,
-        key: pyo3::PyObject,
-        value: pyo3::PyObject,
+        key: pyo3::Py<pyo3::PyAny>,
+        value: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
         let key = crate::tools::qualname_from_pyobject(py, &key)
             .into_qualname()
@@ -889,8 +889,8 @@ impl PyAttrsList {
     fn push(
         &self,
         py: pyo3::Python<'_>,
-        key: pyo3::PyObject,
-        value: pyo3::PyObject,
+        key: pyo3::Py<pyo3::PyAny>,
+        value: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
         let key = crate::tools::qualname_from_pyobject(py, &key)
             .into_qualname()
@@ -934,8 +934,8 @@ impl PyAttrsList {
         &self,
         py: pyo3::Python<'_>,
         index: usize,
-        key: pyo3::PyObject,
-        value: pyo3::PyObject,
+        key: pyo3::Py<pyo3::PyAny>,
+        value: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
         let key = crate::tools::qualname_from_pyobject(py, &key)
             .into_qualname()
@@ -978,7 +978,7 @@ impl PyAttrsList {
     fn update_value(
         self_: pyo3::PyRef<'_, Self>,
         index: usize,
-        value: pyo3::PyObject,
+        value: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
         let value = unsafe {
             if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
@@ -1011,7 +1011,7 @@ impl PyAttrsList {
         }
     }
 
-    fn get_by_index(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::PyObject> {
+    fn get_by_index(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
         let mut tree = self_.0.tree.lock();
         let mut node = tree.get_mut(self_.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
@@ -1048,7 +1048,7 @@ impl PyAttrsList {
         }
     }
 
-    fn remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::PyObject> {
+    fn remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
         let mut tree = self_.0.tree.lock();
         let mut node = tree.get_mut(self_.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
@@ -1085,7 +1085,7 @@ impl PyAttrsList {
         }
     }
 
-    fn swap_remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::PyObject> {
+    fn swap_remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
         let mut tree = self_.0.tree.lock();
         let mut node = tree.get_mut(self_.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
@@ -1162,8 +1162,8 @@ impl PyElement {
     #[new]
     fn new(
         treedom: &pyo3::Bound<'_, pyo3::PyAny>,
-        name: pyo3::PyObject,
-        attrs: Vec<(pyo3::PyObject, pyo3::PyObject)>,
+        name: pyo3::Py<pyo3::PyAny>,
+        attrs: Vec<(pyo3::Py<pyo3::PyAny>, pyo3::Py<pyo3::PyAny>)>,
         template: bool,
         mathml_annotation_xml_integration_point: bool,
     ) -> pyo3::PyResult<Self> {
@@ -1268,7 +1268,7 @@ impl PyElement {
     fn set_attrs(
         &self,
         py: pyo3::Python<'_>,
-        attrs: Vec<(pyo3::PyObject, pyo3::PyObject)>,
+        attrs: Vec<(pyo3::Py<pyo3::PyAny>, pyo3::Py<pyo3::PyAny>)>,
     ) -> pyo3::PyResult<()> {
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
@@ -1372,23 +1372,23 @@ impl PyElement {
         self.0.tree()
     }
 
-    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.parent().map(move |x| x.into_any(py))
     }
 
-    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.prev_sibling().map(move |x| x.into_any(py))
     }
 
-    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.next_sibling().map(move |x| x.into_any(py))
     }
 
-    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.first_child().map(move |x| x.into_any(py))
     }
 
-    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.last_child().map(move |x| x.into_any(py))
     }
 
@@ -1402,7 +1402,7 @@ impl PyElement {
 
     fn __richcmp__(
         self_: pyo3::PyRef<'_, Self>,
-        other: pyo3::PyObject,
+        other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
         if matches!(cmp, pyo3::basic::CompareOp::Eq)
@@ -1528,23 +1528,23 @@ impl PyProcessingInstruction {
         self.0.tree()
     }
 
-    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.parent().map(move |x| x.into_any(py))
     }
 
-    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.prev_sibling().map(move |x| x.into_any(py))
     }
 
-    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.next_sibling().map(move |x| x.into_any(py))
     }
 
-    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.first_child().map(move |x| x.into_any(py))
     }
 
-    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::PyObject> {
+    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
         self.0.last_child().map(move |x| x.into_any(py))
     }
 
@@ -1558,7 +1558,7 @@ impl PyProcessingInstruction {
 
     fn __richcmp__(
         self_: pyo3::PyRef<'_, Self>,
-        other: pyo3::PyObject,
+        other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
         if matches!(cmp, pyo3::basic::CompareOp::Eq)

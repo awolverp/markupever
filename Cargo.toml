@@ -17,10 +17,10 @@ crate-type = ["cdylib"]
 members = ["treedom", "matching"]
 
 [workspace.package]
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 readme = "README.md"
-license = "MIT"
+license = "MPL-2.0"
 homepage = "https://github.com/awolverp/markupever"
 repository = "https://github.com/awolverp/markupever.git"
 authors = ["awolverp"]
@@ -34,7 +34,7 @@ panic = "abort"
 strip = "symbols"
 
 [dependencies]
-pyo3 = { version = "0.25", default-features = false, features = [
+pyo3 = { version = "0.27", default-features = false, features = [
     "macros",
     "extension-module",
 ] }
@@ -47,7 +47,7 @@ hashbrown = { version = "0.15", default-features = false, features = [
 ] }
 
 [build-dependencies]
-pyo3-build-config = { version = "0.25", features = ["resolve-config"] }
+pyo3-build-config = { version = "0.27", features = ["resolve-config"] }
 
 [lints.clippy]
 dbg_macro = "warn"

@@ -6,12 +6,6 @@ description: Parsing HTML/XML documents using markupever in Python
 # More Examples
 There's a collection of examples for markupever library.
 
-
-!!! warning
-
-    **This documentation is incomplete**. Documenting everything take a while.
-
-
 ### Using markupever alongside HTTPX
 How to use markupever alongside `httpx` library.
 
@@ -46,7 +40,7 @@ How to use markupever alongside `httpx` library.
             # Parse the result using markupever
             parser = markupever.Parser(markupever.HtmlOptions())
 
-            for content in stream.iter_bytes():
+            for content in stream.iter_bytes(1024 * 1024):
                 parser.process(content)
             
             dom = parser.finish().into_dom()

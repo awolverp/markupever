@@ -1,4 +1,3 @@
-use pyo3::types::PyAnyMethods;
 use std::sync::Arc;
 
 #[pyo3::pyclass(name = "TreeDom", module = "markupever._rustlib", frozen)]
@@ -65,7 +64,7 @@ impl PyTreeDom {
     #[pyo3(signature=(*, namespaces=None))]
     fn new(
         cls: &pyo3::Bound<'_, pyo3::types::PyType>,
-        namespaces: Option<pyo3::PyObject>,
+        namespaces: Option<pyo3::Py<pyo3::PyAny>>,
     ) -> pyo3::PyResult<Self> {
         Self::with_capacity(cls, 0, namespaces)
     }
@@ -76,14 +75,14 @@ impl PyTreeDom {
     fn with_capacity(
         cls: &pyo3::Bound<'_, pyo3::types::PyType>,
         capacity: usize,
-        namespaces: Option<pyo3::PyObject>,
+        namespaces: Option<pyo3::Py<pyo3::PyAny>>,
     ) -> pyo3::PyResult<Self> {
         let mut ns = ::treedom::NamespaceMap::new();
 
         if let Some(namespaces) = namespaces {
             let namespaces = namespaces
                 .bind(cls.py())
-                .downcast::<pyo3::types::PyDict>()
+                .cast::<pyo3::types::PyDict>()
                 .map_err(|_| {
                     pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                         "expected dict[str, str] for namespaces, got {}",
@@ -92,14 +91,14 @@ impl PyTreeDom {
                 })?;
 
             for (key, val) in pyo3::types::PyDictMethods::iter(namespaces) {
-                let key = key.downcast::<pyo3::types::PyString>().map_err(|_| {
+                let key = key.cast::<pyo3::types::PyString>().map_err(|_| {
                     pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                         "expected dict[str, str] for namespaces, but found a key with type {} (keys must be strings)",
                         unsafe { crate::tools::get_type_name(cls.py(), key.as_ptr()) }
                     ))
                 }).map(|x| pyo3::types::PyStringMethods::to_string_lossy(x).into_owned())?;
 
-                let val = val.downcast::<pyo3::types::PyString>().map_err(|_| {
+                let val = val.cast::<pyo3::types::PyString>().map_err(|_| {
                     pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                         "expected dict[str, str] for namespaces, but found a value with type {} (values must be strings)",
                         unsafe { crate::tools::get_type_name(cls.py(), val.as_ptr()) }
@@ -152,8 +151,8 @@ impl PyTreeDom {
 
     fn append(
         self_: pyo3::PyRef<'_, Self>,
-        parent: pyo3::PyObject,
-        child: pyo3::PyObject,
+        parent: pyo3::Py<pyo3::PyAny>,
+        child: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
         let parent =
             super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
@@ -201,8 +200,8 @@ impl PyTreeDom {
 
     fn prepend(
         self_: pyo3::PyRef<'_, Self>,
-        parent: pyo3::PyObject,
-        child: pyo3::PyObject,
+        parent: pyo3::Py<pyo3::PyAny>,
+        child: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
         let parent =
             super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
@@ -250,8 +249,8 @@ impl PyTreeDom {
 
     fn insert_before(
         self_: pyo3::PyRef<'_, Self>,
-        parent: pyo3::PyObject,
-        child: pyo3::PyObject,
+        parent: pyo3::Py<pyo3::PyAny>,
+        child: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
         let parent =
             super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
@@ -299,8 +298,8 @@ impl PyTreeDom {
 
     fn insert_after(
         self_: pyo3::PyRef<'_, Self>,
-        parent: pyo3::PyObject,
-        child: pyo3::PyObject,
+        parent: pyo3::Py<pyo3::PyAny>,
+        child: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
         let parent =
             super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
@@ -346,7 +345,7 @@ impl PyTreeDom {
         Ok(())
     }
 
-    fn detach(self_: pyo3::PyRef<'_, Self>, node: pyo3::PyObject) -> pyo3::PyResult<()> {
+    fn detach(self_: pyo3::PyRef<'_, Self>, node: pyo3::Py<pyo3::PyAny>) -> pyo3::PyResult<()> {
         let node = super::nodes::NodeGuard::from_pyobject(node.bind(self_.py())).map_err(|_| {
             pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                 "expected an node (such as Element, Text, Comment, ...) for node, got {}",
@@ -374,8 +373,8 @@ impl PyTreeDom {
 
     fn reparent_append(
         self_: pyo3::PyRef<'_, Self>,
-        parent: pyo3::PyObject,
-        child: pyo3::PyObject,
+        parent: pyo3::Py<pyo3::PyAny>,
+        child: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
         let parent =
             super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
@@ -415,8 +414,8 @@ impl PyTreeDom {
 
     fn reparent_prepend(
         self_: pyo3::PyRef<'_, Self>,
-        parent: pyo3::PyObject,
-        child: pyo3::PyObject,
+        parent: pyo3::Py<pyo3::PyAny>,
+        child: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
         let parent =
             super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
@@ -456,7 +455,7 @@ impl PyTreeDom {
 
     fn __richcmp__(
         self_: pyo3::PyRef<'_, Self>,
-        other: pyo3::PyObject,
+        other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
         if matches!(cmp, pyo3::basic::CompareOp::Eq)

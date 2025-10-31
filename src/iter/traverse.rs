@@ -70,7 +70,7 @@ impl PyTraverse {
         self_
     }
 
-    pub fn __next__(mut self_: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<(pyo3::PyObject, bool)> {
+    pub fn __next__(mut self_: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<(pyo3::Py<pyo3::PyAny>, bool)> {
         let py = self_.py();
         match self_.next_edge() {
             Some((x, y)) => Ok((x.into_any(py), y)),
@@ -104,7 +104,7 @@ impl PyDescendants {
         self_
     }
 
-    fn __next__(mut self_: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::PyObject> {
+    fn __next__(mut self_: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
         let py = self_.py();
 
         while let Some((node, is_close)) = self_.0.next_edge() {

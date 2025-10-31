@@ -37,7 +37,7 @@ impl QualNameFromPyObjectResult<'_> {
 
 pub fn qualname_from_pyobject<'a>(
     py: pyo3::Python<'a>,
-    object: &pyo3::PyObject,
+    object: &pyo3::Py<pyo3::PyAny>,
 ) -> QualNameFromPyObjectResult<'a> {
     use pyo3::types::PyAnyMethods;
     unsafe {
@@ -49,7 +49,7 @@ pub fn qualname_from_pyobject<'a>(
                 .extract::<pyo3::PyRef<'_, crate::qualname::PyQualName>>()
             {
                 Ok(x) => QualNameFromPyObjectResult::QualName(x),
-                Err(e) => QualNameFromPyObjectResult::Err(e),
+                Err(e) => QualNameFromPyObjectResult::Err(e.into()),
             }
         }
     }

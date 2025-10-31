@@ -32,7 +32,7 @@ impl PyIterator {
         self_
     }
 
-    fn __next__(self_: pyo3::PyRef<'_, Self>) -> pyo3::PyResult<pyo3::PyObject> {
+    fn __next__(self_: pyo3::PyRef<'_, Self>) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
         let node = {
             let tree = self_.dom.lock();
 
@@ -84,7 +84,7 @@ macro_rules! axis_iterators {
                     self_
                 }
 
-                fn __next__(mut self_: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::PyObject> {
+                fn __next__(mut self_: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
                     let node = self_.guard.take();
                     self_.guard = node.as_ref().and_then($f);
 
@@ -140,7 +140,7 @@ impl PyChildren {
         self_
     }
 
-    fn __next__(mut self_: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::PyObject> {
+    fn __next__(mut self_: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
         let mut is_same = false;
 
         if let (Some(x), Some(y)) = (&self_.front, &self_.back) {

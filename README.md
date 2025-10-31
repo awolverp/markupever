@@ -25,6 +25,7 @@ MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing li
 * ✨ **Low-Memory**: Written in Rust. Uses low memory. Don't worry about memory leaks. Uses Rust memory allocator.
 * 🧶 **Thread-safe**: Completely thread-safe. 
 * 🎯 **Quering**: Use your **CSS** knowledge for selecting elements from a HTML or XML document.
+* ⚡ **Streaming**: Incremental/streaming parsing support.
 
 ## Installation
 You can install MarkupEver by using **pip**:
@@ -43,9 +44,9 @@ Parsing a HTML content and selecting elements:
 ```python
 import markupever
 
-dom = markupever.parse_file("file.html", markupever.HtmlOptions())
+dom = markupever.parse_file("file.html", "html")
 # Or parse a HTML content directly:
-# dom = markupever.parse("... content ...", markupever.HtmlOptions())
+# dom = markupever.parse("... content ...", "html")
 
 for element in dom.select("div.section > p:child-nth(1)"):
     print(element.text())

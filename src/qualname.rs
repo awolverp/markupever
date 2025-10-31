@@ -124,7 +124,7 @@ impl PyQualName {
 
     fn __richcmp__(
         self_: pyo3::PyRef<'_, Self>,
-        other: pyo3::PyObject,
+        other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
         if matches!(cmp, pyo3::basic::CompareOp::Eq)
