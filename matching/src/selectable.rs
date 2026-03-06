@@ -32,10 +32,7 @@ impl selectors::Element for CssNodeRef<'_> {
     }
 
     fn parent_element(&self) -> Option<Self> {
-        self.0
-            .ancestors()
-            .find(|x| x.value().is_element())
-            .map(|x| unsafe { CssNodeRef::new_unchecked(x) })
+        self.0.ancestors().flat_map(CssNodeRef::new).next()
     }
 
     fn parent_node_is_shadow_root(&self) -> bool {
@@ -66,24 +63,15 @@ impl selectors::Element for CssNodeRef<'_> {
     }
 
     fn prev_sibling_element(&self) -> Option<Self> {
-        self.0
-            .prev_siblings()
-            .find(|sibling| sibling.value().is_element())
-            .map(|x| unsafe { Self::new_unchecked(x) })
+        self.0.prev_siblings().flat_map(Self::new).next()
     }
 
     fn next_sibling_element(&self) -> Option<Self> {
-        self.0
-            .next_siblings()
-            .find(|sibling| sibling.value().is_element())
-            .map(|x| unsafe { Self::new_unchecked(x) })
+        self.0.next_siblings().flat_map(Self::new).next()
     }
 
     fn first_element_child(&self) -> Option<Self> {
-        self.0
-            .children()
-            .find(|sibling| sibling.value().is_element())
-            .map(|x| unsafe { Self::new_unchecked(x) })
+        self.0.children().flat_map(Self::new).next()
     }
 
     fn is_html_element_in_html_document(&self) -> bool {
