@@ -1,18 +1,11 @@
-use pyo3::types::{PyStringMethods, PyTypeMethods};
+use pyo3::types::{PyAnyMethods, PyStringMethods, PyTypeMethods};
 
 /// Returns the type name of a [`pyo3::ffi::PyObject`].
 ///
 /// Returns `"<unknown>"` on failure.
-pub unsafe fn get_type_name(py: pyo3::Python<'_>, obj: *mut pyo3::ffi::PyObject) -> String {
-    let type_ = unsafe { (*obj).ob_type };
-
-    if type_.is_null() {
-        String::from("<unknown>")
-    } else {
-        let obj = unsafe { pyo3::types::PyType::from_borrowed_type_ptr(py, type_) };
-
-        obj.name().unwrap().to_str().unwrap().into()
-    }
+pub fn get_type_name(obj: &pyo3::Bound<pyo3::PyAny>) -> String {
+    let type_ = obj.get_type();
+    type_.name().unwrap().to_str().unwrap().into()
 }
 
 pub enum QualNameFromPyObjectResult<'p> {

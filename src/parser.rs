@@ -278,7 +278,7 @@ impl PyParser {
                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
                     format!(
                         "expected HtmlOptions or XmlOptions for options, got {}",
-                        unsafe { crate::tools::get_type_name(options.py(), options.as_ptr()) }
+                        crate::tools::get_type_name(options)
                     ),
                 ));
             }
@@ -305,7 +305,7 @@ impl PyParser {
                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
                     format!(
                         "expected bytes or str for content, got {}",
-                        crate::tools::get_type_name(content.py(), content.as_ptr())
+                        crate::tools::get_type_name(content)
                     ),
                 ));
             }
@@ -424,7 +424,7 @@ pub fn serialize(
     let node = super::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
         pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
             "expected an node (such as Element, Text, Comment, ...) for node, got {}",
-            unsafe { crate::tools::get_type_name(node.py(), node.as_ptr()) }
+            crate::tools::get_type_name(node)
         ))
     })?;
 
