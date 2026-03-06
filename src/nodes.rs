@@ -707,10 +707,10 @@ impl PyAttrsListItems {
         self_
     }
 
-    fn __next__(
-        self_: pyo3::PyRef<'_, Self>,
-        py: pyo3::Python<'_>,
-    ) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
+    fn __next__<'py>(
+        self_: pyo3::PyRef<'py, Self>,
+        py: pyo3::Python<'py>,
+    ) -> pyo3::PyResult<(super::qualname::PyQualName, pyo3::Py<pyo3::types::PyString>)> {
         let tree = self_.guard.tree.lock();
         let node = tree.get(self_.guard.id).unwrap().value().element().unwrap();
 
@@ -726,26 +726,11 @@ impl PyAttrsListItems {
 
         std::mem::drop(tree);
 
-        unsafe {
-            let key = pyo3::Py::new(
-                py,
-                super::qualname::PyQualName {
-                    name: (*attrkey).clone(),
-                },
-            )?;
-            let val = pyo3::types::PyString::new(py, &t_value);
-
-            let tuple = pyo3::ffi::PyTuple_New(2);
-
-            if tuple.is_null() {
-                return Err(pyo3::PyErr::fetch(py));
-            }
-
-            pyo3::ffi::PyTuple_SetItem(tuple, 0, key.into_ptr());
-            pyo3::ffi::PyTuple_SetItem(tuple, 1, val.into_ptr());
-
-            Ok(pyo3::Py::from_owned_ptr(py, tuple))
-        }
+        let key = super::qualname::PyQualName {
+            name: (*attrkey).clone(),
+        };
+        let val = pyo3::types::PyString::new(py, &t_value);
+        Ok((key, val.unbind()))
     }
 
     fn __len__(&self) -> usize {
@@ -958,7 +943,10 @@ impl PyAttrsList {
         }
     }
 
-    fn get_by_index(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
+    fn get_by_index(
+        self_: pyo3::PyRef<'_, Self>,
+        index: usize,
+    ) -> pyo3::PyResult<(super::qualname::PyQualName, pyo3::Py<pyo3::types::PyString>)> {
         let mut tree = self_.0.tree.lock();
         let mut node = tree.get_mut(self_.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
@@ -971,31 +959,18 @@ impl PyAttrsList {
 
         let (attrkey, value) = elem.attrs.get(index).unwrap();
 
-        unsafe {
-            let key = pyo3::Py::new(
-                self_.py(),
-                super::qualname::PyQualName {
-                    name: attrkey.clone().into_qualname(),
-                },
-            )?;
-            let val = pyo3::types::PyString::new(self_.py(), value);
-
-            std::mem::drop(tree);
-
-            let tuple = pyo3::ffi::PyTuple_New(2);
-
-            if tuple.is_null() {
-                return Err(pyo3::PyErr::fetch(self_.py()));
-            }
-
-            pyo3::ffi::PyTuple_SetItem(tuple, 0, key.into_ptr());
-            pyo3::ffi::PyTuple_SetItem(tuple, 1, val.into_ptr());
-
-            Ok(pyo3::Py::from_owned_ptr(self_.py(), tuple))
-        }
+        let key = super::qualname::PyQualName {
+            name: attrkey.clone().into_qualname(),
+        };
+        let val = pyo3::types::PyString::new(self_.py(), value);
+        std::mem::drop(tree);
+        Ok((key, val.unbind()))
     }
 
-    fn remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
+    fn remove(
+        self_: pyo3::PyRef<'_, Self>,
+        index: usize,
+    ) -> pyo3::PyResult<(super::qualname::PyQualName, pyo3::Py<pyo3::types::PyString>)> {
         let mut tree = self_.0.tree.lock();
         let mut node = tree.get_mut(self_.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
@@ -1010,29 +985,17 @@ impl PyAttrsList {
 
         std::mem::drop(tree);
 
-        unsafe {
-            let key = pyo3::Py::new(
-                self_.py(),
-                super::qualname::PyQualName {
-                    name: attrkey.into_qualname(),
-                },
-            )?;
-            let val = pyo3::types::PyString::new(self_.py(), &value);
-
-            let tuple = pyo3::ffi::PyTuple_New(2);
-
-            if tuple.is_null() {
-                return Err(pyo3::PyErr::fetch(self_.py()));
-            }
-
-            pyo3::ffi::PyTuple_SetItem(tuple, 0, key.into_ptr());
-            pyo3::ffi::PyTuple_SetItem(tuple, 1, val.into_ptr());
-
-            Ok(pyo3::Py::from_owned_ptr(self_.py(), tuple))
-        }
+        let key = super::qualname::PyQualName {
+            name: attrkey.into_qualname(),
+        };
+        let val = pyo3::types::PyString::new(self_.py(), &value);
+        Ok((key, val.unbind()))
     }
 
-    fn swap_remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
+    fn swap_remove(
+        self_: pyo3::PyRef<'_, Self>,
+        index: usize,
+    ) -> pyo3::PyResult<(super::qualname::PyQualName, pyo3::Py<pyo3::types::PyString>)> {
         let mut tree = self_.0.tree.lock();
         let mut node = tree.get_mut(self_.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
@@ -1047,26 +1010,11 @@ impl PyAttrsList {
 
         std::mem::drop(tree);
 
-        unsafe {
-            let key = pyo3::Py::new(
-                self_.py(),
-                super::qualname::PyQualName {
-                    name: attrkey.into_qualname(),
-                },
-            )?;
-            let val = pyo3::types::PyString::new(self_.py(), &value);
-
-            let tuple = pyo3::ffi::PyTuple_New(2);
-
-            if tuple.is_null() {
-                return Err(pyo3::PyErr::fetch(self_.py()));
-            }
-
-            pyo3::ffi::PyTuple_SetItem(tuple, 0, key.into_ptr());
-            pyo3::ffi::PyTuple_SetItem(tuple, 1, val.into_ptr());
-
-            Ok(pyo3::Py::from_owned_ptr(self_.py(), tuple))
-        }
+        let key = super::qualname::PyQualName {
+            name: attrkey.into_qualname(),
+        };
+        let val = pyo3::types::PyString::new(self_.py(), &value);
+        Ok((key, val.unbind()))
     }
 
     fn dedup(&self) {
