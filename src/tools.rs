@@ -33,17 +33,16 @@ pub fn qualname_from_pyobject<'a>(
     object: &pyo3::Py<pyo3::PyAny>,
 ) -> QualNameFromPyObjectResult<'a> {
     use pyo3::types::PyAnyMethods;
-    unsafe {
-        if pyo3::ffi::PyUnicode_Check(object.as_ptr()) == 1 {
-            QualNameFromPyObjectResult::Str(object.bind(py).extract::<String>().unwrap_unchecked())
-        } else {
-            match object
-                .bind(py)
-                .extract::<pyo3::PyRef<'_, crate::qualname::PyQualName>>()
-            {
-                Ok(x) => QualNameFromPyObjectResult::QualName(x),
-                Err(e) => QualNameFromPyObjectResult::Err(e.into()),
-            }
+
+    if let Ok(x) = object.bind(py).extract::<String>() {
+        QualNameFromPyObjectResult::Str(x)
+    } else {
+        match object
+            .bind(py)
+            .extract::<pyo3::PyRef<'_, crate::qualname::PyQualName>>()
+        {
+            Ok(x) => QualNameFromPyObjectResult::QualName(x),
+            Err(e) => QualNameFromPyObjectResult::Err(e.into()),
         }
     }
 }

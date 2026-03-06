@@ -106,49 +106,17 @@ impl NodeGuard {
     }
 
     pub fn from_pyobject(object: &pyo3::Bound<'_, pyo3::PyAny>) -> Result<Self, ()> {
-        use pyo3::type_object::PyTypeInfo;
-
-        if PyDocument::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyDocument>>()
-                    .unwrap_unchecked()
-            };
+        if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyDocument>>() {
             Ok(x.0.clone())
-        } else if PyDoctype::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyDoctype>>()
-                    .unwrap_unchecked()
-            };
+        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyDoctype>>() {
             Ok(x.0.clone())
-        } else if PyComment::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyComment>>()
-                    .unwrap_unchecked()
-            };
+        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyComment>>() {
             Ok(x.0.clone())
-        } else if PyText::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyText>>()
-                    .unwrap_unchecked()
-            };
+        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyText>>() {
             Ok(x.0.clone())
-        } else if PyElement::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyElement>>()
-                    .unwrap_unchecked()
-            };
+        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyElement>>() {
             Ok(x.0.clone())
-        } else if PyProcessingInstruction::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyProcessingInstruction>>()
-                    .unwrap_unchecked()
-            };
+        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyProcessingInstruction>>() {
             Ok(x.0.clone())
         } else {
             Err(())
@@ -856,17 +824,13 @@ impl PyAttrsList {
                 ))
             })?;
 
-        let val = unsafe {
-            if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
-                value.bind(py).extract::<String>().unwrap_unchecked()
-            } else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected str for value, got {}",
-                        crate::tools::get_type_name(value.bind(py))
-                    ),
-                ));
-            }
+        let Ok(val) = value.bind(py).extract::<String>() else {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                format!(
+                    "expected str for value, got {}",
+                    crate::tools::get_type_name(value.bind(py))
+                ),
+            ));
         };
 
         let mut tree = self.0.tree.lock();
@@ -899,17 +863,13 @@ impl PyAttrsList {
                 ))
             })?;
 
-        let val = unsafe {
-            if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
-                value.bind(py).extract::<String>().unwrap_unchecked()
-            } else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected str for value, got {}",
-                        crate::tools::get_type_name(value.bind(py))
-                    ),
-                ));
-            }
+        let Ok(val) = value.bind(py).extract::<String>() else {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                format!(
+                    "expected str for value, got {}",
+                    crate::tools::get_type_name(value.bind(py))
+                ),
+            ));
         };
 
         let mut tree = self.0.tree.lock();
@@ -944,17 +904,13 @@ impl PyAttrsList {
                 ))
             })?;
 
-        let val = unsafe {
-            if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
-                value.bind(py).extract::<String>().unwrap_unchecked()
-            } else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected str for value, got {}",
-                        crate::tools::get_type_name(value.bind(py))
-                    ),
-                ));
-            }
+        let Ok(val) = value.bind(py).extract::<String>() else {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                format!(
+                    "expected str for value, got {}",
+                    crate::tools::get_type_name(value.bind(py))
+                ),
+            ));
         };
 
         let mut tree = self.0.tree.lock();
@@ -978,20 +934,13 @@ impl PyAttrsList {
         index: usize,
         value: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
-        let value = unsafe {
-            if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
-                value
-                    .bind(self_.py())
-                    .extract::<String>()
-                    .unwrap_unchecked()
-            } else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected str for value, got {}",
-                        crate::tools::get_type_name(value.bind(self_.py()))
-                    ),
-                ));
-            }
+        let Ok(value) = value.bind(self_.py()).extract::<String>() else {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                format!(
+                    "expected str for value, got {}",
+                    crate::tools::get_type_name(value.bind(self_.py()))
+                ),
+            ));
         };
 
         let mut tree = self_.0.tree.lock();
@@ -1199,19 +1148,13 @@ impl PyElement {
                 }
             };
 
-            let val = unsafe {
-                if pyo3::ffi::PyUnicode_Check(val.as_ptr()) == 1 {
-                    val.bind(treedom.py())
-                        .extract::<String>()
-                        .unwrap_unchecked()
-                } else {
-                    return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "expected str for attrs #2, got {}",
-                            crate::tools::get_type_name(val.bind(treedom.py()))
-                        ),
-                    ));
-                }
+            let Ok(val) = val.bind(treedom.py()).extract::<String>() else {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    format!(
+                        "expected str for attrs #2, got {}",
+                        crate::tools::get_type_name(val.bind(treedom.py()))
+                    ),
+                ));
             };
 
             attributes.push((key, treedom::atomic::AtomicTendril::from(val)));
@@ -1287,17 +1230,13 @@ impl PyElement {
                 }
             };
 
-            let val = unsafe {
-                if pyo3::ffi::PyUnicode_Check(val.as_ptr()) == 1 {
-                    val.bind(py).extract::<String>().unwrap_unchecked()
-                } else {
-                    return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "expected str for attrs #2, got {}",
-                            crate::tools::get_type_name(val.bind(py))
-                        ),
-                    ));
-                }
+            let Ok(val) = val.bind(py).extract::<String>() else {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    format!(
+                        "expected str for attrs #2, got {}",
+                        crate::tools::get_type_name(val.bind(py))
+                    ),
+                ));
             };
 
             attributes.push((
