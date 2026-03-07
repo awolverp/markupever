@@ -795,21 +795,11 @@ impl PyAttrsList {
 
     fn insert(
         &self,
-        py: pyo3::Python<'_>,
         index: usize,
         key: crate::tools::PyQualNameOrStr,
-        value: pyo3::Py<pyo3::PyAny>,
+        value: &str,
     ) -> pyo3::PyResult<()> {
         let key = key.into_qualname();
-
-        let Ok(val) = value.bind(py).extract::<String>() else {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                format!(
-                    "expected str for value, got {}",
-                    crate::tools::get_type_name(value.bind(py))
-                ),
-            ));
-        };
 
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
@@ -821,35 +811,19 @@ impl PyAttrsList {
             ));
         }
 
-        elem.attrs.insert(index, (key.into(), val.into()));
+        elem.attrs.insert(index, (key.into(), value.into()));
 
         Ok(())
     }
 
-    fn push(
-        &self,
-        py: pyo3::Python<'_>,
-        key: crate::tools::PyQualNameOrStr,
-        value: pyo3::Py<pyo3::PyAny>,
-    ) -> pyo3::PyResult<()> {
+    fn push(&self, key: crate::tools::PyQualNameOrStr, value: &str) {
         let key = key.into_qualname();
-
-        let Ok(val) = value.bind(py).extract::<String>() else {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                format!(
-                    "expected str for value, got {}",
-                    crate::tools::get_type_name(value.bind(py))
-                ),
-            ));
-        };
 
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
 
-        elem.attrs.push((key.into(), val.into()));
-
-        Ok(())
+        elem.attrs.push((key.into(), value.into()));
     }
 
     fn items(self_: pyo3::PyRef<'_, Self>) -> PyAttrsListItems {
@@ -861,21 +835,11 @@ impl PyAttrsList {
 
     fn update_item(
         &self,
-        py: pyo3::Python<'_>,
         index: usize,
         key: crate::tools::PyQualNameOrStr,
-        value: pyo3::Py<pyo3::PyAny>,
+        value: &str,
     ) -> pyo3::PyResult<()> {
         let key = key.into_qualname();
-
-        let Ok(val) = value.bind(py).extract::<String>() else {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                format!(
-                    "expected str for value, got {}",
-                    crate::tools::get_type_name(value.bind(py))
-                ),
-            ));
-        };
 
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
@@ -884,7 +848,7 @@ impl PyAttrsList {
         match elem.attrs.get_mut(index) {
             Some(x) => {
                 x.0 = key.into();
-                x.1 = val.into();
+                x.1 = value.into();
                 Ok(())
             }
             None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyIndexError, _>(
@@ -893,22 +857,9 @@ impl PyAttrsList {
         }
     }
 
-    fn update_value(
-        self_: pyo3::PyRef<'_, Self>,
-        index: usize,
-        value: pyo3::Py<pyo3::PyAny>,
-    ) -> pyo3::PyResult<()> {
-        let Ok(value) = value.bind(self_.py()).extract::<String>() else {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                format!(
-                    "expected str for value, got {}",
-                    crate::tools::get_type_name(value.bind(self_.py()))
-                ),
-            ));
-        };
-
-        let mut tree = self_.0.tree.lock();
-        let mut node = tree.get_mut(self_.0.id).unwrap();
+    fn update_value(&self, index: usize, value: &str) -> pyo3::PyResult<()> {
+        let mut tree = self.0.tree.lock();
+        let mut node = tree.get_mut(self.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
 
         match elem.attrs.get_mut(index) {
@@ -1037,7 +988,7 @@ impl PyElement {
     fn new(
         treedom: &pyo3::Bound<'_, pyo3::PyAny>,
         name: crate::tools::PyQualNameOrStr,
-        attrs: Vec<(crate::tools::PyQualNameOrStr, pyo3::Py<pyo3::PyAny>)>,
+        attrs: Vec<(crate::tools::PyQualNameOrStr, pyo3::pybacked::PyBackedStr)>,
         template: bool,
         mathml_annotation_xml_integration_point: bool,
     ) -> pyo3::PyResult<Self> {
@@ -1056,17 +1007,7 @@ impl PyElement {
 
         for (key, val) in attrs.into_iter() {
             let key = key.into_qualname();
-
-            let Ok(val) = val.bind(treedom.py()).extract::<String>() else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected str for attrs #2, got {}",
-                        crate::tools::get_type_name(val.bind(treedom.py()))
-                    ),
-                ));
-            };
-
-            attributes.push((key, treedom::atomic::AtomicTendril::from(val)));
+            attributes.push((key, treedom::atomic::AtomicTendril::from(&*val)));
         }
 
         let val = ::treedom::interface::ElementInterface::new(
@@ -1110,8 +1051,7 @@ impl PyElement {
     #[setter]
     fn set_attrs(
         &self,
-        py: pyo3::Python<'_>,
-        attrs: Vec<(crate::tools::PyQualNameOrStr, pyo3::Py<pyo3::PyAny>)>,
+        attrs: Vec<(crate::tools::PyQualNameOrStr, pyo3::pybacked::PyBackedStr)>,
     ) -> pyo3::PyResult<()> {
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
@@ -1120,19 +1060,9 @@ impl PyElement {
 
         for (key, val) in attrs.into_iter() {
             let key = key.into_qualname();
-
-            let Ok(val) = val.bind(py).extract::<String>() else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected str for attrs #2, got {}",
-                        crate::tools::get_type_name(val.bind(py))
-                    ),
-                ));
-            };
-
             attributes.push((
                 treedom::interface::AttributeKey::from(key),
-                treedom::atomic::AtomicTendril::from(val),
+                treedom::atomic::AtomicTendril::from(&*val),
             ));
         }
 
