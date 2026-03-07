@@ -64,8 +64,10 @@ impl PyTreeDom {
     #[pyo3(signature=(*, namespaces=None))]
     fn new(
         cls: &pyo3::Bound<'_, pyo3::types::PyType>,
-        namespaces: Option<pyo3::Py<pyo3::PyAny>>,
-    ) -> pyo3::PyResult<Self> {
+        namespaces: Option<
+            std::collections::HashMap<pyo3::pybacked::PyBackedStr, pyo3::pybacked::PyBackedStr>,
+        >,
+    ) -> Self {
         Self::with_capacity(cls, 0, namespaces)
     }
 
@@ -73,41 +75,17 @@ impl PyTreeDom {
     #[classmethod]
     #[pyo3(signature=(capacity, *, namespaces=None))]
     fn with_capacity(
-        cls: &pyo3::Bound<'_, pyo3::types::PyType>,
+        _cls: &pyo3::Bound<'_, pyo3::types::PyType>,
         capacity: usize,
-        namespaces: Option<pyo3::Py<pyo3::PyAny>>,
-    ) -> pyo3::PyResult<Self> {
-        let mut ns = ::treedom::NamespaceMap::new();
-
-        if let Some(namespaces) = namespaces {
-            let namespaces = namespaces
-                .bind(cls.py())
-                .cast::<pyo3::types::PyDict>()
-                .map_err(|_| {
-                    pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                        "expected dict[str, str] for namespaces, got {}",
-                        crate::tools::get_type_name(namespaces.bind(cls.py()))
-                    ))
-                })?;
-
-            for (key, val) in pyo3::types::PyDictMethods::iter(namespaces) {
-                let key = key.cast::<pyo3::types::PyString>().map_err(|_| {
-                    pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                        "expected dict[str, str] for namespaces, but found a key with type {} (keys must be strings)",
-                        crate::tools::get_type_name(&key)
-                    ))
-                }).map(|x| pyo3::types::PyStringMethods::to_string_lossy(x).into_owned())?;
-
-                let val = val.cast::<pyo3::types::PyString>().map_err(|_| {
-                    pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                        "expected dict[str, str] for namespaces, but found a value with type {} (values must be strings)",
-                        crate::tools::get_type_name(&val)
-                    ))
-                }).map(|x| pyo3::types::PyStringMethods::to_string_lossy(x).into_owned())?;
-
-                ns.insert(key.into(), val.into());
-            }
-        }
+        namespaces: Option<
+            std::collections::HashMap<pyo3::pybacked::PyBackedStr, pyo3::pybacked::PyBackedStr>,
+        >,
+    ) -> Self {
+        let ns = namespaces
+            .into_iter()
+            .flatten()
+            .map(|(key, val)| ((*key).into(), (*val).into()))
+            .collect();
 
         let dom = if capacity == 0 {
             ::treedom::IDTreeDOM::new(::treedom::interface::DocumentInterface, ns)
@@ -119,24 +97,18 @@ impl PyTreeDom {
             )
         };
 
-        Ok(Self {
+        Self {
             dom: Arc::new(parking_lot::Mutex::new(dom)),
-        })
+        }
     }
 
     /// Returns the available namespaces in DOM as a `dict`.
-    fn namespaces<'a>(&self, py: pyo3::Python<'a>) -> pyo3::PyResult<pyo3::Bound<'a, pyo3::PyAny>> {
-        use pyo3::types::{PyDict, PyDictMethods};
-
-        let dict = PyDict::new(py);
-
+    fn namespaces(&self) -> std::collections::HashMap<String, String> {
         let dom = self.dom.lock();
-
-        for (key, val) in dom.namespaces().iter() {
-            dict.set_item(key.to_string(), val.to_string())?;
-        }
-
-        Ok(dict.into_any())
+        dom.namespaces()
+            .iter()
+            .map(|(key, val)| (key.to_string(), val.to_string()))
+            .collect()
     }
 
     /// Returns the root node (always is PyDocument).
