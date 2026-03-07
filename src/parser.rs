@@ -1,5 +1,3 @@
-use pyo3::types::PyAnyMethods;
-
 /// These are options for HTML parsing.
 ///
 /// # Note
@@ -245,6 +243,12 @@ pub struct PyParser {
     state: parking_lot::Mutex<ParserState>,
 }
 
+#[derive(pyo3::FromPyObject)]
+enum PyParserOptions<'p> {
+    Html(pyo3::PyRef<'p, PyHtmlOptions>),
+    Xml(pyo3::PyRef<'p, PyXmlOptions>),
+}
+
 #[pyo3::pymethods]
 impl PyParser {
     /// Creates a new [`PyParser`]
@@ -252,41 +256,37 @@ impl PyParser {
     /// - `options`: If your input is a HTML document, pass a PyHtmlOptions;
     ///              If your input is a XML document, pass PyXmlOptions.
     #[new]
-    fn new(options: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<Self> {
+    fn new(options: PyParserOptions) -> pyo3::PyResult<Self> {
         let state = {
-            if let Ok(options) = options.extract::<pyo3::PyRef<'_, PyHtmlOptions>>() {
-                ParserState::as_html(treedom::ParserSink::parse_html(
-                    options.full_document,
-                    treedom::html5ever::tokenizer::TokenizerOpts {
-                        exact_errors: options.exact_errors,
-                        discard_bom: options.discard_bom,
-                        profile: options.profile,
-                        ..Default::default()
-                    },
-                    treedom::html5ever::tree_builder::TreeBuilderOpts {
-                        exact_errors: options.exact_errors,
-                        iframe_srcdoc: options.iframe_srcdoc,
-                        drop_doctype: options.drop_doctype,
-                        quirks_mode: options.quirks_mode,
-                        ..Default::default()
-                    },
-                ))
-            } else if let Ok(options) = options.extract::<pyo3::PyRef<'_, PyXmlOptions>>() {
-                ParserState::as_xml(treedom::ParserSink::parse_xml(
-                    treedom::xml5ever::tokenizer::XmlTokenizerOpts {
-                        exact_errors: options.exact_errors,
-                        discard_bom: options.discard_bom,
-                        profile: options.profile,
-                        ..Default::default()
-                    },
-                ))
-            } else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected HtmlOptions or XmlOptions for options, got {}",
-                        crate::tools::get_type_name(options)
-                    ),
-                ));
+            match options {
+                PyParserOptions::Html(options) => {
+                    ParserState::as_html(treedom::ParserSink::parse_html(
+                        options.full_document,
+                        treedom::html5ever::tokenizer::TokenizerOpts {
+                            exact_errors: options.exact_errors,
+                            discard_bom: options.discard_bom,
+                            profile: options.profile,
+                            ..Default::default()
+                        },
+                        treedom::html5ever::tree_builder::TreeBuilderOpts {
+                            exact_errors: options.exact_errors,
+                            iframe_srcdoc: options.iframe_srcdoc,
+                            drop_doctype: options.drop_doctype,
+                            quirks_mode: options.quirks_mode,
+                            ..Default::default()
+                        },
+                    ))
+                }
+                PyParserOptions::Xml(options) => {
+                    ParserState::as_xml(treedom::ParserSink::parse_xml(
+                        treedom::xml5ever::tokenizer::XmlTokenizerOpts {
+                            exact_errors: options.exact_errors,
+                            discard_bom: options.discard_bom,
+                            profile: options.profile,
+                            ..Default::default()
+                        },
+                    ))
+                }
             }
         };
 
