@@ -86,6 +86,7 @@ impl ParserSink {
                     markup5ever::local_name!("body"),
                 ),
                 Vec::new(),
+                true,
             )
         }
     }
