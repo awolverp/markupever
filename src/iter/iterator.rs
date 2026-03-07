@@ -1,4 +1,3 @@
-use pyo3::types::PyAnyMethods;
 use std::sync::atomic;
 use std::sync::Arc;
 
@@ -12,20 +11,11 @@ pub struct PyIterator {
 #[pyo3::pymethods]
 impl PyIterator {
     #[new]
-    fn new(dom: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<Self> {
-        let dom = dom
-            .extract::<pyo3::PyRef<'_, crate::tree::PyTreeDom>>()
-            .map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected TreeDom for dom, got {}",
-                    crate::tools::get_type_name(dom)
-                ))
-            })?;
-
-        Ok(Self {
+    fn new(dom: &crate::tree::PyTreeDom) -> Self {
+        Self {
             dom: dom.dom.clone(),
             index: atomic::AtomicUsize::new(0),
-        })
+        }
     }
 
     fn __iter__(self_: pyo3::PyRef<'_, Self>) -> pyo3::PyRef<'_, Self> {

@@ -275,20 +275,11 @@ pub struct PyDoctype(pub(super) NodeGuard);
 impl PyDoctype {
     #[new]
     fn new(
-        treedom: &pyo3::Bound<'_, pyo3::PyAny>,
+        treedom: &super::tree::PyTreeDom,
         name: String,
         public_id: String,
         system_id: String,
     ) -> pyo3::PyResult<Self> {
-        let treedom = treedom
-            .extract::<pyo3::PyRef<'_, super::tree::PyTreeDom>>()
-            .map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected TreeDom for treedom, got {}",
-                    crate::tools::get_type_name(treedom)
-                ))
-            })?;
-
         let val = ::treedom::interface::DoctypeInterface::new(
             name.into(),
             public_id.into(),
@@ -437,16 +428,7 @@ pub struct PyComment(pub(super) NodeGuard);
 #[pyo3::pymethods]
 impl PyComment {
     #[new]
-    fn new(treedom: &pyo3::Bound<'_, pyo3::PyAny>, content: String) -> pyo3::PyResult<Self> {
-        let treedom = treedom
-            .extract::<pyo3::PyRef<'_, super::tree::PyTreeDom>>()
-            .map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected TreeDom for treedom, got {}",
-                    crate::tools::get_type_name(treedom)
-                ))
-            })?;
-
+    fn new(treedom: &super::tree::PyTreeDom, content: String) -> pyo3::PyResult<Self> {
         let val = ::treedom::interface::CommentInterface::new(content.into());
 
         let mut dom = treedom.dom.lock();
@@ -560,16 +542,7 @@ pub struct PyText(pub(super) NodeGuard);
 #[pyo3::pymethods]
 impl PyText {
     #[new]
-    fn new(treedom: &pyo3::Bound<'_, pyo3::PyAny>, content: String) -> pyo3::PyResult<Self> {
-        let treedom = treedom
-            .extract::<pyo3::PyRef<'_, super::tree::PyTreeDom>>()
-            .map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected TreeDom for treedom, got {}",
-                    crate::tools::get_type_name(treedom)
-                ))
-            })?;
-
+    fn new(treedom: &super::tree::PyTreeDom, content: String) -> pyo3::PyResult<Self> {
         let val = ::treedom::interface::TextInterface::new(content.into());
 
         let mut dom = treedom.dom.lock();
@@ -986,21 +959,12 @@ pub struct PyElement(pub(super) NodeGuard);
 impl PyElement {
     #[new]
     fn new(
-        treedom: &pyo3::Bound<'_, pyo3::PyAny>,
+        treedom: &super::tree::PyTreeDom,
         name: crate::tools::PyQualNameOrStr,
         attrs: Vec<(crate::tools::PyQualNameOrStr, pyo3::pybacked::PyBackedStr)>,
         template: bool,
         mathml_annotation_xml_integration_point: bool,
-    ) -> pyo3::PyResult<Self> {
-        let treedom = treedom
-            .extract::<pyo3::PyRef<'_, super::tree::PyTreeDom>>()
-            .map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected TreeDom for treedom, got {}",
-                    crate::tools::get_type_name(treedom)
-                ))
-            })?;
-
+    ) -> Self {
         let name = name.into_qualname();
 
         let mut attributes = Vec::with_capacity(attrs.len());
@@ -1020,7 +984,7 @@ impl PyElement {
         let mut dom = treedom.dom.lock();
         let node = dom.orphan(val.into());
 
-        Ok(Self(NodeGuard::from_nodemut(treedom.dom.clone(), node)))
+        Self(NodeGuard::from_nodemut(treedom.dom.clone(), node))
     }
 
     #[getter]
@@ -1225,20 +1189,7 @@ pub struct PyProcessingInstruction(pub(super) NodeGuard);
 #[pyo3::pymethods]
 impl PyProcessingInstruction {
     #[new]
-    fn new(
-        treedom: &pyo3::Bound<pyo3::PyAny>,
-        data: String,
-        target: String,
-    ) -> pyo3::PyResult<Self> {
-        let treedom = treedom
-            .extract::<pyo3::PyRef<'_, super::tree::PyTreeDom>>()
-            .map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected TreeDom for treedom, got {}",
-                    crate::tools::get_type_name(treedom)
-                ))
-            })?;
-
+    fn new(treedom: &super::tree::PyTreeDom, data: String, target: String) -> pyo3::PyResult<Self> {
         let val =
             ::treedom::interface::ProcessingInstructionInterface::new(data.into(), target.into());
 
