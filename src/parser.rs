@@ -192,12 +192,12 @@ impl ParserState {
         )))
     }
 
-    fn process(&mut self, content: Vec<u8>) -> pyo3::PyResult<()> {
+    fn process(&mut self, content: &[u8]) -> pyo3::PyResult<()> {
         use treedom::tendril::TendrilSink;
 
         match self {
-            Self::OnHtml(x) => x.process(treedom::tendril::ByteTendril::from_slice(&content)),
-            Self::OnXml(x) => x.process(treedom::tendril::ByteTendril::from_slice(&content)),
+            Self::OnHtml(x) => x.process(treedom::tendril::ByteTendril::from_slice(content)),
+            Self::OnXml(x) => x.process(treedom::tendril::ByteTendril::from_slice(content)),
             _ => {
                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                     "The parser is completed parsing",
@@ -228,6 +228,12 @@ impl std::fmt::Debug for ParserState {
             Self::Dropped => write!(f, "converted"),
         }
     }
+}
+
+#[derive(pyo3::FromPyObject)]
+enum Input {
+    Bytes(pyo3::pybacked::PyBackedBytes),
+    Str(pyo3::pybacked::PyBackedStr),
 }
 
 /// An HTML/XML parser, ready to receive unicode input.
@@ -294,18 +300,10 @@ impl PyParser {
     /// `content` must be `str` or `bytes`.
     ///
     /// Raises `RuntimeError` if `.finish()` method is called.
-    fn process(&self, content: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<()> {
-        let content = if let Ok(b) = content.extract::<Vec<u8>>() {
-            b
-        } else if let Ok(s) = content.extract::<String>() {
-            s.into_bytes()
-        } else {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                format!(
-                    "expected bytes or str for content, got {}",
-                    crate::tools::get_type_name(content)
-                ),
-            ));
+    fn process(&self, content: Input) -> pyo3::PyResult<()> {
+        let content = match &content {
+            Input::Bytes(b) => b,
+            Input::Str(s) => s.as_bytes(),
         };
 
         let mut state = self.state.lock();
