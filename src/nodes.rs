@@ -797,17 +797,10 @@ impl PyAttrsList {
         &self,
         py: pyo3::Python<'_>,
         index: usize,
-        key: pyo3::Py<pyo3::PyAny>,
+        key: crate::tools::PyQualNameOrStr,
         value: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
-        let key = crate::tools::qualname_from_pyobject(py, &key)
-            .into_qualname()
-            .map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected QualName or str for key, got {}",
-                    crate::tools::get_type_name(key.bind(py))
-                ))
-            })?;
+        let key = key.into_qualname();
 
         let Ok(val) = value.bind(py).extract::<String>() else {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
@@ -836,17 +829,10 @@ impl PyAttrsList {
     fn push(
         &self,
         py: pyo3::Python<'_>,
-        key: pyo3::Py<pyo3::PyAny>,
+        key: crate::tools::PyQualNameOrStr,
         value: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
-        let key = crate::tools::qualname_from_pyobject(py, &key)
-            .into_qualname()
-            .map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected QualName or str for key, got {}",
-                    crate::tools::get_type_name(key.bind(py))
-                ))
-            })?;
+        let key = key.into_qualname();
 
         let Ok(val) = value.bind(py).extract::<String>() else {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
@@ -877,17 +863,10 @@ impl PyAttrsList {
         &self,
         py: pyo3::Python<'_>,
         index: usize,
-        key: pyo3::Py<pyo3::PyAny>,
+        key: crate::tools::PyQualNameOrStr,
         value: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
-        let key = crate::tools::qualname_from_pyobject(py, &key)
-            .into_qualname()
-            .map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected QualName or str for key, got {}",
-                    crate::tools::get_type_name(key.bind(py))
-                ))
-            })?;
+        let key = key.into_qualname();
 
         let Ok(val) = value.bind(py).extract::<String>() else {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
@@ -1057,8 +1036,8 @@ impl PyElement {
     #[new]
     fn new(
         treedom: &pyo3::Bound<'_, pyo3::PyAny>,
-        name: pyo3::Py<pyo3::PyAny>,
-        attrs: Vec<(pyo3::Py<pyo3::PyAny>, pyo3::Py<pyo3::PyAny>)>,
+        name: crate::tools::PyQualNameOrStr,
+        attrs: Vec<(crate::tools::PyQualNameOrStr, pyo3::Py<pyo3::PyAny>)>,
         template: bool,
         mathml_annotation_xml_integration_point: bool,
     ) -> pyo3::PyResult<Self> {
@@ -1071,30 +1050,12 @@ impl PyElement {
                 ))
             })?;
 
-        let name = crate::tools::qualname_from_pyobject(treedom.py(), &name)
-            .into_qualname()
-            .map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected QualName or str for name, got {}",
-                    crate::tools::get_type_name(name.bind(treedom.py()))
-                ))
-            })?;
+        let name = name.into_qualname();
 
         let mut attributes = Vec::with_capacity(attrs.len());
 
         for (key, val) in attrs.into_iter() {
-            let key = match crate::tools::qualname_from_pyobject(treedom.py(), &key).into_qualname()
-            {
-                Ok(x) => x,
-                Err(_) => {
-                    return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "expected QualName or str for attrs #1, got {}",
-                            crate::tools::get_type_name(key.bind(treedom.py()))
-                        ),
-                    ))
-                }
-            };
+            let key = key.into_qualname();
 
             let Ok(val) = val.bind(treedom.py()).extract::<String>() else {
                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
@@ -1132,21 +1093,13 @@ impl PyElement {
     }
 
     #[setter]
-    fn set_name(&self, name: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<()> {
+    fn set_name(&self, name: crate::tools::PyQualNameOrStr) {
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
 
-        let name = crate::tools::qualname_from_pyobject(name.py(), name.as_unbound())
-            .into_qualname()
-            .map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected QualName or str for name, got {}",
-                    crate::tools::get_type_name(name)
-                ))
-            })?;
+        let name = name.into_qualname();
 
         node.value().element_mut().unwrap().name = name;
-        Ok(())
     }
 
     #[getter]
@@ -1158,7 +1111,7 @@ impl PyElement {
     fn set_attrs(
         &self,
         py: pyo3::Python<'_>,
-        attrs: Vec<(pyo3::Py<pyo3::PyAny>, pyo3::Py<pyo3::PyAny>)>,
+        attrs: Vec<(crate::tools::PyQualNameOrStr, pyo3::Py<pyo3::PyAny>)>,
     ) -> pyo3::PyResult<()> {
         let mut tree = self.0.tree.lock();
         let mut node = tree.get_mut(self.0.id).unwrap();
@@ -1166,17 +1119,7 @@ impl PyElement {
         let mut attributes = Vec::with_capacity(attrs.len());
 
         for (key, val) in attrs.into_iter() {
-            let key = match crate::tools::qualname_from_pyobject(py, &key).into_qualname() {
-                Ok(x) => x,
-                Err(_) => {
-                    return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "expected QualName or str for attrs #1, got {}",
-                            crate::tools::get_type_name(key.bind(py))
-                        ),
-                    ))
-                }
-            };
+            let key = key.into_qualname();
 
             let Ok(val) = val.bind(py).extract::<String>() else {
                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(

@@ -8,41 +8,21 @@ pub fn get_type_name(obj: &pyo3::Bound<pyo3::PyAny>) -> String {
     type_.name().unwrap().to_str().unwrap().into()
 }
 
-pub enum QualNameFromPyObjectResult<'p> {
+#[derive(pyo3::FromPyObject)]
+pub enum PyQualNameOrStr<'p> {
     QualName(pyo3::PyRef<'p, crate::qualname::PyQualName>),
-    Str(String),
-    Err(pyo3::PyErr),
+    Str(pyo3::pybacked::PyBackedStr),
 }
 
-impl QualNameFromPyObjectResult<'_> {
-    pub fn into_qualname(self) -> pyo3::PyResult<treedom::markup5ever::QualName> {
+impl PyQualNameOrStr<'_> {
+    pub fn into_qualname(self) -> treedom::markup5ever::QualName {
         match self {
-            Self::QualName(q) => Ok(q.name.clone()),
-            Self::Str(s) => Ok(treedom::markup5ever::QualName::new(
+            Self::QualName(q) => q.name.clone(),
+            Self::Str(s) => treedom::markup5ever::QualName::new(
                 None,
                 treedom::markup5ever::namespace_url!(""),
-                s.into(),
-            )),
-            Self::Err(e) => Err(e),
-        }
-    }
-}
-
-pub fn qualname_from_pyobject<'a>(
-    py: pyo3::Python<'a>,
-    object: &pyo3::Py<pyo3::PyAny>,
-) -> QualNameFromPyObjectResult<'a> {
-    use pyo3::types::PyAnyMethods;
-
-    if let Ok(x) = object.bind(py).extract::<String>() {
-        QualNameFromPyObjectResult::Str(x)
-    } else {
-        match object
-            .bind(py)
-            .extract::<pyo3::PyRef<'_, crate::qualname::PyQualName>>()
-        {
-            Ok(x) => QualNameFromPyObjectResult::QualName(x),
-            Err(e) => QualNameFromPyObjectResult::Err(e.into()),
+                (*s).into(),
+            ),
         }
     }
 }
