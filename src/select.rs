@@ -66,13 +66,8 @@ pub struct PySelect {
 #[pyo3::pymethods]
 impl PySelect {
     #[new]
-    fn new(node: &pyo3::Bound<'_, pyo3::PyAny>, expression: String) -> pyo3::PyResult<Self> {
-        let node = crate::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
-            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                "expected a node (such as Element, Text, Comment, ...) for node, got {}",
-                crate::tools::get_type_name(node)
-            ))
-        })?;
+    fn new(node: crate::nodes::PyNodeRef, expression: String) -> pyo3::PyResult<Self> {
+        let node = node.as_node_guard().clone();
 
         Ok(Self {
             inner: Arc::new(parking_lot::Mutex::new(PySelectInner::new(

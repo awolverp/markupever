@@ -150,33 +150,20 @@ impl PyTreeDom {
     }
 
     fn append(
-        self_: pyo3::PyRef<'_, Self>,
-        parent: pyo3::Py<pyo3::PyAny>,
-        child: pyo3::Py<pyo3::PyAny>,
+        &self,
+        parent: crate::nodes::PyNodeRef,
+        child: crate::nodes::PyNodeRef,
     ) -> pyo3::PyResult<()> {
-        let parent =
-            super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for parent, got {}",
-                    crate::tools::get_type_name(parent.bind(self_.py()))
-                ))
-            })?;
+        let parent = parent.as_node_guard();
+        let child = child.as_node_guard();
 
-        let child =
-            super::nodes::NodeGuard::from_pyobject(child.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for child, got {}",
-                    crate::tools::get_type_name(child.bind(self_.py()))
-                ))
-            })?;
-
-        if !Arc::ptr_eq(&self_.dom, &parent.tree) {
+        if !Arc::ptr_eq(&self.dom, &parent.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent parent is not for this dom",
             ));
         }
 
-        if !Arc::ptr_eq(&self_.dom, &child.tree) {
+        if !Arc::ptr_eq(&self.dom, &child.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent child is not for this dom",
             ));
@@ -188,44 +175,31 @@ impl PyTreeDom {
             ));
         }
 
-        let mut tree = self_.dom.lock();
+        let mut tree = self.dom.lock();
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.append_id(child.id);
 
-        self_.add_new_namespace(tree, child.id);
+        self.add_new_namespace(tree, child.id);
 
         Ok(())
     }
 
     fn prepend(
-        self_: pyo3::PyRef<'_, Self>,
-        parent: pyo3::Py<pyo3::PyAny>,
-        child: pyo3::Py<pyo3::PyAny>,
+        &self,
+        parent: crate::nodes::PyNodeRef,
+        child: crate::nodes::PyNodeRef,
     ) -> pyo3::PyResult<()> {
-        let parent =
-            super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for parent, got {}",
-                    crate::tools::get_type_name(parent.bind(self_.py()))
-                ))
-            })?;
+        let parent = parent.as_node_guard();
+        let child = child.as_node_guard();
 
-        let child =
-            super::nodes::NodeGuard::from_pyobject(child.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for child, got {}",
-                    crate::tools::get_type_name(child.bind(self_.py()))
-                ))
-            })?;
-
-        if !Arc::ptr_eq(&self_.dom, &parent.tree) {
+        if !Arc::ptr_eq(&self.dom, &parent.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent parent is not for this dom",
             ));
         }
 
-        if !Arc::ptr_eq(&self_.dom, &child.tree) {
+        if !Arc::ptr_eq(&self.dom, &child.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent child is not for this dom",
             ));
@@ -237,44 +211,31 @@ impl PyTreeDom {
             ));
         }
 
-        let mut tree = self_.dom.lock();
+        let mut tree = self.dom.lock();
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.prepend_id(child.id);
 
-        self_.add_new_namespace(tree, child.id);
+        self.add_new_namespace(tree, child.id);
 
         Ok(())
     }
 
     fn insert_before(
-        self_: pyo3::PyRef<'_, Self>,
-        parent: pyo3::Py<pyo3::PyAny>,
-        child: pyo3::Py<pyo3::PyAny>,
+        &self,
+        parent: crate::nodes::PyNodeRef,
+        child: crate::nodes::PyNodeRef,
     ) -> pyo3::PyResult<()> {
-        let parent =
-            super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for parent, got {}",
-                    crate::tools::get_type_name(parent.bind(self_.py()))
-                ))
-            })?;
+        let parent = parent.as_node_guard();
+        let child = child.as_node_guard();
 
-        let child =
-            super::nodes::NodeGuard::from_pyobject(child.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for child, got {}",
-                    crate::tools::get_type_name(child.bind(self_.py()))
-                ))
-            })?;
-
-        if !Arc::ptr_eq(&self_.dom, &parent.tree) {
+        if !Arc::ptr_eq(&self.dom, &parent.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent parent is not for this dom",
             ));
         }
 
-        if !Arc::ptr_eq(&self_.dom, &child.tree) {
+        if !Arc::ptr_eq(&self.dom, &child.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent child is not for this dom",
             ));
@@ -286,44 +247,31 @@ impl PyTreeDom {
             ));
         }
 
-        let mut tree = self_.dom.lock();
+        let mut tree = self.dom.lock();
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.insert_id_before(child.id);
 
-        self_.add_new_namespace(tree, child.id);
+        self.add_new_namespace(tree, child.id);
 
         Ok(())
     }
 
     fn insert_after(
-        self_: pyo3::PyRef<'_, Self>,
-        parent: pyo3::Py<pyo3::PyAny>,
-        child: pyo3::Py<pyo3::PyAny>,
+        &self,
+        parent: crate::nodes::PyNodeRef,
+        child: crate::nodes::PyNodeRef,
     ) -> pyo3::PyResult<()> {
-        let parent =
-            super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for parent, got {}",
-                    crate::tools::get_type_name(parent.bind(self_.py()))
-                ))
-            })?;
+        let parent = parent.as_node_guard();
+        let child = child.as_node_guard();
 
-        let child =
-            super::nodes::NodeGuard::from_pyobject(child.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for child, got {}",
-                    crate::tools::get_type_name(child.bind(self_.py()))
-                ))
-            })?;
-
-        if !Arc::ptr_eq(&self_.dom, &parent.tree) {
+        if !Arc::ptr_eq(&self.dom, &parent.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent parent is not for this dom",
             ));
         }
 
-        if !Arc::ptr_eq(&self_.dom, &child.tree) {
+        if !Arc::ptr_eq(&self.dom, &child.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent child is not for this dom",
             ));
@@ -335,76 +283,58 @@ impl PyTreeDom {
             ));
         }
 
-        let mut tree = self_.dom.lock();
+        let mut tree = self.dom.lock();
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.insert_id_after(child.id);
 
-        self_.add_new_namespace(tree, child.id);
+        self.add_new_namespace(tree, child.id);
 
         Ok(())
     }
 
-    fn detach(self_: pyo3::PyRef<'_, Self>, node: pyo3::Py<pyo3::PyAny>) -> pyo3::PyResult<()> {
-        let node = super::nodes::NodeGuard::from_pyobject(node.bind(self_.py())).map_err(|_| {
-            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                "expected an node (such as Element, Text, Comment, ...) for node, got {}",
-                crate::tools::get_type_name(node.bind(self_.py()))
-            ))
-        })?;
+    fn detach(&self, node: crate::nodes::PyNodeRef) -> pyo3::PyResult<()> {
+        let node = node.as_node_guard();
 
-        if !Arc::ptr_eq(&self_.dom, &node.tree) {
+        if !Arc::ptr_eq(&self.dom, &node.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given node node is not for this dom",
             ));
         }
 
-        let mut tree = self_.dom.lock();
+        let mut tree = self.dom.lock();
         let mut node = tree.get_mut(node.id).unwrap();
 
         node.detach();
         let id = node.id();
         let _ = node;
 
-        self_.remove_old_namespace(tree, id);
+        self.remove_old_namespace(tree, id);
 
         Ok(())
     }
 
     fn reparent_append(
-        self_: pyo3::PyRef<'_, Self>,
-        parent: pyo3::Py<pyo3::PyAny>,
-        child: pyo3::Py<pyo3::PyAny>,
+        &self,
+        parent: crate::nodes::PyNodeRef,
+        child: crate::nodes::PyNodeRef,
     ) -> pyo3::PyResult<()> {
-        let parent =
-            super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for parent, got {}",
-                    crate::tools::get_type_name(parent.bind(self_.py()))
-                ))
-            })?;
+        let parent = parent.as_node_guard();
+        let child = child.as_node_guard();
 
-        let child =
-            super::nodes::NodeGuard::from_pyobject(child.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for child, got {}",
-                    crate::tools::get_type_name(child.bind(self_.py()))
-                ))
-            })?;
-
-        if !Arc::ptr_eq(&self_.dom, &parent.tree) {
+        if !Arc::ptr_eq(&self.dom, &parent.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent parent is not for this dom",
             ));
         }
 
-        if !Arc::ptr_eq(&self_.dom, &child.tree) {
+        if !Arc::ptr_eq(&self.dom, &child.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent child is not for this dom",
             ));
         }
 
-        let mut tree = self_.dom.lock();
+        let mut tree = self.dom.lock();
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.reparent_from_id_append(child.id);
@@ -413,39 +343,26 @@ impl PyTreeDom {
     }
 
     fn reparent_prepend(
-        self_: pyo3::PyRef<'_, Self>,
-        parent: pyo3::Py<pyo3::PyAny>,
-        child: pyo3::Py<pyo3::PyAny>,
+        &self,
+        parent: crate::nodes::PyNodeRef,
+        child: crate::nodes::PyNodeRef,
     ) -> pyo3::PyResult<()> {
-        let parent =
-            super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for parent, got {}",
-                    crate::tools::get_type_name(parent.bind(self_.py()))
-                ))
-            })?;
+        let parent = parent.as_node_guard();
+        let child = child.as_node_guard();
 
-        let child =
-            super::nodes::NodeGuard::from_pyobject(child.bind(self_.py())).map_err(|_| {
-                pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                    "expected an node (such as Element, Text, Comment, ...) for child, got {}",
-                    crate::tools::get_type_name(child.bind(self_.py()))
-                ))
-            })?;
-
-        if !Arc::ptr_eq(&self_.dom, &parent.tree) {
+        if !Arc::ptr_eq(&self.dom, &parent.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent parent is not for this dom",
             ));
         }
 
-        if !Arc::ptr_eq(&self_.dom, &child.tree) {
+        if !Arc::ptr_eq(&self.dom, &child.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                 "the given parent child is not for this dom",
             ));
         }
 
-        let mut tree = self_.dom.lock();
+        let mut tree = self.dom.lock();
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.reparent_from_id_prepend(child.id);

@@ -1,4 +1,3 @@
-use pyo3::types::PyAnyMethods;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -9,6 +8,29 @@ pub enum NodeGuardType {
     Text,
     Element,
     Pi,
+}
+
+#[derive(pyo3::FromPyObject)]
+pub enum PyNodeRef<'p> {
+    Document(pyo3::PyRef<'p, PyDocument>),
+    Doctype(pyo3::PyRef<'p, PyDoctype>),
+    Comment(pyo3::PyRef<'p, PyComment>),
+    Text(pyo3::PyRef<'p, PyText>),
+    Element(pyo3::PyRef<'p, PyElement>),
+    Pi(pyo3::PyRef<'p, PyProcessingInstruction>),
+}
+
+impl PyNodeRef<'_> {
+    pub fn as_node_guard(&self) -> &NodeGuard {
+        match self {
+            PyNodeRef::Document(x) => &x.0,
+            PyNodeRef::Doctype(x) => &x.0,
+            PyNodeRef::Comment(x) => &x.0,
+            PyNodeRef::Text(x) => &x.0,
+            PyNodeRef::Element(x) => &x.0,
+            PyNodeRef::Pi(x) => &x.0,
+        }
+    }
 }
 
 impl From<&::treedom::interface::Interface> for NodeGuardType {
@@ -103,24 +125,6 @@ impl NodeGuard {
         let tree = self.tree.lock();
         let node = tree.get(self.id).unwrap();
         node.has_children()
-    }
-
-    pub fn from_pyobject(object: &pyo3::Bound<'_, pyo3::PyAny>) -> Result<Self, ()> {
-        if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyDocument>>() {
-            Ok(x.0.clone())
-        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyDoctype>>() {
-            Ok(x.0.clone())
-        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyComment>>() {
-            Ok(x.0.clone())
-        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyText>>() {
-            Ok(x.0.clone())
-        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyElement>>() {
-            Ok(x.0.clone())
-        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyProcessingInstruction>>() {
-            Ok(x.0.clone())
-        } else {
-            Err(())
-        }
     }
 
     pub fn into_any(self, py: pyo3::Python<'_>) -> pyo3::Py<pyo3::PyAny> {

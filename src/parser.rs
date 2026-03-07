@@ -411,17 +411,12 @@ unsafe impl Sync for PyParser {}
 #[pyo3::pyfunction]
 #[pyo3(signature=(node, indent=4, include_self=true, is_html=None))]
 pub fn serialize(
-    node: &pyo3::Bound<'_, pyo3::PyAny>,
+    node: crate::nodes::PyNodeRef,
     indent: usize,
     include_self: bool,
     is_html: Option<bool>,
 ) -> pyo3::PyResult<Vec<u8>> {
-    let node = super::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
-        pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-            "expected an node (such as Element, Text, Comment, ...) for node, got {}",
-            crate::tools::get_type_name(node)
-        ))
-    })?;
+    let node = node.as_node_guard();
 
     let is_html = match is_html {
         Some(x) => x,

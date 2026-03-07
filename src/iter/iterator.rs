@@ -59,13 +59,8 @@ macro_rules! axis_iterators {
             #[pyo3::pymethods]
             impl $name {
                 #[new]
-                fn new(node: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<Self> {
-                    let node = crate::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
-                        pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                            "expected a node (such as Element, Text, Comment, ...) for node, got {}",
-                            crate::tools::get_type_name(node)
-                        ))
-                    })?;
+                fn new(node: crate::nodes::PyNodeRef) -> pyo3::PyResult<Self> {
+                    let node = node.as_node_guard();
 
                     Ok(Self { guard: $f(&node) })
                 }
@@ -112,13 +107,8 @@ pub struct PyChildren {
 #[pyo3::pymethods]
 impl PyChildren {
     #[new]
-    fn new(node: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<Self> {
-        let node = crate::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
-            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                "expected a node (such as Element, Text, Comment, ...) for node, got {}",
-                crate::tools::get_type_name(node)
-            ))
-        })?;
+    fn new(node: crate::nodes::PyNodeRef) -> pyo3::PyResult<Self> {
+        let node = node.as_node_guard();
 
         let front = node.first_child();
         let back = node.last_child();
