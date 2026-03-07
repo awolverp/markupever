@@ -10,6 +10,16 @@ pub enum NodeGuardType {
     Pi,
 }
 
+#[derive(pyo3::IntoPyObject)]
+pub enum PyNode {
+    Document(PyDocument),
+    Doctype(PyDoctype),
+    Comment(PyComment),
+    Text(PyText),
+    Element(PyElement),
+    Pi(PyProcessingInstruction),
+}
+
 #[derive(pyo3::FromPyObject)]
 pub enum PyNodeRef<'p> {
     Document(pyo3::PyRef<'p, PyDocument>),
@@ -127,16 +137,14 @@ impl NodeGuard {
         node.has_children()
     }
 
-    pub fn into_any(self, py: pyo3::Python<'_>) -> pyo3::Py<pyo3::PyAny> {
+    pub fn into_py_node(self) -> PyNode {
         match &self.type_ {
-            NodeGuardType::Document => pyo3::Py::new(py, PyDocument(self)).unwrap().into_any(),
-            NodeGuardType::Comment => pyo3::Py::new(py, PyComment(self)).unwrap().into_any(),
-            NodeGuardType::Doctype => pyo3::Py::new(py, PyDoctype(self)).unwrap().into_any(),
-            NodeGuardType::Element => pyo3::Py::new(py, PyElement(self)).unwrap().into_any(),
-            NodeGuardType::Text => pyo3::Py::new(py, PyText(self)).unwrap().into_any(),
-            NodeGuardType::Pi => pyo3::Py::new(py, PyProcessingInstruction(self))
-                .unwrap()
-                .into_any(),
+            NodeGuardType::Document => PyNode::Document(PyDocument(self)),
+            NodeGuardType::Doctype => PyNode::Doctype(PyDoctype(self)),
+            NodeGuardType::Comment => PyNode::Comment(PyComment(self)),
+            NodeGuardType::Text => PyNode::Text(PyText(self)),
+            NodeGuardType::Element => PyNode::Element(PyElement(self)),
+            NodeGuardType::Pi => PyNode::Pi(PyProcessingInstruction(self)),
         }
     }
 }
@@ -160,6 +168,16 @@ impl PartialEq for NodeGuard {
     }
 }
 impl Eq for NodeGuard {}
+
+impl<'py> pyo3::IntoPyObject<'py> for NodeGuard {
+    type Target = pyo3::PyAny;
+    type Output = pyo3::Bound<'py, pyo3::PyAny>;
+    type Error = pyo3::PyErr;
+
+    fn into_pyobject(self, py: pyo3::Python<'py>) -> Result<Self::Output, Self::Error> {
+        self.into_py_node().into_pyobject(py)
+    }
+}
 
 macro_rules! create_richcmp_notimplemented {
     ($token:expr, $selfobj:expr) => {{
@@ -195,24 +213,24 @@ impl PyDocument {
         self.0.tree()
     }
 
-    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.parent().map(move |x| x.into_any(py))
+    fn parent(&self) -> Option<NodeGuard> {
+        self.0.parent()
     }
 
-    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.prev_sibling().map(move |x| x.into_any(py))
+    fn prev_sibling(&self) -> Option<NodeGuard> {
+        self.0.prev_sibling()
     }
 
-    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.next_sibling().map(move |x| x.into_any(py))
+    fn next_sibling(&self) -> Option<NodeGuard> {
+        self.0.next_sibling()
     }
 
-    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.first_child().map(move |x| x.into_any(py))
+    fn first_child(&self) -> Option<NodeGuard> {
+        self.0.first_child()
     }
 
-    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.last_child().map(move |x| x.into_any(py))
+    fn last_child(&self) -> Option<NodeGuard> {
+        self.0.last_child()
     }
 
     fn has_children(&self) -> bool {
@@ -342,24 +360,24 @@ impl PyDoctype {
         self.0.tree()
     }
 
-    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.parent().map(move |x| x.into_any(py))
+    fn parent(&self) -> Option<NodeGuard> {
+        self.0.parent()
     }
 
-    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.prev_sibling().map(move |x| x.into_any(py))
+    fn prev_sibling(&self) -> Option<NodeGuard> {
+        self.0.prev_sibling()
     }
 
-    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.next_sibling().map(move |x| x.into_any(py))
+    fn next_sibling(&self) -> Option<NodeGuard> {
+        self.0.next_sibling()
     }
 
-    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.first_child().map(move |x| x.into_any(py))
+    fn first_child(&self) -> Option<NodeGuard> {
+        self.0.first_child()
     }
 
-    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.last_child().map(move |x| x.into_any(py))
+    fn last_child(&self) -> Option<NodeGuard> {
+        self.0.last_child()
     }
 
     fn has_children(&self) -> bool {
@@ -459,24 +477,24 @@ impl PyComment {
         self.0.tree()
     }
 
-    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.parent().map(move |x| x.into_any(py))
+    fn parent(&self) -> Option<NodeGuard> {
+        self.0.parent()
     }
 
-    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.prev_sibling().map(move |x| x.into_any(py))
+    fn prev_sibling(&self) -> Option<NodeGuard> {
+        self.0.prev_sibling()
     }
 
-    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.next_sibling().map(move |x| x.into_any(py))
+    fn next_sibling(&self) -> Option<NodeGuard> {
+        self.0.next_sibling()
     }
 
-    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.first_child().map(move |x| x.into_any(py))
+    fn first_child(&self) -> Option<NodeGuard> {
+        self.0.first_child()
     }
 
-    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.last_child().map(move |x| x.into_any(py))
+    fn last_child(&self) -> Option<NodeGuard> {
+        self.0.last_child()
     }
 
     fn has_children(&self) -> bool {
@@ -573,24 +591,24 @@ impl PyText {
         self.0.tree()
     }
 
-    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.parent().map(move |x| x.into_any(py))
+    fn parent(&self) -> Option<NodeGuard> {
+        self.0.parent()
     }
 
-    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.prev_sibling().map(move |x| x.into_any(py))
+    fn prev_sibling(&self) -> Option<NodeGuard> {
+        self.0.prev_sibling()
     }
 
-    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.next_sibling().map(move |x| x.into_any(py))
+    fn next_sibling(&self) -> Option<NodeGuard> {
+        self.0.next_sibling()
     }
 
-    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.first_child().map(move |x| x.into_any(py))
+    fn first_child(&self) -> Option<NodeGuard> {
+        self.0.first_child()
     }
 
-    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.last_child().map(move |x| x.into_any(py))
+    fn last_child(&self) -> Option<NodeGuard> {
+        self.0.last_child()
     }
 
     fn has_children(&self) -> bool {
@@ -1100,24 +1118,24 @@ impl PyElement {
         self.0.tree()
     }
 
-    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.parent().map(move |x| x.into_any(py))
+    fn parent(&self) -> Option<NodeGuard> {
+        self.0.parent()
     }
 
-    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.prev_sibling().map(move |x| x.into_any(py))
+    fn prev_sibling(&self) -> Option<NodeGuard> {
+        self.0.prev_sibling()
     }
 
-    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.next_sibling().map(move |x| x.into_any(py))
+    fn next_sibling(&self) -> Option<NodeGuard> {
+        self.0.next_sibling()
     }
 
-    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.first_child().map(move |x| x.into_any(py))
+    fn first_child(&self) -> Option<NodeGuard> {
+        self.0.first_child()
     }
 
-    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.last_child().map(move |x| x.into_any(py))
+    fn last_child(&self) -> Option<NodeGuard> {
+        self.0.last_child()
     }
 
     fn has_children(&self) -> bool {
@@ -1243,24 +1261,24 @@ impl PyProcessingInstruction {
         self.0.tree()
     }
 
-    fn parent(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.parent().map(move |x| x.into_any(py))
+    fn parent(&self) -> Option<NodeGuard> {
+        self.0.parent()
     }
 
-    fn prev_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.prev_sibling().map(move |x| x.into_any(py))
+    fn prev_sibling(&self) -> Option<NodeGuard> {
+        self.0.prev_sibling()
     }
 
-    fn next_sibling(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.next_sibling().map(move |x| x.into_any(py))
+    fn next_sibling(&self) -> Option<NodeGuard> {
+        self.0.next_sibling()
     }
 
-    fn first_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.first_child().map(move |x| x.into_any(py))
+    fn first_child(&self) -> Option<NodeGuard> {
+        self.0.first_child()
     }
 
-    fn last_child(&self, py: pyo3::Python<'_>) -> Option<pyo3::Py<pyo3::PyAny>> {
-        self.0.last_child().map(move |x| x.into_any(py))
+    fn last_child(&self) -> Option<NodeGuard> {
+        self.0.last_child()
     }
 
     fn has_children(&self) -> bool {
