@@ -106,49 +106,17 @@ impl NodeGuard {
     }
 
     pub fn from_pyobject(object: &pyo3::Bound<'_, pyo3::PyAny>) -> Result<Self, ()> {
-        use pyo3::type_object::PyTypeInfo;
-
-        if PyDocument::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyDocument>>()
-                    .unwrap_unchecked()
-            };
+        if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyDocument>>() {
             Ok(x.0.clone())
-        } else if PyDoctype::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyDoctype>>()
-                    .unwrap_unchecked()
-            };
+        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyDoctype>>() {
             Ok(x.0.clone())
-        } else if PyComment::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyComment>>()
-                    .unwrap_unchecked()
-            };
+        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyComment>>() {
             Ok(x.0.clone())
-        } else if PyText::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyText>>()
-                    .unwrap_unchecked()
-            };
+        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyText>>() {
             Ok(x.0.clone())
-        } else if PyElement::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyElement>>()
-                    .unwrap_unchecked()
-            };
+        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyElement>>() {
             Ok(x.0.clone())
-        } else if PyProcessingInstruction::is_exact_type_of(object) {
-            let x = unsafe {
-                object
-                    .extract::<pyo3::PyRef<'_, PyProcessingInstruction>>()
-                    .unwrap_unchecked()
-            };
+        } else if let Ok(x) = object.extract::<pyo3::PyRef<'_, PyProcessingInstruction>>() {
             Ok(x.0.clone())
         } else {
             Err(())
@@ -190,17 +158,15 @@ impl PartialEq for NodeGuard {
 impl Eq for NodeGuard {}
 
 macro_rules! create_richcmp_notimplemented {
-    ($token:expr, $selfobj:expr) => {
-        unsafe {
-            Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                format!(
-                    "'{}' not implemented for '{}'",
-                    $token,
-                    crate::tools::get_type_name($selfobj.py(), $selfobj.as_ptr()),
-                ),
-            ))
-        }
-    };
+    ($token:expr, $selfobj:expr) => {{
+        Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+            format!(
+                "'{}' not implemented for '{}'",
+                $token,
+                crate::tools::get_type_name(&$selfobj),
+            ),
+        ))
+    }};
 }
 
 pub(crate) use create_richcmp_notimplemented;
@@ -254,7 +220,7 @@ impl PyDocument {
     }
 
     fn __richcmp__(
-        self_: pyo3::PyRef<'_, Self>,
+        self_: pyo3::Bound<Self>,
         other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
@@ -271,7 +237,7 @@ impl PyDocument {
                     Err(_) => return Ok(false),
                 };
 
-                Ok(self_.0 == other.0)
+                Ok(self_.get().0 == other.0)
             }
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -279,7 +245,7 @@ impl PyDocument {
                     Err(_) => return Ok(false),
                 };
 
-                Ok(self_.0 != other.0)
+                Ok(self_.get().0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
                 create_richcmp_notimplemented!('>', self_)
@@ -319,7 +285,7 @@ impl PyDoctype {
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected TreeDom for treedom, got {}",
-                    unsafe { crate::tools::get_type_name(treedom.py(), treedom.as_ptr()) }
+                    crate::tools::get_type_name(treedom)
                 ))
             })?;
 
@@ -410,7 +376,7 @@ impl PyDoctype {
     }
 
     fn __richcmp__(
-        self_: pyo3::PyRef<'_, Self>,
+        self_: pyo3::Bound<Self>,
         other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
@@ -427,7 +393,7 @@ impl PyDoctype {
                     Err(_) => return Ok(false),
                 };
 
-                Ok(self_.0 == other.0)
+                Ok(self_.get().0 == other.0)
             }
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -435,7 +401,7 @@ impl PyDoctype {
                     Err(_) => return Ok(false),
                 };
 
-                Ok(self_.0 != other.0)
+                Ok(self_.get().0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
                 create_richcmp_notimplemented!('>', self_)
@@ -477,7 +443,7 @@ impl PyComment {
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected TreeDom for treedom, got {}",
-                    unsafe { crate::tools::get_type_name(treedom.py(), treedom.as_ptr()) }
+                    crate::tools::get_type_name(treedom)
                 ))
             })?;
 
@@ -536,7 +502,7 @@ impl PyComment {
     }
 
     fn __richcmp__(
-        self_: pyo3::PyRef<'_, Self>,
+        self_: pyo3::Bound<Self>,
         other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
@@ -553,7 +519,7 @@ impl PyComment {
                     Err(_) => return Ok(false),
                 };
 
-                Ok(self_.0 == other.0)
+                Ok(self_.get().0 == other.0)
             }
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -561,7 +527,7 @@ impl PyComment {
                     Err(_) => return Ok(false),
                 };
 
-                Ok(self_.0 != other.0)
+                Ok(self_.get().0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
                 create_richcmp_notimplemented!('>', self_)
@@ -600,7 +566,7 @@ impl PyText {
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected TreeDom for treedom, got {}",
-                    unsafe { crate::tools::get_type_name(treedom.py(), treedom.as_ptr()) }
+                    crate::tools::get_type_name(treedom)
                 ))
             })?;
 
@@ -659,7 +625,7 @@ impl PyText {
     }
 
     fn __richcmp__(
-        self_: pyo3::PyRef<'_, Self>,
+        self_: pyo3::Bound<Self>,
         other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
@@ -676,7 +642,7 @@ impl PyText {
                     Err(_) => return Ok(false),
                 };
 
-                Ok(self_.0 == other.0)
+                Ok(self_.get().0 == other.0)
             }
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -684,7 +650,7 @@ impl PyText {
                     Err(_) => return Ok(false),
                 };
 
-                Ok(self_.0 != other.0)
+                Ok(self_.get().0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
                 create_richcmp_notimplemented!('>', self_)
@@ -741,10 +707,10 @@ impl PyAttrsListItems {
         self_
     }
 
-    fn __next__(
-        self_: pyo3::PyRef<'_, Self>,
-        py: pyo3::Python<'_>,
-    ) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
+    fn __next__<'py>(
+        self_: pyo3::PyRef<'py, Self>,
+        py: pyo3::Python<'py>,
+    ) -> pyo3::PyResult<(super::qualname::PyQualName, pyo3::Py<pyo3::types::PyString>)> {
         let tree = self_.guard.tree.lock();
         let node = tree.get(self_.guard.id).unwrap().value().element().unwrap();
 
@@ -760,26 +726,11 @@ impl PyAttrsListItems {
 
         std::mem::drop(tree);
 
-        unsafe {
-            let key = pyo3::Py::new(
-                py,
-                super::qualname::PyQualName {
-                    name: (*attrkey).clone(),
-                },
-            )?;
-            let val = pyo3::types::PyString::new(py, &t_value);
-
-            let tuple = pyo3::ffi::PyTuple_New(2);
-
-            if tuple.is_null() {
-                return Err(pyo3::PyErr::fetch(py));
-            }
-
-            pyo3::ffi::PyTuple_SetItem(tuple, 0, key.into_ptr());
-            pyo3::ffi::PyTuple_SetItem(tuple, 1, val.into_ptr());
-
-            Ok(pyo3::Py::from_owned_ptr(py, tuple))
-        }
+        let key = super::qualname::PyQualName {
+            name: (*attrkey).clone(),
+        };
+        let val = pyo3::types::PyString::new(py, &t_value);
+        Ok((key, val.unbind()))
     }
 
     fn __len__(&self) -> usize {
@@ -854,21 +805,17 @@ impl PyAttrsList {
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected QualName or str for key, got {}",
-                    unsafe { crate::tools::get_type_name(py, key.as_ptr()) }
+                    crate::tools::get_type_name(key.bind(py))
                 ))
             })?;
 
-        let val = unsafe {
-            if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
-                value.bind(py).extract::<String>().unwrap_unchecked()
-            } else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected str for value, got {}",
-                        crate::tools::get_type_name(py, value.as_ptr())
-                    ),
-                ));
-            }
+        let Ok(val) = value.bind(py).extract::<String>() else {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                format!(
+                    "expected str for value, got {}",
+                    crate::tools::get_type_name(value.bind(py))
+                ),
+            ));
         };
 
         let mut tree = self.0.tree.lock();
@@ -897,21 +844,17 @@ impl PyAttrsList {
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected QualName or str for key, got {}",
-                    unsafe { crate::tools::get_type_name(py, key.as_ptr()) }
+                    crate::tools::get_type_name(key.bind(py))
                 ))
             })?;
 
-        let val = unsafe {
-            if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
-                value.bind(py).extract::<String>().unwrap_unchecked()
-            } else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected str for value, got {}",
-                        crate::tools::get_type_name(py, value.as_ptr())
-                    ),
-                ));
-            }
+        let Ok(val) = value.bind(py).extract::<String>() else {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                format!(
+                    "expected str for value, got {}",
+                    crate::tools::get_type_name(value.bind(py))
+                ),
+            ));
         };
 
         let mut tree = self.0.tree.lock();
@@ -942,21 +885,17 @@ impl PyAttrsList {
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected QualName or str for key, got {}",
-                    unsafe { crate::tools::get_type_name(py, key.as_ptr()) }
+                    crate::tools::get_type_name(key.bind(py))
                 ))
             })?;
 
-        let val = unsafe {
-            if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
-                value.bind(py).extract::<String>().unwrap_unchecked()
-            } else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected str for value, got {}",
-                        crate::tools::get_type_name(py, value.as_ptr())
-                    ),
-                ));
-            }
+        let Ok(val) = value.bind(py).extract::<String>() else {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                format!(
+                    "expected str for value, got {}",
+                    crate::tools::get_type_name(value.bind(py))
+                ),
+            ));
         };
 
         let mut tree = self.0.tree.lock();
@@ -980,20 +919,13 @@ impl PyAttrsList {
         index: usize,
         value: pyo3::Py<pyo3::PyAny>,
     ) -> pyo3::PyResult<()> {
-        let value = unsafe {
-            if pyo3::ffi::PyUnicode_CheckExact(value.as_ptr()) == 1 {
-                value
-                    .bind(self_.py())
-                    .extract::<String>()
-                    .unwrap_unchecked()
-            } else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected str for value, got {}",
-                        crate::tools::get_type_name(self_.py(), value.as_ptr())
-                    ),
-                ));
-            }
+        let Ok(value) = value.bind(self_.py()).extract::<String>() else {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                format!(
+                    "expected str for value, got {}",
+                    crate::tools::get_type_name(value.bind(self_.py()))
+                ),
+            ));
         };
 
         let mut tree = self_.0.tree.lock();
@@ -1011,7 +943,10 @@ impl PyAttrsList {
         }
     }
 
-    fn get_by_index(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
+    fn get_by_index(
+        self_: pyo3::PyRef<'_, Self>,
+        index: usize,
+    ) -> pyo3::PyResult<(super::qualname::PyQualName, pyo3::Py<pyo3::types::PyString>)> {
         let mut tree = self_.0.tree.lock();
         let mut node = tree.get_mut(self_.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
@@ -1024,31 +959,18 @@ impl PyAttrsList {
 
         let (attrkey, value) = elem.attrs.get(index).unwrap();
 
-        unsafe {
-            let key = pyo3::Py::new(
-                self_.py(),
-                super::qualname::PyQualName {
-                    name: attrkey.clone().into_qualname(),
-                },
-            )?;
-            let val = pyo3::types::PyString::new(self_.py(), value);
-
-            std::mem::drop(tree);
-
-            let tuple = pyo3::ffi::PyTuple_New(2);
-
-            if tuple.is_null() {
-                return Err(pyo3::PyErr::fetch(self_.py()));
-            }
-
-            pyo3::ffi::PyTuple_SetItem(tuple, 0, key.into_ptr());
-            pyo3::ffi::PyTuple_SetItem(tuple, 1, val.into_ptr());
-
-            Ok(pyo3::Py::from_owned_ptr(self_.py(), tuple))
-        }
+        let key = super::qualname::PyQualName {
+            name: attrkey.clone().into_qualname(),
+        };
+        let val = pyo3::types::PyString::new(self_.py(), value);
+        std::mem::drop(tree);
+        Ok((key, val.unbind()))
     }
 
-    fn remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
+    fn remove(
+        self_: pyo3::PyRef<'_, Self>,
+        index: usize,
+    ) -> pyo3::PyResult<(super::qualname::PyQualName, pyo3::Py<pyo3::types::PyString>)> {
         let mut tree = self_.0.tree.lock();
         let mut node = tree.get_mut(self_.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
@@ -1063,29 +985,17 @@ impl PyAttrsList {
 
         std::mem::drop(tree);
 
-        unsafe {
-            let key = pyo3::Py::new(
-                self_.py(),
-                super::qualname::PyQualName {
-                    name: attrkey.into_qualname(),
-                },
-            )?;
-            let val = pyo3::types::PyString::new(self_.py(), &value);
-
-            let tuple = pyo3::ffi::PyTuple_New(2);
-
-            if tuple.is_null() {
-                return Err(pyo3::PyErr::fetch(self_.py()));
-            }
-
-            pyo3::ffi::PyTuple_SetItem(tuple, 0, key.into_ptr());
-            pyo3::ffi::PyTuple_SetItem(tuple, 1, val.into_ptr());
-
-            Ok(pyo3::Py::from_owned_ptr(self_.py(), tuple))
-        }
+        let key = super::qualname::PyQualName {
+            name: attrkey.into_qualname(),
+        };
+        let val = pyo3::types::PyString::new(self_.py(), &value);
+        Ok((key, val.unbind()))
     }
 
-    fn swap_remove(self_: pyo3::PyRef<'_, Self>, index: usize) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
+    fn swap_remove(
+        self_: pyo3::PyRef<'_, Self>,
+        index: usize,
+    ) -> pyo3::PyResult<(super::qualname::PyQualName, pyo3::Py<pyo3::types::PyString>)> {
         let mut tree = self_.0.tree.lock();
         let mut node = tree.get_mut(self_.0.id).unwrap();
         let elem = node.value().element_mut().unwrap();
@@ -1100,26 +1010,11 @@ impl PyAttrsList {
 
         std::mem::drop(tree);
 
-        unsafe {
-            let key = pyo3::Py::new(
-                self_.py(),
-                super::qualname::PyQualName {
-                    name: attrkey.into_qualname(),
-                },
-            )?;
-            let val = pyo3::types::PyString::new(self_.py(), &value);
-
-            let tuple = pyo3::ffi::PyTuple_New(2);
-
-            if tuple.is_null() {
-                return Err(pyo3::PyErr::fetch(self_.py()));
-            }
-
-            pyo3::ffi::PyTuple_SetItem(tuple, 0, key.into_ptr());
-            pyo3::ffi::PyTuple_SetItem(tuple, 1, val.into_ptr());
-
-            Ok(pyo3::Py::from_owned_ptr(self_.py(), tuple))
-        }
+        let key = super::qualname::PyQualName {
+            name: attrkey.into_qualname(),
+        };
+        let val = pyo3::types::PyString::new(self_.py(), &value);
+        Ok((key, val.unbind()))
     }
 
     fn dedup(&self) {
@@ -1172,7 +1067,7 @@ impl PyElement {
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected TreeDom for treedom, got {}",
-                    unsafe { crate::tools::get_type_name(treedom.py(), treedom.as_ptr()) }
+                    crate::tools::get_type_name(treedom)
                 ))
             })?;
 
@@ -1181,7 +1076,7 @@ impl PyElement {
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected QualName or str for name, got {}",
-                    unsafe { crate::tools::get_type_name(treedom.py(), name.as_ptr()) }
+                    crate::tools::get_type_name(name.bind(treedom.py()))
                 ))
             })?;
 
@@ -1193,26 +1088,21 @@ impl PyElement {
                 Ok(x) => x,
                 Err(_) => {
                     return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!("expected QualName or str for attrs #1, got {}", unsafe {
-                            crate::tools::get_type_name(treedom.py(), key.as_ptr())
-                        }),
+                        format!(
+                            "expected QualName or str for attrs #1, got {}",
+                            crate::tools::get_type_name(key.bind(treedom.py()))
+                        ),
                     ))
                 }
             };
 
-            let val = unsafe {
-                if pyo3::ffi::PyUnicode_Check(val.as_ptr()) == 1 {
-                    val.bind(treedom.py())
-                        .extract::<String>()
-                        .unwrap_unchecked()
-                } else {
-                    return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "expected str for attrs #2, got {}",
-                            crate::tools::get_type_name(treedom.py(), val.as_ptr())
-                        ),
-                    ));
-                }
+            let Ok(val) = val.bind(treedom.py()).extract::<String>() else {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    format!(
+                        "expected str for attrs #2, got {}",
+                        crate::tools::get_type_name(val.bind(treedom.py()))
+                    ),
+                ));
             };
 
             attributes.push((key, treedom::atomic::AtomicTendril::from(val)));
@@ -1251,7 +1141,7 @@ impl PyElement {
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected QualName or str for name, got {}",
-                    unsafe { crate::tools::get_type_name(name.py(), name.as_ptr()) }
+                    crate::tools::get_type_name(name)
                 ))
             })?;
 
@@ -1280,24 +1170,21 @@ impl PyElement {
                 Ok(x) => x,
                 Err(_) => {
                     return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!("expected QualName or str for attrs #1, got {}", unsafe {
-                            crate::tools::get_type_name(py, key.as_ptr())
-                        }),
+                        format!(
+                            "expected QualName or str for attrs #1, got {}",
+                            crate::tools::get_type_name(key.bind(py))
+                        ),
                     ))
                 }
             };
 
-            let val = unsafe {
-                if pyo3::ffi::PyUnicode_Check(val.as_ptr()) == 1 {
-                    val.bind(py).extract::<String>().unwrap_unchecked()
-                } else {
-                    return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "expected str for attrs #2, got {}",
-                            crate::tools::get_type_name(py, val.as_ptr())
-                        ),
-                    ));
-                }
+            let Ok(val) = val.bind(py).extract::<String>() else {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    format!(
+                        "expected str for attrs #2, got {}",
+                        crate::tools::get_type_name(val.bind(py))
+                    ),
+                ));
             };
 
             attributes.push((
@@ -1401,7 +1288,7 @@ impl PyElement {
     }
 
     fn __richcmp__(
-        self_: pyo3::PyRef<'_, Self>,
+        self_: pyo3::Bound<Self>,
         other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
@@ -1418,7 +1305,7 @@ impl PyElement {
                     Err(_) => return Ok(false),
                 };
 
-                Ok(self_.0 == other.0)
+                Ok(self_.get().0 == other.0)
             }
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -1426,7 +1313,7 @@ impl PyElement {
                     Err(_) => return Ok(false),
                 };
 
-                Ok(self_.0 != other.0)
+                Ok(self_.get().0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
                 create_richcmp_notimplemented!('>', self_)
@@ -1466,7 +1353,7 @@ pub struct PyProcessingInstruction(pub(super) NodeGuard);
 impl PyProcessingInstruction {
     #[new]
     fn new(
-        treedom: &pyo3::Bound<'_, pyo3::PyAny>,
+        treedom: &pyo3::Bound<pyo3::PyAny>,
         data: String,
         target: String,
     ) -> pyo3::PyResult<Self> {
@@ -1475,7 +1362,7 @@ impl PyProcessingInstruction {
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected TreeDom for treedom, got {}",
-                    unsafe { crate::tools::get_type_name(treedom.py(), treedom.as_ptr()) }
+                    crate::tools::get_type_name(treedom)
                 ))
             })?;
 
@@ -1557,7 +1444,7 @@ impl PyProcessingInstruction {
     }
 
     fn __richcmp__(
-        self_: pyo3::PyRef<'_, Self>,
+        self_: pyo3::Bound<Self>,
         other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
@@ -1574,7 +1461,7 @@ impl PyProcessingInstruction {
                     Err(_) => return Ok(false),
                 };
 
-                Ok(self_.0 == other.0)
+                Ok(self_.get().0 == other.0)
             }
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -1582,7 +1469,7 @@ impl PyProcessingInstruction {
                     Err(_) => return Ok(false),
                 };
 
-                Ok(self_.0 != other.0)
+                Ok(self_.get().0 != other.0)
             }
             pyo3::basic::CompareOp::Gt => {
                 create_richcmp_notimplemented!('>', self_)

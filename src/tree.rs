@@ -86,7 +86,7 @@ impl PyTreeDom {
                 .map_err(|_| {
                     pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                         "expected dict[str, str] for namespaces, got {}",
-                        unsafe { crate::tools::get_type_name(cls.py(), namespaces.as_ptr()) }
+                        crate::tools::get_type_name(namespaces.bind(cls.py()))
                     ))
                 })?;
 
@@ -94,14 +94,14 @@ impl PyTreeDom {
                 let key = key.cast::<pyo3::types::PyString>().map_err(|_| {
                     pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                         "expected dict[str, str] for namespaces, but found a key with type {} (keys must be strings)",
-                        unsafe { crate::tools::get_type_name(cls.py(), key.as_ptr()) }
+                        crate::tools::get_type_name(&key)
                     ))
                 }).map(|x| pyo3::types::PyStringMethods::to_string_lossy(x).into_owned())?;
 
                 let val = val.cast::<pyo3::types::PyString>().map_err(|_| {
                     pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                         "expected dict[str, str] for namespaces, but found a value with type {} (values must be strings)",
-                        unsafe { crate::tools::get_type_name(cls.py(), val.as_ptr()) }
+                        crate::tools::get_type_name(&val)
                     ))
                 }).map(|x| pyo3::types::PyStringMethods::to_string_lossy(x).into_owned())?;
 
@@ -158,7 +158,7 @@ impl PyTreeDom {
             super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected an node (such as Element, Text, Comment, ...) for parent, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), parent.as_ptr()) }
+                    crate::tools::get_type_name(parent.bind(self_.py()))
                 ))
             })?;
 
@@ -166,7 +166,7 @@ impl PyTreeDom {
             super::nodes::NodeGuard::from_pyobject(child.bind(self_.py())).map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected an node (such as Element, Text, Comment, ...) for child, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), child.as_ptr()) }
+                    crate::tools::get_type_name(child.bind(self_.py()))
                 ))
             })?;
 
@@ -207,7 +207,7 @@ impl PyTreeDom {
             super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected an node (such as Element, Text, Comment, ...) for parent, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), parent.as_ptr()) }
+                    crate::tools::get_type_name(parent.bind(self_.py()))
                 ))
             })?;
 
@@ -215,7 +215,7 @@ impl PyTreeDom {
             super::nodes::NodeGuard::from_pyobject(child.bind(self_.py())).map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected an node (such as Element, Text, Comment, ...) for child, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), child.as_ptr()) }
+                    crate::tools::get_type_name(child.bind(self_.py()))
                 ))
             })?;
 
@@ -256,7 +256,7 @@ impl PyTreeDom {
             super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected an node (such as Element, Text, Comment, ...) for parent, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), parent.as_ptr()) }
+                    crate::tools::get_type_name(parent.bind(self_.py()))
                 ))
             })?;
 
@@ -264,7 +264,7 @@ impl PyTreeDom {
             super::nodes::NodeGuard::from_pyobject(child.bind(self_.py())).map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected an node (such as Element, Text, Comment, ...) for child, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), child.as_ptr()) }
+                    crate::tools::get_type_name(child.bind(self_.py()))
                 ))
             })?;
 
@@ -305,7 +305,7 @@ impl PyTreeDom {
             super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected an node (such as Element, Text, Comment, ...) for parent, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), parent.as_ptr()) }
+                    crate::tools::get_type_name(parent.bind(self_.py()))
                 ))
             })?;
 
@@ -313,7 +313,7 @@ impl PyTreeDom {
             super::nodes::NodeGuard::from_pyobject(child.bind(self_.py())).map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected an node (such as Element, Text, Comment, ...) for child, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), child.as_ptr()) }
+                    crate::tools::get_type_name(child.bind(self_.py()))
                 ))
             })?;
 
@@ -349,7 +349,7 @@ impl PyTreeDom {
         let node = super::nodes::NodeGuard::from_pyobject(node.bind(self_.py())).map_err(|_| {
             pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                 "expected an node (such as Element, Text, Comment, ...) for node, got {}",
-                unsafe { crate::tools::get_type_name(self_.py(), node.as_ptr()) }
+                crate::tools::get_type_name(node.bind(self_.py()))
             ))
         })?;
 
@@ -380,7 +380,7 @@ impl PyTreeDom {
             super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected an node (such as Element, Text, Comment, ...) for parent, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), parent.as_ptr()) }
+                    crate::tools::get_type_name(parent.bind(self_.py()))
                 ))
             })?;
 
@@ -388,7 +388,7 @@ impl PyTreeDom {
             super::nodes::NodeGuard::from_pyobject(child.bind(self_.py())).map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected an node (such as Element, Text, Comment, ...) for child, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), child.as_ptr()) }
+                    crate::tools::get_type_name(child.bind(self_.py()))
                 ))
             })?;
 
@@ -421,7 +421,7 @@ impl PyTreeDom {
             super::nodes::NodeGuard::from_pyobject(parent.bind(self_.py())).map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected an node (such as Element, Text, Comment, ...) for parent, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), parent.as_ptr()) }
+                    crate::tools::get_type_name(parent.bind(self_.py()))
                 ))
             })?;
 
@@ -429,7 +429,7 @@ impl PyTreeDom {
             super::nodes::NodeGuard::from_pyobject(child.bind(self_.py())).map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected an node (such as Element, Text, Comment, ...) for child, got {}",
-                    unsafe { crate::tools::get_type_name(self_.py(), child.as_ptr()) }
+                    crate::tools::get_type_name(child.bind(self_.py()))
                 ))
             })?;
 
@@ -454,7 +454,7 @@ impl PyTreeDom {
     }
 
     fn __richcmp__(
-        self_: pyo3::PyRef<'_, Self>,
+        self_: pyo3::Bound<Self>,
         other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
@@ -471,10 +471,10 @@ impl PyTreeDom {
                     Err(_) => return Ok(false),
                 };
 
-                if Arc::ptr_eq(&self_.dom, &other.dom) {
+                if Arc::ptr_eq(&self_.get().dom, &other.dom) {
                     Ok(true)
                 } else {
-                    let t1 = self_.dom.lock();
+                    let t1 = self_.get().dom.lock();
                     let t2 = other.dom.lock();
 
                     Ok(*t1 == *t2)
@@ -486,10 +486,10 @@ impl PyTreeDom {
                     Err(_) => return Ok(false),
                 };
 
-                if Arc::ptr_eq(&self_.dom, &other.dom) {
+                if Arc::ptr_eq(&self_.get().dom, &other.dom) {
                     Ok(false)
                 } else {
-                    let t1 = self_.dom.lock();
+                    let t1 = self_.get().dom.lock();
                     let t2 = other.dom.lock();
 
                     Ok(*t1 != *t2)

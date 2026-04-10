@@ -70,7 +70,7 @@ impl PySelect {
         let node = crate::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
             pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                 "expected a node (such as Element, Text, Comment, ...) for node, got {}",
-                unsafe { crate::tools::get_type_name(node.py(), node.as_ptr()) }
+                crate::tools::get_type_name(node)
             ))
         })?;
 

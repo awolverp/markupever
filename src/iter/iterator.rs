@@ -18,7 +18,7 @@ impl PyIterator {
             .map_err(|_| {
                 pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                     "expected TreeDom for dom, got {}",
-                    unsafe { crate::tools::get_type_name(dom.py(), dom.as_ptr()) }
+                    crate::tools::get_type_name(dom)
                 ))
             })?;
 
@@ -73,7 +73,7 @@ macro_rules! axis_iterators {
                     let node = crate::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
                         pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                             "expected a node (such as Element, Text, Comment, ...) for node, got {}",
-                            unsafe { crate::tools::get_type_name(node.py(), node.as_ptr()) }
+                            crate::tools::get_type_name(node)
                         ))
                     })?;
 
@@ -126,7 +126,7 @@ impl PyChildren {
         let node = crate::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
             pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
                 "expected a node (such as Element, Text, Comment, ...) for node, got {}",
-                unsafe { crate::tools::get_type_name(node.py(), node.as_ptr()) }
+                crate::tools::get_type_name(node)
             ))
         })?;
 

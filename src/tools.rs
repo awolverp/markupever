@@ -1,18 +1,11 @@
-use pyo3::types::{PyStringMethods, PyTypeMethods};
+use pyo3::types::{PyAnyMethods, PyStringMethods, PyTypeMethods};
 
 /// Returns the type name of a [`pyo3::ffi::PyObject`].
 ///
 /// Returns `"<unknown>"` on failure.
-pub unsafe fn get_type_name(py: pyo3::Python<'_>, obj: *mut pyo3::ffi::PyObject) -> String {
-    let type_ = unsafe { (*obj).ob_type };
-
-    if type_.is_null() {
-        String::from("<unknown>")
-    } else {
-        let obj = unsafe { pyo3::types::PyType::from_borrowed_type_ptr(py, type_) };
-
-        obj.name().unwrap().to_str().unwrap().into()
-    }
+pub fn get_type_name(obj: &pyo3::Bound<pyo3::PyAny>) -> String {
+    let type_ = obj.get_type();
+    type_.name().unwrap().to_str().unwrap().into()
 }
 
 pub enum QualNameFromPyObjectResult<'p> {
@@ -40,17 +33,16 @@ pub fn qualname_from_pyobject<'a>(
     object: &pyo3::Py<pyo3::PyAny>,
 ) -> QualNameFromPyObjectResult<'a> {
     use pyo3::types::PyAnyMethods;
-    unsafe {
-        if pyo3::ffi::PyUnicode_Check(object.as_ptr()) == 1 {
-            QualNameFromPyObjectResult::Str(object.bind(py).extract::<String>().unwrap_unchecked())
-        } else {
-            match object
-                .bind(py)
-                .extract::<pyo3::PyRef<'_, crate::qualname::PyQualName>>()
-            {
-                Ok(x) => QualNameFromPyObjectResult::QualName(x),
-                Err(e) => QualNameFromPyObjectResult::Err(e.into()),
-            }
+
+    if let Ok(x) = object.bind(py).extract::<String>() {
+        QualNameFromPyObjectResult::Str(x)
+    } else {
+        match object
+            .bind(py)
+            .extract::<pyo3::PyRef<'_, crate::qualname::PyQualName>>()
+        {
+            Ok(x) => QualNameFromPyObjectResult::QualName(x),
+            Err(e) => QualNameFromPyObjectResult::Err(e.into()),
         }
     }
 }

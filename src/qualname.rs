@@ -123,7 +123,7 @@ impl PyQualName {
     }
 
     fn __richcmp__(
-        self_: pyo3::PyRef<'_, Self>,
+        self_: pyo3::Bound<Self>,
         other: pyo3::Py<pyo3::PyAny>,
         cmp: pyo3::basic::CompareOp,
     ) -> pyo3::PyResult<bool> {
@@ -134,36 +134,35 @@ impl PyQualName {
         }
 
         macro_rules! create_error {
-            ($token:expr, $selfobj:expr, $otherobj:expr) => {
-                unsafe {
-                    Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                        format!(
-                            "'{}' not supported between '{}' and '{}'",
-                            $token,
-                            crate::tools::get_type_name($selfobj.py(), $selfobj.as_ptr()),
-                            crate::tools::get_type_name($selfobj.py(), $otherobj.as_ptr()),
-                        ),
-                    ))
-                }
-            };
+            ($token:expr, $selfobj:expr, $otherobj:expr) => {{
+                let py = $selfobj.py();
+                Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                    format!(
+                        "'{}' not supported between '{}' and '{}'",
+                        $token,
+                        crate::tools::get_type_name(&$selfobj),
+                        crate::tools::get_type_name($otherobj.bind(py)),
+                    ),
+                ))
+            }};
         }
 
         match cmp {
             pyo3::basic::CompareOp::Eq => {
                 match crate::tools::qualname_from_pyobject(self_.py(), &other) {
                     crate::tools::QualNameFromPyObjectResult::QualName(x) => {
-                        Ok(x.name == self_.name)
+                        Ok(x.name == self_.get().name)
                     }
-                    crate::tools::QualNameFromPyObjectResult::Str(x) => Ok(self_.name.local == x),
+                    crate::tools::QualNameFromPyObjectResult::Str(x) => Ok(self_.get().name.local == x),
                     crate::tools::QualNameFromPyObjectResult::Err(_) => Ok(false),
                 }
             }
             pyo3::basic::CompareOp::Ne => {
                 match crate::tools::qualname_from_pyobject(self_.py(), &other) {
                     crate::tools::QualNameFromPyObjectResult::QualName(x) => {
-                        Ok(x.name != self_.name)
+                        Ok(x.name != self_.get().name)
                     }
-                    crate::tools::QualNameFromPyObjectResult::Str(x) => Ok(self_.name.local != x),
+                    crate::tools::QualNameFromPyObjectResult::Str(x) => Ok(self_.get().name.local != x),
                     crate::tools::QualNameFromPyObjectResult::Err(_) => Ok(true),
                 }
             }
@@ -173,7 +172,7 @@ impl PyQualName {
                     Err(_) => return create_error!('>', self_, other),
                 };
 
-                Ok(self_.name > other.name)
+                Ok(self_.get().name > other.name)
             }
             pyo3::basic::CompareOp::Lt => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -181,7 +180,7 @@ impl PyQualName {
                     Err(_) => return create_error!('<', self_, other),
                 };
 
-                Ok(self_.name < other.name)
+                Ok(self_.get().name < other.name)
             }
             pyo3::basic::CompareOp::Le => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -189,7 +188,7 @@ impl PyQualName {
                     Err(_) => return create_error!("<=", self_, other),
                 };
 
-                Ok(self_.name <= other.name)
+                Ok(self_.get().name <= other.name)
             }
             pyo3::basic::CompareOp::Ge => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
@@ -197,7 +196,7 @@ impl PyQualName {
                     Err(_) => return create_error!(">=", self_, other),
                 };
 
-                Ok(self_.name >= other.name)
+                Ok(self_.get().name >= other.name)
             }
         }
     }

@@ -122,15 +122,11 @@ impl<'a> Iterator for Select<'a> {
         let mut result: Option<Self::Item> = None;
 
         for node in &mut self.inner {
-            if node.value().is_element()
-                && self.expr.matches(
-                    unsafe { CssNodeRef::new_unchecked(node) },
-                    None,
-                    &mut self.caches,
-                )
-            {
-                result = Some(node);
-                break;
+            if let Some(css_node) = CssNodeRef::new(node) {
+                if self.expr.matches(css_node, None, &mut self.caches) {
+                    result = Some(node);
+                    break;
+                }
             }
         }
 

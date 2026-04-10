@@ -278,7 +278,7 @@ impl PyParser {
                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
                     format!(
                         "expected HtmlOptions or XmlOptions for options, got {}",
-                        unsafe { crate::tools::get_type_name(options.py(), options.as_ptr()) }
+                        crate::tools::get_type_name(options)
                     ),
                 ));
             }
@@ -295,20 +295,17 @@ impl PyParser {
     ///
     /// Raises `RuntimeError` if `.finish()` method is called.
     fn process(&self, content: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<()> {
-        let content = unsafe {
-            if pyo3::ffi::PyBytes_Check(content.as_ptr()) == 1 {
-                content.extract::<Vec<u8>>().unwrap()
-            } else if pyo3::ffi::PyUnicode_Check(content.as_ptr()) == 1 {
-                let s = content.extract::<String>().unwrap();
-                s.into_bytes()
-            } else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected bytes or str for content, got {}",
-                        crate::tools::get_type_name(content.py(), content.as_ptr())
-                    ),
-                ));
-            }
+        let content = if let Ok(b) = content.extract::<Vec<u8>>() {
+            b
+        } else if let Ok(s) = content.extract::<String>() {
+            s.into_bytes()
+        } else {
+            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+                format!(
+                    "expected bytes or str for content, got {}",
+                    crate::tools::get_type_name(content)
+                ),
+            ));
         };
 
         let mut state = self.state.lock();
@@ -424,7 +421,7 @@ pub fn serialize(
     let node = super::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
         pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
             "expected an node (such as Element, Text, Comment, ...) for node, got {}",
-            unsafe { crate::tools::get_type_name(node.py(), node.as_ptr()) }
+            crate::tools::get_type_name(node)
         ))
     })?;
 
