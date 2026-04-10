@@ -1,4 +1,4 @@
-use treedom::markup5ever::{namespace_url, ns};
+use treedom::markup5ever::ns;
 
 /// A selectable [`treedom::ego_tree::NodeRef`]
 #[derive(Debug, Clone)]
