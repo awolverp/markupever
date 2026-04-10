@@ -24,38 +24,50 @@ fn _is_node_impl(object: &pyo3::Bound<'_, pyo3::PyAny>) -> bool {
 }
 
 #[pymodule(gil_used = false)]
-#[cold]
-fn _rustlib(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("__author__", env!("CARGO_PKG_AUTHORS"))?;
-    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+mod _rustlib {
+    use pyo3::types::PyModuleMethods;
+    use pyo3::PyResult;
 
-    m.add("QUIRKS_MODE_FULL", tools::QUIRKS_MODE_FULL)?;
-    m.add("QUIRKS_MODE_LIMITED", tools::QUIRKS_MODE_LIMITED)?;
-    m.add("QUIRKS_MODE_OFF", tools::QUIRKS_MODE_OFF)?;
+    #[pymodule_export]
+    use crate::qualname::PyQualName;
 
-    m.add_class::<qualname::PyQualName>()?;
-    m.add_class::<parser::PyHtmlOptions>()?;
-    m.add_class::<parser::PyXmlOptions>()?;
-    m.add_class::<parser::PyParser>()?;
-    m.add_class::<tree::PyTreeDom>()?;
+    #[pymodule_export]
+    use crate::parser::{PyHtmlOptions, PyParser, PyXmlOptions};
 
-    m.add_class::<nodes::PyAttrsList>()?;
-    m.add_class::<nodes::PyAttrsListItems>()?;
-    m.add_class::<nodes::PyComment>()?;
-    m.add_class::<nodes::PyDoctype>()?;
-    m.add_class::<nodes::PyDocument>()?;
-    m.add_class::<nodes::PyElement>()?;
-    m.add_class::<nodes::PyProcessingInstruction>()?;
-    m.add_class::<nodes::PyText>()?;
+    #[pymodule_export]
+    use crate::tree::PyTreeDom;
 
-    m.add_class::<select::PySelect>()?;
+    #[pymodule_export]
+    use crate::nodes::{
+        PyAttrsList, PyAttrsListItems, PyComment, PyDoctype, PyDocument, PyElement,
+        PyProcessingInstruction, PyText,
+    };
 
-    m.add_function(wrap_pyfunction!(parser::serialize, m)?)?;
-    m.add_function(wrap_pyfunction!(_is_node_impl, m)?)?;
+    #[pymodule_export]
+    use crate::select::PySelect;
 
-    iter::register_iter_module(m)?;
+    #[pymodule_export]
+    use crate::parser::serialize;
 
-    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    m.add("__author__", "awolverp")?;
-    Ok(())
+    #[pymodule_export]
+    use crate::_is_node_impl;
+
+    #[pymodule_export]
+    const QUIRKS_MODE_FULL: u8 = crate::tools::QUIRKS_MODE_FULL;
+
+    #[pymodule_export]
+    const QUIRKS_MODE_LIMITED: u8 = crate::tools::QUIRKS_MODE_LIMITED;
+
+    #[pymodule_export]
+    const QUIRKS_MODE_OFF: u8 = crate::tools::QUIRKS_MODE_OFF;
+
+    #[pymodule_init]
+    fn init(m: &pyo3::Bound<'_, pyo3::types::PyModule>) -> PyResult<()> {
+        m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+        m.add("__author__", "awolverp")?;
+
+        crate::iter::register_iter_module(m)?;
+
+        Ok(())
+    }
 }

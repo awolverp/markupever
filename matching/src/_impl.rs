@@ -103,6 +103,15 @@ impl<'a> From<&'a str> for CssNamespacePrefix {
 #[derive(PartialEq, Eq, Clone)]
 pub struct NonTSPseudoClass;
 
+impl cssparser::ToCss for NonTSPseudoClass {
+    fn to_css<W>(&self, dest: &mut W) -> std::fmt::Result
+    where
+        W: std::fmt::Write,
+    {
+        dest.write_str("")
+    }
+}
+
 impl selectors::parser::NonTSPseudoClass for NonTSPseudoClass {
     type Impl = ParserImplementation;
 
@@ -112,15 +121,6 @@ impl selectors::parser::NonTSPseudoClass for NonTSPseudoClass {
 
     fn is_user_action_state(&self) -> bool {
         false
-    }
-}
-
-impl cssparser::ToCss for NonTSPseudoClass {
-    fn to_css<W>(&self, dest: &mut W) -> std::fmt::Result
-    where
-        W: std::fmt::Write,
-    {
-        dest.write_str("")
     }
 }
 
