@@ -742,13 +742,13 @@ impl PyAttrsListItems {
 }
 
 fn repr_attrlist(element: &::treedom::interface::ElementInterface) -> String {
-    let mut writer = String::from("[");
+    let mut writer = String::from("AttrsList({");
 
     let mut iter_ = element.attrs.iter();
 
     if let Some((key, val)) = iter_.next() {
         writer += &format!(
-            "({}, {:?})",
+            "{}: {:?}",
             super::qualname::repr_qualname(key),
             val.as_ref()
         );
@@ -756,13 +756,13 @@ fn repr_attrlist(element: &::treedom::interface::ElementInterface) -> String {
 
     for (key, val) in iter_ {
         writer += &format!(
-            ", ({}, {:?})",
+            ", {}: {:?}",
             super::qualname::repr_qualname(key),
             val.as_ref()
         );
     }
 
-    writer + "]"
+    writer + "})"
 }
 
 /// This type is design for communicating with element attributes.
