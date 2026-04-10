@@ -1,4 +1,5 @@
-use crate::atomic::{make_atomic_tendril, AtomicTendril, OnceLock};
+use crate::atomic::{make_atomic_tendril, AtomicTendril};
+use std::cell::OnceCell;
 use tendril::StrTendril;
 
 /// The root of a document
@@ -133,16 +134,16 @@ impl From<markup5ever::QualName> for AttributeKey {
 #[derive(Clone)]
 pub struct ElementAttributes {
     list: Vec<(AttributeKey, AtomicTendril)>,
-    id: OnceLock<Option<AtomicTendril>>,
-    class: OnceLock<Vec<markup5ever::LocalName>>,
+    id: OnceCell<Option<AtomicTendril>>,
+    class: OnceCell<Vec<markup5ever::LocalName>>,
 }
 
 impl ElementAttributes {
     pub fn new(list: Vec<(AttributeKey, AtomicTendril)>) -> Self {
         Self {
             list,
-            id: OnceLock::new(),
-            class: OnceLock::new(),
+            id: OnceCell::new(),
+            class: OnceCell::new(),
         }
     }
 
