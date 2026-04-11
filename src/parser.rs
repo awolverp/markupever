@@ -238,7 +238,7 @@ enum Input {
 ///
 /// This is very easy to use and allows you to stream input using `.process()` method; By this way
 /// you are don't worry about memory usages of huge inputs.
-#[pyo3::pyclass(name = "Parser", module = "markupever._rustlib", frozen)]
+#[pyo3::pyclass(name = "Parser", module = "markupever._rustlib", frozen, unsendable)]
 pub struct PyParser {
     state: parking_lot::Mutex<ParserState>,
 }
@@ -404,9 +404,6 @@ impl PyParser {
         format!("<Parser - {:?}>", &*state)
     }
 }
-
-unsafe impl Send for PyParser {}
-unsafe impl Sync for PyParser {}
 
 #[pyo3::pyfunction]
 #[pyo3(signature=(node, indent=4, include_self=true, is_html=None))]
