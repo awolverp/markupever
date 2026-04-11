@@ -778,6 +778,10 @@ class AttrsList:
         """Clears the attributes list, removing all values."""
         self.__raw.clear()
 
+    def items(self) -> typing.Iterator[(QualName, str)]:
+        """Returns a generator of attribute key-value pairs."""
+        return self.__raw.items()
+
     def keys(self) -> typing.Generator[QualName, None, None]:
         """Returns a generator of attribute keys."""
         return (i for i, _ in self.__raw.items())
