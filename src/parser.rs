@@ -1,5 +1,3 @@
-use pyo3::types::PyAnyMethods;
-
 /// These are options for HTML parsing.
 ///
 /// # Note
@@ -192,12 +190,12 @@ impl ParserState {
         )))
     }
 
-    fn process(&mut self, content: Vec<u8>) -> pyo3::PyResult<()> {
+    fn process(&mut self, content: &[u8]) -> pyo3::PyResult<()> {
         use treedom::tendril::TendrilSink;
 
         match self {
-            Self::OnHtml(x) => x.process(treedom::tendril::ByteTendril::from_slice(&content)),
-            Self::OnXml(x) => x.process(treedom::tendril::ByteTendril::from_slice(&content)),
+            Self::OnHtml(x) => x.process(treedom::tendril::ByteTendril::from_slice(content)),
+            Self::OnXml(x) => x.process(treedom::tendril::ByteTendril::from_slice(content)),
             _ => {
                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                     "The parser is completed parsing",
@@ -230,6 +228,12 @@ impl std::fmt::Debug for ParserState {
     }
 }
 
+#[derive(pyo3::FromPyObject)]
+enum Input {
+    Bytes(pyo3::pybacked::PyBackedBytes),
+    Str(pyo3::pybacked::PyBackedStr),
+}
+
 /// An HTML/XML parser, ready to receive unicode input.
 ///
 /// This is very easy to use and allows you to stream input using `.process()` method; By this way
@@ -239,6 +243,12 @@ pub struct PyParser {
     state: parking_lot::Mutex<ParserState>,
 }
 
+#[derive(pyo3::FromPyObject)]
+enum PyParserOptions<'p> {
+    Html(pyo3::PyRef<'p, PyHtmlOptions>),
+    Xml(pyo3::PyRef<'p, PyXmlOptions>),
+}
+
 #[pyo3::pymethods]
 impl PyParser {
     /// Creates a new [`PyParser`]
@@ -246,41 +256,37 @@ impl PyParser {
     /// - `options`: If your input is a HTML document, pass a PyHtmlOptions;
     ///              If your input is a XML document, pass PyXmlOptions.
     #[new]
-    fn new(options: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<Self> {
+    fn new(options: PyParserOptions) -> pyo3::PyResult<Self> {
         let state = {
-            if let Ok(options) = options.extract::<pyo3::PyRef<'_, PyHtmlOptions>>() {
-                ParserState::as_html(treedom::ParserSink::parse_html(
-                    options.full_document,
-                    treedom::html5ever::tokenizer::TokenizerOpts {
-                        exact_errors: options.exact_errors,
-                        discard_bom: options.discard_bom,
-                        profile: options.profile,
-                        ..Default::default()
-                    },
-                    treedom::html5ever::tree_builder::TreeBuilderOpts {
-                        exact_errors: options.exact_errors,
-                        iframe_srcdoc: options.iframe_srcdoc,
-                        drop_doctype: options.drop_doctype,
-                        quirks_mode: options.quirks_mode,
-                        ..Default::default()
-                    },
-                ))
-            } else if let Ok(options) = options.extract::<pyo3::PyRef<'_, PyXmlOptions>>() {
-                ParserState::as_xml(treedom::ParserSink::parse_xml(
-                    treedom::xml5ever::tokenizer::XmlTokenizerOpts {
-                        exact_errors: options.exact_errors,
-                        discard_bom: options.discard_bom,
-                        profile: options.profile,
-                        ..Default::default()
-                    },
-                ))
-            } else {
-                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                    format!(
-                        "expected HtmlOptions or XmlOptions for options, got {}",
-                        crate::tools::get_type_name(options)
-                    ),
-                ));
+            match options {
+                PyParserOptions::Html(options) => {
+                    ParserState::as_html(treedom::ParserSink::parse_html(
+                        options.full_document,
+                        treedom::html5ever::tokenizer::TokenizerOpts {
+                            exact_errors: options.exact_errors,
+                            discard_bom: options.discard_bom,
+                            profile: options.profile,
+                            ..Default::default()
+                        },
+                        treedom::html5ever::tree_builder::TreeBuilderOpts {
+                            exact_errors: options.exact_errors,
+                            iframe_srcdoc: options.iframe_srcdoc,
+                            drop_doctype: options.drop_doctype,
+                            quirks_mode: options.quirks_mode,
+                            ..Default::default()
+                        },
+                    ))
+                }
+                PyParserOptions::Xml(options) => {
+                    ParserState::as_xml(treedom::ParserSink::parse_xml(
+                        treedom::xml5ever::tokenizer::XmlTokenizerOpts {
+                            exact_errors: options.exact_errors,
+                            discard_bom: options.discard_bom,
+                            profile: options.profile,
+                            ..Default::default()
+                        },
+                    ))
+                }
             }
         };
 
@@ -294,18 +300,10 @@ impl PyParser {
     /// `content` must be `str` or `bytes`.
     ///
     /// Raises `RuntimeError` if `.finish()` method is called.
-    fn process(&self, content: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<()> {
-        let content = if let Ok(b) = content.extract::<Vec<u8>>() {
-            b
-        } else if let Ok(s) = content.extract::<String>() {
-            s.into_bytes()
-        } else {
-            return Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                format!(
-                    "expected bytes or str for content, got {}",
-                    crate::tools::get_type_name(content)
-                ),
-            ));
+    fn process(&self, content: Input) -> pyo3::PyResult<()> {
+        let content = match &content {
+            Input::Bytes(b) => b,
+            Input::Str(s) => s.as_bytes(),
         };
 
         let mut state = self.state.lock();
@@ -413,17 +411,12 @@ unsafe impl Sync for PyParser {}
 #[pyo3::pyfunction]
 #[pyo3(signature=(node, indent=4, include_self=true, is_html=None))]
 pub fn serialize(
-    node: &pyo3::Bound<'_, pyo3::PyAny>,
+    node: crate::nodes::PyNodeRef,
     indent: usize,
     include_self: bool,
     is_html: Option<bool>,
 ) -> pyo3::PyResult<Vec<u8>> {
-    let node = super::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
-        pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-            "expected an node (such as Element, Text, Comment, ...) for node, got {}",
-            crate::tools::get_type_name(node)
-        ))
-    })?;
+    let node = node.as_node_guard();
 
     let is_html = match is_html {
         Some(x) => x,

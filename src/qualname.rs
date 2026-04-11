@@ -149,21 +149,21 @@ impl PyQualName {
 
         match cmp {
             pyo3::basic::CompareOp::Eq => {
-                match crate::tools::qualname_from_pyobject(self_.py(), &other) {
-                    crate::tools::QualNameFromPyObjectResult::QualName(x) => {
+                match other.extract::<crate::tools::PyQualNameOrStr>(self_.py()) {
+                    Ok(crate::tools::PyQualNameOrStr::QualName(x)) => {
                         Ok(x.name == self_.get().name)
                     }
-                    crate::tools::QualNameFromPyObjectResult::Str(x) => Ok(self_.get().name.local == x),
-                    crate::tools::QualNameFromPyObjectResult::Err(_) => Ok(false),
+                    Ok(crate::tools::PyQualNameOrStr::Str(x)) => Ok(*self_.get().name.local == x),
+                    Err(_) => Ok(false),
                 }
             }
             pyo3::basic::CompareOp::Ne => {
-                match crate::tools::qualname_from_pyobject(self_.py(), &other) {
-                    crate::tools::QualNameFromPyObjectResult::QualName(x) => {
+                match other.extract::<crate::tools::PyQualNameOrStr>(self_.py()) {
+                    Ok(crate::tools::PyQualNameOrStr::QualName(x)) => {
                         Ok(x.name != self_.get().name)
                     }
-                    crate::tools::QualNameFromPyObjectResult::Str(x) => Ok(self_.get().name.local != x),
-                    crate::tools::QualNameFromPyObjectResult::Err(_) => Ok(true),
+                    Ok(crate::tools::PyQualNameOrStr::Str(x)) => Ok(*self_.get().name.local != x),
+                    Err(_) => Ok(true),
                 }
             }
             pyo3::basic::CompareOp::Gt => {

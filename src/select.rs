@@ -66,13 +66,8 @@ pub struct PySelect {
 #[pyo3::pymethods]
 impl PySelect {
     #[new]
-    fn new(node: &pyo3::Bound<'_, pyo3::PyAny>, expression: String) -> pyo3::PyResult<Self> {
-        let node = crate::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
-            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                "expected a node (such as Element, Text, Comment, ...) for node, got {}",
-                crate::tools::get_type_name(node)
-            ))
-        })?;
+    fn new(node: crate::nodes::PyNodeRef, expression: String) -> pyo3::PyResult<Self> {
+        let node = node.as_node_guard().clone();
 
         Ok(Self {
             inner: Arc::new(parking_lot::Mutex::new(PySelectInner::new(
@@ -85,11 +80,10 @@ impl PySelect {
         self_
     }
 
-    pub fn __next__(self_: pyo3::PyRef<'_, Self>) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
-        let mut lock = self_.inner.lock();
+    pub fn __next__(&self) -> pyo3::PyResult<crate::nodes::NodeGuard> {
+        let mut lock = self.inner.lock();
 
         lock.next()
             .ok_or_else(|| pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()))
-            .map(|x| x.into_any(self_.py()))
     }
 }

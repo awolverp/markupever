@@ -55,14 +55,8 @@ impl PyTraverse {
 #[pyo3::pymethods]
 impl PyTraverse {
     #[new]
-    fn new(node: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<Self> {
-        let node = crate::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
-            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                "expected a node (such as Element, Text, Comment, ...) for node, got {}",
-                crate::tools::get_type_name(node)
-            ))
-        })?;
-
+    fn new(node: crate::nodes::PyNodeRef) -> pyo3::PyResult<Self> {
+        let node = node.as_node_guard().clone();
         Ok(Self::from_nodeguard(node))
     }
 
@@ -70,10 +64,9 @@ impl PyTraverse {
         self_
     }
 
-    pub fn __next__(mut self_: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<(pyo3::Py<pyo3::PyAny>, bool)> {
-        let py = self_.py();
-        match self_.next_edge() {
-            Some((x, y)) => Ok((x.into_any(py), y)),
+    pub fn __next__(&mut self) -> pyo3::PyResult<(crate::nodes::NodeGuard, bool)> {
+        match self.next_edge() {
+            Some((x, y)) => Ok((x, y)),
             None => Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(())),
         }
     }
@@ -86,13 +79,8 @@ pub struct PyDescendants(PyTraverse);
 #[pyo3::pymethods]
 impl PyDescendants {
     #[new]
-    fn new(node: &pyo3::Bound<'_, pyo3::PyAny>) -> pyo3::PyResult<Self> {
-        let node = crate::nodes::NodeGuard::from_pyobject(node).map_err(|_| {
-            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
-                "expected a node (such as Element, Text, Comment, ...) for node, got {}",
-                crate::tools::get_type_name(node)
-            ))
-        })?;
+    fn new(node: crate::nodes::PyNodeRef) -> pyo3::PyResult<Self> {
+        let node = node.as_node_guard().clone();
 
         Ok(Self(PyTraverse {
             root: Some(node),
@@ -104,15 +92,13 @@ impl PyDescendants {
         self_
     }
 
-    fn __next__(mut self_: pyo3::PyRefMut<'_, Self>) -> pyo3::PyResult<pyo3::Py<pyo3::PyAny>> {
-        let py = self_.py();
-
-        while let Some((node, is_close)) = self_.0.next_edge() {
+    fn __next__(&mut self) -> pyo3::PyResult<crate::nodes::NodeGuard> {
+        while let Some((node, is_close)) = self.0.next_edge() {
             if is_close {
                 continue;
             }
 
-            return Ok(node.into_any(py));
+            return Ok(node);
         }
 
         Err(pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()))
