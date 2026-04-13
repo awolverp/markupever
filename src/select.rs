@@ -45,7 +45,7 @@ impl Iterator for PySelectInner {
             let node = tree.get(guard.id).unwrap();
 
             if self.expr.matches(
-                unsafe { ::matching::CssNodeRef::new_unchecked(node) },
+                ::matching::CssNodeRef::new_unchecked(node),
                 None,
                 &mut Default::default(),
             ) {
