@@ -108,7 +108,7 @@ impl ParserSink {
 impl markup5ever::interface::TreeSink for ParserSink {
     type Output = Self;
     type Handle = ego_tree::NodeId;
-    type ElemName<'a> = markup5ever::ExpandedName<'a>;
+    type ElemName<'a> = &'a markup5ever::QualName;
 
     // Consume this sink and return the overall result of parsing.
     fn finish(self) -> Self::Output {
@@ -165,7 +165,7 @@ impl markup5ever::interface::TreeSink for ParserSink {
         let item = self.tree_mut().get(*target).unwrap();
 
         if let Some(x) = item.value().element() {
-            x.name.expanded()
+            &x.name
         } else {
             unreachable!("target is not a element");
         }
