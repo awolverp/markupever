@@ -47,8 +47,6 @@ impl AsRef<str> for CssTendril {
     }
 }
 
-unsafe impl Sync for CssTendril {}
-
 /// A [`treedom::markup5ever::LocalName`] which implemented [`cssparser::ToCss`]
 #[derive(Clone, PartialEq, Eq)]
 pub struct CssLocalName(pub treedom::markup5ever::LocalName);

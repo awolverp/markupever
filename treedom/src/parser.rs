@@ -1,16 +1,16 @@
 use super::dom::IDTreeDOM;
 use super::interface;
 use hashbrown::HashMap;
-use std::cell::{Cell, UnsafeCell};
+use std::cell::{Cell, Ref, RefCell};
 
 /// Markup parser that implemented [`markup5ever::interface::TreeSink`]
 #[derive(Debug)]
 pub struct ParserSink {
-    tree: UnsafeCell<ego_tree::Tree<interface::Interface>>,
-    errors: UnsafeCell<Vec<std::borrow::Cow<'static, str>>>,
+    tree: RefCell<ego_tree::Tree<interface::Interface>>,
+    errors: RefCell<Vec<std::borrow::Cow<'static, str>>>,
     quirks_mode: Cell<markup5ever::interface::QuirksMode>,
-    namespaces: UnsafeCell<HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
-    lineno: UnsafeCell<u64>,
+    namespaces: RefCell<HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
+    lineno: Cell<u64>,
 }
 
 impl Default for ParserSink {
@@ -23,25 +23,19 @@ impl ParserSink {
     /// Creates a new [`ParserSink`]
     pub fn new() -> Self {
         Self {
-            tree: UnsafeCell::new(ego_tree::Tree::new(interface::Interface::new(
+            tree: RefCell::new(ego_tree::Tree::new(interface::Interface::new(
                 interface::DocumentInterface,
             ))),
-            errors: UnsafeCell::new(Vec::new()),
+            errors: RefCell::new(Vec::new()),
             quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
-            namespaces: UnsafeCell::new(HashMap::new()),
-            lineno: UnsafeCell::new(1),
+            namespaces: RefCell::new(HashMap::new()),
+            lineno: Cell::new(1),
         }
     }
 
-    #[allow(clippy::mut_from_ref)]
-    fn tree_mut(&self) -> &mut ego_tree::Tree<interface::Interface> {
-        // SAFETY: Parser is not Send/Sync so cannot be used in multi threads.
-        unsafe { &mut *self.tree.get() }
-    }
-
     /// Returns the errors which are detected while parsing
-    pub fn errors(&self) -> &Vec<std::borrow::Cow<'static, str>> {
-        unsafe { &*self.errors.get() }
+    pub fn errors(&'_ self) -> Ref<'_, Vec<std::borrow::Cow<'static, str>>> {
+        self.errors.borrow()
     }
 
     /// Returns the Quirks Mode
@@ -51,7 +45,7 @@ impl ParserSink {
 
     /// Returns the line count of the parsed content (does nothing for XML)
     pub fn lineno(&self) -> u64 {
-        unsafe { *self.lineno.get() }
+        self.lineno.get()
     }
 
     /// Consumes the self and returns [`IDTreeDOM`]
@@ -108,7 +102,7 @@ impl ParserSink {
 impl markup5ever::interface::TreeSink for ParserSink {
     type Output = Self;
     type Handle = ego_tree::NodeId;
-    type ElemName<'a> = markup5ever::ExpandedName<'a>;
+    type ElemName<'a> = Ref<'a, markup5ever::QualName>;
 
     // Consume this sink and return the overall result of parsing.
     fn finish(self) -> Self::Output {
@@ -117,14 +111,12 @@ impl markup5ever::interface::TreeSink for ParserSink {
 
     // Signal a parse error.
     fn parse_error(&self, msg: std::borrow::Cow<'static, str>) {
-        unsafe { &mut *self.errors.get() }.push(msg);
+        self.errors.borrow_mut().push(msg);
     }
 
     // Called whenever the line number changes.
     fn set_current_line(&self, n: u64) {
-        unsafe {
-            *self.lineno.get() = n;
-        }
+        self.lineno.set(n);
     }
 
     // Set the document's quirks mode.
@@ -134,13 +126,14 @@ impl markup5ever::interface::TreeSink for ParserSink {
 
     // Get a handle to the `Document` node.
     fn get_document(&self) -> Self::Handle {
-        self.tree_mut().root().id()
+        self.tree.borrow().root().id()
     }
 
     // Get a handle to a template's template contents.
     // The tree builder promises this will never be called with something else than a template element.
     fn get_template_contents(&self, target: &Self::Handle) -> Self::Handle {
-        let item = self.tree_mut().get(*target).unwrap();
+        let tree = self.tree.borrow();
+        let item = tree.get(*target).unwrap();
 
         if let Some(x) = item.value().element() {
             if x.template {
@@ -162,13 +155,15 @@ impl markup5ever::interface::TreeSink for ParserSink {
     //
     // Should never be called on a non-element node; feel free to panic!.
     fn elem_name<'a>(&'a self, target: &'a Self::Handle) -> Self::ElemName<'a> {
-        let item = self.tree_mut().get(*target).unwrap();
+        Ref::map(self.tree.borrow(), |tree| {
+            let item = tree.get(*target).unwrap();
 
-        if let Some(x) = item.value().element() {
-            x.name.expanded()
-        } else {
-            unreachable!("target is not a element");
-        }
+            if let Some(x) = item.value().element() {
+                &x.name
+            } else {
+                unreachable!("target is not a element");
+            }
+        })
     }
 
     // Create an element.
@@ -184,12 +179,11 @@ impl markup5ever::interface::TreeSink for ParserSink {
         flags: markup5ever::interface::ElementFlags,
     ) -> Self::Handle {
         // Keep all the namespaces in a hashmap, we need them for css selectors
-        unsafe {
-            if let Some(ref prefix) = name.prefix {
-                (*self.namespaces.get()).insert(prefix.clone(), name.ns.clone());
-            } else if (*self.namespaces.get()).is_empty() {
-                (*self.namespaces.get()).insert(markup5ever::Prefix::from(""), name.ns.clone());
-            }
+        let mut namespaces = self.namespaces.borrow_mut();
+        if let Some(ref prefix) = name.prefix {
+            namespaces.insert(prefix.clone(), name.ns.clone());
+        } else if namespaces.is_empty() {
+            namespaces.insert(markup5ever::Prefix::from(""), name.ns.clone());
         }
 
         let element = interface::ElementInterface::from_non_atomic(
@@ -199,13 +193,15 @@ impl markup5ever::interface::TreeSink for ParserSink {
             flags.mathml_annotation_xml_integration_point,
         );
 
-        let node = self.tree_mut().orphan(interface::Interface::new(element));
+        let mut tree = self.tree.borrow_mut();
+        let node = tree.orphan(interface::Interface::new(element));
         node.id()
     }
 
     // Create a comment node.
     fn create_comment(&self, text: tendril::StrTendril) -> Self::Handle {
-        let node = self.tree_mut().orphan(interface::Interface::new(
+        let mut tree = self.tree.borrow_mut();
+        let node = tree.orphan(interface::Interface::new(
             interface::CommentInterface::from_non_atomic(text),
         ));
 
@@ -214,7 +210,8 @@ impl markup5ever::interface::TreeSink for ParserSink {
 
     // Create a Processing Instruction node.
     fn create_pi(&self, target: tendril::StrTendril, data: tendril::StrTendril) -> Self::Handle {
-        let node = self.tree_mut().orphan(interface::Interface::new(
+        let mut tree = self.tree.borrow_mut();
+        let node = tree.orphan(interface::Interface::new(
             interface::ProcessingInstructionInterface::from_non_atomic(data, target),
         ));
 
@@ -228,9 +225,12 @@ impl markup5ever::interface::TreeSink for ParserSink {
         public_id: tendril::StrTendril,
         system_id: tendril::StrTendril,
     ) {
-        self.tree_mut().root_mut().append(interface::Interface::new(
-            interface::DoctypeInterface::from_non_atomic(name, public_id, system_id),
-        ));
+        self.tree
+            .borrow_mut()
+            .root_mut()
+            .append(interface::Interface::new(
+                interface::DoctypeInterface::from_non_atomic(name, public_id, system_id),
+            ));
     }
 
     // Append a node as the last child of the given node. If this would produce adjacent sibling text nodes, it should concatenate the text instead.
@@ -241,7 +241,8 @@ impl markup5ever::interface::TreeSink for ParserSink {
         parent: &Self::Handle,
         child: markup5ever::interface::NodeOrText<Self::Handle>,
     ) {
-        let mut parent = self.tree_mut().get_mut(*parent).unwrap();
+        let mut tree = self.tree.borrow_mut();
+        let mut parent = tree.get_mut(*parent).unwrap();
 
         match child {
             markup5ever::interface::NodeOrText::AppendNode(handle) => {
@@ -272,7 +273,8 @@ impl markup5ever::interface::TreeSink for ParserSink {
         sibling_id: &Self::Handle,
         new_node_id: markup5ever::interface::NodeOrText<Self::Handle>,
     ) {
-        let mut sibling = self.tree_mut().get_mut(*sibling_id).unwrap();
+        let mut tree = self.tree.borrow_mut();
+        let mut sibling = tree.get_mut(*sibling_id).unwrap();
 
         match (new_node_id, sibling.prev_sibling()) {
             (markup5ever::interface::NodeOrText::AppendText(text), None) => {
@@ -306,7 +308,8 @@ impl markup5ever::interface::TreeSink for ParserSink {
         prev_item_index: &Self::Handle,
         child: markup5ever::interface::NodeOrText<Self::Handle>,
     ) {
-        let item = self.tree_mut().get(*item_index).unwrap();
+        let tree = self.tree.borrow_mut();
+        let item = tree.get(*item_index).unwrap();
 
         if item.parent().is_some() {
             self.append_before_sibling(item_index, child);
@@ -318,7 +321,8 @@ impl markup5ever::interface::TreeSink for ParserSink {
     // Add each attribute to the given element, if no attribute with that name already exists.
     // The tree builder promises this will never be called with something else than an element.
     fn add_attrs_if_missing(&self, target: &Self::Handle, attrs: Vec<markup5ever::Attribute>) {
-        let mut node = self.tree_mut().get_mut(*target).unwrap();
+        let mut tree = self.tree.borrow_mut();
+        let mut node = tree.get_mut(*target).unwrap();
 
         if let Some(element) = node.value().element_mut() {
             element.attrs.extend(
@@ -333,12 +337,13 @@ impl markup5ever::interface::TreeSink for ParserSink {
 
     // Detach the given node from its parent.
     fn remove_from_parent(&self, target: &Self::Handle) {
-        self.tree_mut().get_mut(*target).unwrap().detach();
+        self.tree.borrow_mut().get_mut(*target).unwrap().detach();
     }
 
     // Remove all the children from node and append them to new_parent.
     fn reparent_children(&self, node: &Self::Handle, new_parent: &Self::Handle) {
-        self.tree_mut()
+        self.tree
+            .borrow_mut()
             .get_mut(*new_parent)
             .unwrap()
             .reparent_from_id_append(*node);
@@ -346,7 +351,8 @@ impl markup5ever::interface::TreeSink for ParserSink {
 
     // Returns true if the adjusted current node is an HTML integration point and the token is a start tag.
     fn is_mathml_annotation_xml_integration_point(&self, target: &Self::Handle) -> bool {
-        let item = self.tree_mut().get(*target).unwrap();
+        let tree = self.tree.borrow_mut();
+        let item = tree.get(*target).unwrap();
 
         if let Some(x) = item.value().element() {
             x.mathml_annotation_xml_integration_point

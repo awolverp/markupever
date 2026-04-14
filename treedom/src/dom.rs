@@ -257,7 +257,7 @@ impl markup5ever::serialize::Serialize for Serializer<'_> {
     where
         S: markup5ever::serialize::Serializer,
     {
-        let mut traverse = unsafe { self.dom.tree.get_unchecked(self.id).traverse() };
+        let mut traverse = self.dom.tree.get(self.id).unwrap().traverse();
 
         if let markup5ever::serialize::TraversalScope::ChildrenOnly(_) = traversal_scope {
             traverse.next();

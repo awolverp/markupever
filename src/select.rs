@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 struct PySelectInner {
     traverse: crate::iter::PyTraverse,
     expr: ::matching::ExpressionGroup,
@@ -45,7 +43,7 @@ impl Iterator for PySelectInner {
             let node = tree.get(guard.id).unwrap();
 
             if self.expr.matches(
-                unsafe { ::matching::CssNodeRef::new_unchecked(node) },
+                ::matching::CssNodeRef::new_unchecked(node),
                 None,
                 &mut Default::default(),
             ) {
@@ -58,9 +56,9 @@ impl Iterator for PySelectInner {
     }
 }
 
-#[pyo3::pyclass(name = "Select", module = "markupever._rustlib", frozen)]
+#[pyo3::pyclass(name = "Select", module = "markupever._rustlib", unsendable)]
 pub struct PySelect {
-    inner: Arc<parking_lot::Mutex<PySelectInner>>,
+    inner: PySelectInner,
 }
 
 #[pyo3::pymethods]
@@ -70,9 +68,7 @@ impl PySelect {
         let node = node.as_node_guard().clone();
 
         Ok(Self {
-            inner: Arc::new(parking_lot::Mutex::new(PySelectInner::new(
-                node, expression,
-            )?)),
+            inner: PySelectInner::new(node, expression)?,
         })
     }
 
@@ -80,10 +76,9 @@ impl PySelect {
         self_
     }
 
-    pub fn __next__(&self) -> pyo3::PyResult<crate::nodes::NodeGuard> {
-        let mut lock = self.inner.lock();
-
-        lock.next()
+    pub fn __next__(&mut self) -> pyo3::PyResult<crate::nodes::NodeGuard> {
+        self.inner
+            .next()
             .ok_or_else(|| pyo3::PyErr::new::<pyo3::exceptions::PyStopIteration, _>(()))
     }
 }

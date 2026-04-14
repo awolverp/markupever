@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use pyo3::prelude::*;
 
 extern crate matching;
