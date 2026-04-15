@@ -1,6 +1,7 @@
-from .dom import TreeDom
-from . import _rustlib
 import typing
+
+from . import _rustlib
+from .dom import TreeDom
 
 
 class Parser:
@@ -9,7 +10,10 @@ class Parser:
     def __init__(
         self,
         options: typing.Union[
-            _rustlib.HtmlOptions, _rustlib.XmlOptions, typing.Literal["html"], typing.Literal["xml"]
+            _rustlib.HtmlOptions,
+            _rustlib.XmlOptions,
+            typing.Literal["html"],
+            typing.Literal["xml"],
         ] = "html",
     ):
         """
@@ -38,12 +42,12 @@ class Parser:
 
     def writable(self) -> bool:
         """
-        Same as `Parser.is_finished`.
+        Shorthand for `not Parser.is_finished`.
 
         This function exists to make `Parser` like a `BytesIO` and `StringIO`.
         You can pass the `Parser` to each function which needs a writable buffer or IO.
         """
-        return self.is_finished
+        return not self.is_finished
 
     def write(self, content: typing.Union[str, bytes]) -> int:
         """
@@ -119,7 +123,10 @@ class Parser:
 def parse(
     content: typing.Union[str, bytes],
     options: typing.Union[
-        _rustlib.HtmlOptions, _rustlib.XmlOptions, typing.Literal["html"], typing.Literal["xml"]
+        _rustlib.HtmlOptions,
+        _rustlib.XmlOptions,
+        typing.Literal["html"],
+        typing.Literal["xml"],
     ] = "html",
 ) -> TreeDom:
     """
@@ -140,7 +147,10 @@ def parse(
 def parse_file(
     path: typing.Union[str, typing.TextIO, typing.BinaryIO],
     options: typing.Union[
-        _rustlib.HtmlOptions, _rustlib.XmlOptions, typing.Literal["html"], typing.Literal["xml"]
+        _rustlib.HtmlOptions,
+        _rustlib.XmlOptions,
+        typing.Literal["html"],
+        typing.Literal["xml"],
     ] = "html",
     *,
     chunk_size: int = 10240,
