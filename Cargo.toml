@@ -17,7 +17,7 @@ crate-type = ["cdylib"]
 members = ["treedom", "matching"]
 
 [workspace.package]
-version = "0.3.3"
+version = "0.3.4"
 edition = "2021"
 readme = "README.md"
 license = "MPL-2.0"
