@@ -195,7 +195,7 @@ impl PartialEq for ElementAttributes {
 
 impl std::fmt::Debug for ElementAttributes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "ElementAttributes({:?})", &self.list)
+        write!(f, "ElementAttributes({:?})", self.list)
     }
 }
 

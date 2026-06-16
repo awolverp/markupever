@@ -23,7 +23,7 @@ readme = "README.md"
 license = "MPL-2.0"
 homepage = "https://github.com/awolverp/markupever"
 repository = "https://github.com/awolverp/markupever.git"
-authors = ["awolverp"]
+authors = ["Ali Pooralijan <awolverp@gmail.com>"]
 
 [profile.release]
 codegen-units = 1
@@ -34,10 +34,9 @@ panic = "abort"
 strip = "symbols"
 
 [dependencies]
-pyo3 = { version = "0.28", default-features = false, features = [
+pyo3 = { version = "0.29", default-features = false, features = [
     "macros",
     "extension-module",
-    "generate-import-lib",
 ] }
 parking_lot = { version = "0.12" }
 treedom = { path = "treedom" }
@@ -48,7 +47,7 @@ hashbrown = { version = "0.17", default-features = false, features = [
 ] }
 
 [build-dependencies]
-pyo3-build-config = { version = "0.28", features = ["resolve-config"] }
+pyo3-build-config = { version = "0.29", features = ["resolve-config"] }
 
 [lints.clippy]
 dbg_macro = "warn"

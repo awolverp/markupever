@@ -401,7 +401,7 @@ impl PyParser {
     fn __repr__(&self) -> String {
         let state = self.state.lock();
 
-        format!("<Parser - {:?}>", &*state)
+        format!("<Parser - {:?}>", *state)
     }
 }
 
