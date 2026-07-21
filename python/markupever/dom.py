@@ -108,9 +108,7 @@ class TreeDom:
 class _ConfigNode:
     __slots__ = ("basetype", "invalid_ordering")
 
-    def __init__(
-        self, basetype: typing.Optional[type], invalid_ordering: typing.Tuple[int]
-    ):
+    def __init__(self, basetype: typing.Optional[type], invalid_ordering: typing.Tuple[int]):
         self.basetype = basetype
         self.invalid_ordering = invalid_ordering
 
@@ -148,9 +146,7 @@ class BaseNode:
     _SUBCLASS_WRAP = {}
 
     def __init__(self, node: typing.Any):
-        if self._CONFIG.basetype is not None and not isinstance(
-            node, self._CONFIG.basetype
-        ):
+        if self._CONFIG.basetype is not None and not isinstance(node, self._CONFIG.basetype):
             raise TypeError(
                 "expected {} for node, got {} - It's recommended to use nodes `create_*` methods for creating nodes and don't call directly markupever.nodes classes.".format(
                     self._CONFIG.basetype.__name__, type(node).__name__
@@ -388,9 +384,9 @@ class BaseNode:
         - is_html (bool, optional): Whether to serialize as HTML. Defaults to None.
         - include_self (bool, optional): Whether to include the current node in serialization. Defaults to True.
         """
-        return self.serialize_bytes(
-            indent, is_html=is_html, include_self=include_self
-        ).decode("utf-8")
+        return self.serialize_bytes(indent, is_html=is_html, include_self=include_self).decode(
+            "utf-8"
+        )
 
     def __eq__(self, value):
         if isinstance(value, BaseNode):
@@ -453,9 +449,7 @@ class Document(BaseNode):
         self._connect_node(ordering, dom, node)
         return Doctype(node)
 
-    def create_comment(
-        self, content: str, *, ordering: int = Ordering.APPEND
-    ) -> "Comment":
+    def create_comment(self, content: str, *, ordering: int = Ordering.APPEND) -> "Comment":
         """
         Create and connect a `Comment` to this node depends on `ordering` value.
         """
@@ -493,9 +487,7 @@ class Document(BaseNode):
         if isinstance(attrs, dict):
             attrs = list(attrs.items())
 
-        node = _rustlib.Element(
-            dom, name, attrs, template, mathml_annotation_xml_integration_point
-        )
+        node = _rustlib.Element(dom, name, attrs, template, mathml_annotation_xml_integration_point)
         self._connect_node(ordering, dom, node)
         return Element(node)
 
@@ -826,9 +818,7 @@ class AttrsList:
         """Returns a generator of attribute keys."""
         return self.keys()
 
-    def __contains__(
-        self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple]
-    ) -> bool:
+    def __contains__(self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple]) -> bool:
         """
         Returns `True` if the list has the specified key, else `False`.
         """
@@ -1025,9 +1015,7 @@ class Element(BaseNode):
         if isinstance(attrs, dict):
             attrs = list(attrs.items())
 
-        node = _rustlib.Element(
-            dom, name, attrs, template, mathml_annotation_xml_integration_point
-        )
+        node = _rustlib.Element(dom, name, attrs, template, mathml_annotation_xml_integration_point)
         self._connect_node(ordering, dom, node)
         return Element(node)
 
@@ -1052,9 +1040,7 @@ class ProcessingInstruction(BaseNode):
     be ignored by any other applications which don't recognize the instruction.
     """
 
-    _CONFIG = _ConfigNode(
-        _rustlib.ProcessingInstruction, (Ordering.APPEND, Ordering.PREPEND)
-    )
+    _CONFIG = _ConfigNode(_rustlib.ProcessingInstruction, (Ordering.APPEND, Ordering.PREPEND))
 
     @property
     def target(self) -> str:

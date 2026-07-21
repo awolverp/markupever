@@ -1,5 +1,5 @@
-use super::CssNodeRef;
 use super::_impl;
+use super::CssNodeRef;
 
 #[derive(Debug, Clone)]
 pub struct CssParserKindError<'a>(pub selectors::parser::SelectorParseErrorKind<'a>);

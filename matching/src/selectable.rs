@@ -1,3 +1,5 @@
+use std::hash::{BuildHasher, Hash};
+
 use treedom::markup5ever::ns;
 
 /// A selectable [`treedom::ego_tree::NodeRef`]
@@ -22,6 +24,15 @@ impl<'a> CssNodeRef<'a> {
     pub fn into_node(self) -> treedom::NodeRef<'a> {
         self.0
     }
+}
+
+#[inline]
+fn bloom_hash<T: Hash + ?Sized>(value: &T) -> u32 {
+    let hasher = foldhash::fast::RandomState::default();
+    let h = hasher.hash_one(value);
+
+    // Same folding used in selectors' own tests.
+    (h as u32) ^ ((h >> 32) as u32)
 }
 
 impl selectors::Element for CssNodeRef<'_> {
@@ -133,7 +144,7 @@ impl selectors::Element for CssNodeRef<'_> {
     }
 
     fn is_html_slot_element(&self) -> bool {
-        true
+        &self.0.value().element().unwrap().name.local == "slot"
     }
 
     fn has_id(
@@ -182,7 +193,25 @@ impl selectors::Element for CssNodeRef<'_> {
 
     fn apply_selector_flags(&self, _flags: selectors::matching::ElementSelectorFlags) {}
 
-    fn add_element_unique_hashes(&self, _filter: &mut selectors::bloom::BloomFilter) -> bool {
-        false
+    fn add_element_unique_hashes(&self, filter: &mut selectors::bloom::BloomFilter) -> bool {
+        let elem = self.0.value().element().unwrap();
+
+        // Namespace
+        filter.insert_hash(bloom_hash(&elem.name.ns));
+
+        // Local name
+        filter.insert_hash(bloom_hash(&elem.name.local));
+
+        // id
+        if let Some(id) = elem.attrs.id() {
+            filter.insert_hash(bloom_hash(id));
+        }
+
+        // classes
+        for class in elem.attrs.class().iter() {
+            filter.insert_hash(bloom_hash(class));
+        }
+
+        true
     }
 }
