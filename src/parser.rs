@@ -10,6 +10,7 @@ pub struct PyHtmlOptions {
     iframe_srcdoc: bool,
     drop_doctype: bool,
     full_document: bool,
+    fragment_context: Option<treedom::markup5ever::QualName>,
     quirks_mode: treedom::markup5ever::interface::QuirksMode,
 }
 
@@ -17,23 +18,29 @@ pub struct PyHtmlOptions {
 impl PyHtmlOptions {
     /// Creates a new [`PyHtmlOptions`]
     ///
-    /// - `full_document`: Is this a complete document? (means includes html, head, and body tag). Default: true.
+    /// - `full_document`: Is this a complete document? (means includes html, head, and body tag). Default: true,
+    ///   or false if `fragment_context` is given.
     /// - `exact_errors`: Report all parse errors described in the spec, at some performance penalty? Default: false.
     /// - `discard_bom`: Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? Default: true.
     /// - `profile`: Keep a record of how long we spent in each state? Printed when `finish()` is called. Default: false.
     /// - `iframe_srcdoc`: Is this an `iframe srcdoc` document? Default: false.
     /// - `drop_doctype`: Should we drop the DOCTYPE (if any) from the tree? Default: false.
     /// - `quirks_mode`: Initial TreeBuilder quirks mode. Default: QUIRKS_MODE_OFF.
+    /// - `fragment_context`: Parse a fragment as if it were the contents of this context element, e.g. `"td"` or
+    ///   `QualName("path", "svg")`. A name without a namespace is an HTML element. Default: None (fragments are
+    ///   parsed in a `body` context).
     #[new]
-    #[pyo3(signature=(full_document=true, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, quirks_mode=crate::tools::QUIRKS_MODE_OFF))]
+    #[pyo3(signature=(full_document=None, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, quirks_mode=crate::tools::QUIRKS_MODE_OFF, fragment_context=None))]
+    #[allow(clippy::too_many_arguments)]
     fn new(
-        full_document: bool,
+        full_document: Option<bool>,
         exact_errors: bool,
         discard_bom: bool,
         profile: bool,
         iframe_srcdoc: bool,
         drop_doctype: bool,
         quirks_mode: u8,
+        fragment_context: Option<crate::tools::PyQualNameOrStr>,
     ) -> pyo3::PyResult<Self> {
         let quirks_mode =
             crate::tools::convert_u8_to_quirks_mode(quirks_mode).ok_or_else(|| {
@@ -43,6 +50,24 @@ impl PyHtmlOptions {
                 ))
             })?;
 
+        let fragment_context = fragment_context.map(|x| {
+            let mut name = x.into_qualname();
+            if name.ns.is_empty() {
+                name.ns = treedom::markup5ever::namespace_url!("http://www.w3.org/1999/xhtml");
+            }
+            name
+        });
+
+        let full_document = match (full_document, &fragment_context) {
+            (Some(true), Some(_)) => {
+                return Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                    "full_document=True cannot be combined with fragment_context",
+                ))
+            }
+            (Some(full_document), _) => full_document,
+            (None, fragment_context) => fragment_context.is_none(),
+        };
+
         Ok(Self {
             exact_errors,
             discard_bom,
@@ -50,6 +75,7 @@ impl PyHtmlOptions {
             iframe_srcdoc,
             drop_doctype,
             full_document,
+            fragment_context,
             quirks_mode,
         })
     }
@@ -89,9 +115,16 @@ impl PyHtmlOptions {
         self.full_document
     }
 
+    #[getter]
+    fn fragment_context(&self) -> Option<crate::qualname::PyQualName> {
+        self.fragment_context
+            .clone()
+            .map(|name| crate::qualname::PyQualName { name })
+    }
+
     fn __repr__(&self) -> String {
         format!(
-            "markupever._rustlib.HtmlOptions(full_document={}, exact_errors={}, discard_bom={}, profile={}, iframe_srcdoc={}, drop_doctype={}, quirks_mode={})",
+            "markupever._rustlib.HtmlOptions(full_document={}, exact_errors={}, discard_bom={}, profile={}, iframe_srcdoc={}, drop_doctype={}, quirks_mode={}, fragment_context={})",
             self.full_document,
             self.exact_errors,
             self.discard_bom,
@@ -99,6 +132,9 @@ impl PyHtmlOptions {
             self.iframe_srcdoc,
             self.drop_doctype,
             crate::tools::convert_quirks_mode_to_u8(self.quirks_mode),
+            self.fragment_context
+                .as_ref()
+                .map_or_else(|| "None".to_owned(), crate::qualname::repr_qualname),
         )
     }
 }
@@ -260,22 +296,32 @@ impl PyParser {
         let state = {
             match options {
                 PyParserOptions::Html(options) => {
-                    ParserState::as_html(treedom::ParserSink::parse_html(
-                        options.full_document,
-                        treedom::html5ever::tokenizer::TokenizerOpts {
-                            exact_errors: options.exact_errors,
-                            discard_bom: options.discard_bom,
-                            profile: options.profile,
-                            ..Default::default()
-                        },
-                        treedom::html5ever::tree_builder::TreeBuilderOpts {
-                            exact_errors: options.exact_errors,
-                            iframe_srcdoc: options.iframe_srcdoc,
-                            drop_doctype: options.drop_doctype,
-                            quirks_mode: options.quirks_mode,
-                            ..Default::default()
-                        },
-                    ))
+                    let tokenizer = treedom::html5ever::tokenizer::TokenizerOpts {
+                        exact_errors: options.exact_errors,
+                        discard_bom: options.discard_bom,
+                        profile: options.profile,
+                        ..Default::default()
+                    };
+                    let tree_builder = treedom::html5ever::tree_builder::TreeBuilderOpts {
+                        exact_errors: options.exact_errors,
+                        iframe_srcdoc: options.iframe_srcdoc,
+                        drop_doctype: options.drop_doctype,
+                        quirks_mode: options.quirks_mode,
+                        ..Default::default()
+                    };
+
+                    ParserState::as_html(match &options.fragment_context {
+                        Some(context) => treedom::ParserSink::parse_html_fragment(
+                            context.clone(),
+                            tokenizer,
+                            tree_builder,
+                        ),
+                        None => treedom::ParserSink::parse_html(
+                            options.full_document,
+                            tokenizer,
+                            tree_builder,
+                        ),
+                    })
                 }
                 PyParserOptions::Xml(options) => {
                     ParserState::as_xml(treedom::ParserSink::parse_xml(

@@ -91,3 +91,34 @@ def test_parse_file_function(tmp_path):
     )
 
     markupever.parse_file(file, markupever.HtmlOptions())
+
+
+def test_fragment_context():
+    options = markupever.HtmlOptions(fragment_context="tbody")
+    assert not options.full_document
+    assert options.fragment_context == markupever.dom.QualName("tbody", "html")
+    assert "fragment_context=" in repr(options)
+
+    # In a tbody context, table rows are kept rather than dropped
+    dom = markupever.parse("<tr><td>x", options)
+    (html,) = dom.root().children()
+    (tr,) = html.children()
+    assert tr.name.local == "tr"
+    (td,) = tr.children()
+    assert td.name.local == "td"
+
+    # In an svg context, elements are created in the SVG namespace
+    options = markupever.HtmlOptions(fragment_context=markupever.dom.QualName("svg", "svg"))
+    (html,) = markupever.parse("<path/>", options).root().children()
+    (path,) = html.children()
+    assert path.name == markupever.dom.QualName("path", "svg")
+
+    # Without a context, fragments are parsed in a body context as before
+    options = markupever.HtmlOptions(full_document=False)
+    assert options.fragment_context is None
+    (html,) = markupever.parse("<tr><td>x", options).root().children()
+    assert [node.content for node in html.children()] == ["x"]
+
+    assert markupever.HtmlOptions().full_document
+    with pytest.raises(ValueError):
+        markupever.HtmlOptions(full_document=True, fragment_context="td")
