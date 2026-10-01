@@ -99,25 +99,25 @@ def test_fragment_context():
     assert options.fragment_context == markupever.dom.QualName("tbody", "html")
     assert "fragment_context=" in repr(options)
 
-    # In a tbody context, table rows are kept rather than dropped
+    # In a tbody context, table rows are kept rather than dropped, and the parsed nodes are the
+    # children of the root
     dom = markupever.parse("<tr><td>x", options)
-    (html,) = dom.root().children()
-    (tr,) = html.children()
+    (tr,) = dom.root().children()
     assert tr.name.local == "tr"
     (td,) = tr.children()
     assert td.name.local == "td"
+    assert dom.serialize(indent=0) == "<tr><td>x</td></tr>"
 
     # In an svg context, elements are created in the SVG namespace
     options = markupever.HtmlOptions(fragment_context=markupever.dom.QualName("svg", "svg"))
-    (html,) = markupever.parse("<path/>", options).root().children()
-    (path,) = html.children()
+    (path,) = markupever.parse("<path/>", options).root().children()
     assert path.name == markupever.dom.QualName("path", "svg")
 
-    # Without a context, fragments are parsed in a body context as before
+    # Without a context, fragments are parsed in a body context
     options = markupever.HtmlOptions(full_document=False)
     assert options.fragment_context is None
-    (html,) = markupever.parse("<tr><td>x", options).root().children()
-    assert [node.content for node in html.children()] == ["x"]
+    dom = markupever.parse("<tr><td>x<p>y", options)
+    assert dom.serialize(indent=0) == "x<p>y</p>"
 
     assert markupever.HtmlOptions().full_document
     with pytest.raises(ValueError):

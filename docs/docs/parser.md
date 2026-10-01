@@ -277,7 +277,7 @@ Use `HtmlOptions()` for HTML documents and `XmlOptions()` for XML documents. If 
 
 Let's see what parameters we have:
 
-* **`full_document`** - Specifies that is this a complete document? default: True.
+* **`full_document`** - Specifies that is this a complete document? If not, the content is parsed as a fragment, whose nodes are the children of the root. default: True.
 
 === "True"
 
@@ -296,7 +296,7 @@ Let's see what parameters we have:
     
     dom = markupever.parse("<p>A Text</p>", markupever.HtmlOptions(full_document=False))
     dom.serialize()
-    # <html><p>A Text</p></html>
+    # <p>A Text</p>
     ```
 
 * **`fragment_context`** - Parses a fragment as if it were the contents of this context element (like setting `innerHTML` on it). Pass a tag name such as `"td"`, or a `QualName` for an element in another namespace, such as `QualName("svg", "svg")`; a name without a namespace is an HTML element. Implies `full_document=False`. default: None (fragments are parsed in a `body` context).
@@ -308,7 +308,7 @@ Let's see what parameters we have:
     
     dom = markupever.parse("<tr><td>A Text</td></tr>", markupever.HtmlOptions(fragment_context="tbody"))
     dom.serialize(indent=0)
-    # <html><tr><td>A Text</td></tr></html>
+    # <tr><td>A Text</td></tr>
     ```
 
 === "None"
@@ -318,7 +318,7 @@ Let's see what parameters we have:
     
     dom = markupever.parse("<tr><td>A Text</td></tr>", markupever.HtmlOptions(full_document=False))
     dom.serialize(indent=0)
-    # <html>A Text</html>
+    # A Text
     ```
 
 * **`exact_errors`** - Report all parse errors described in the spec, at some performance penalty? default: False.

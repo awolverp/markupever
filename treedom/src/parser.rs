@@ -11,6 +11,8 @@ pub struct ParserSink {
     quirks_mode: Cell<markup5ever::interface::QuirksMode>,
     namespaces: RefCell<HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
     lineno: Cell<u64>,
+    // Whether this sink is parsing a fragment, whose nodes html5ever puts in an <html> root element
+    fragment: bool,
 }
 
 impl Default for ParserSink {
@@ -30,6 +32,7 @@ impl ParserSink {
             quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
             namespaces: RefCell::new(HashMap::new()),
             lineno: Cell::new(1),
+            fragment: false,
         }
     }
 
@@ -49,9 +52,21 @@ impl ParserSink {
     }
 
     /// Consumes the self and returns [`IDTreeDOM`]
+    ///
+    /// For a fragment, the parsed nodes are the children of the root.
     pub fn into_dom(self) -> IDTreeDOM {
+        let mut tree = self.tree.into_inner();
+
+        // The fragment parsing algorithm returns the children of the <html> root element
+        if self.fragment {
+            if let Some(html) = tree.root().first_child().map(|x| x.id()) {
+                tree.root_mut().reparent_from_id_append(html);
+                tree.get_mut(html).unwrap().detach();
+            }
+        }
+
         IDTreeDOM {
-            tree: self.tree.into_inner(),
+            tree,
             namespaces: self.namespaces.into_inner(),
         }
     }
@@ -86,7 +101,7 @@ impl ParserSink {
     /// in the given context element (like setting `innerHTML` on it)
     ///
     /// The context may be in any namespace, e.g. `td`, `svg path`, or `math mi`.
-    /// The parsed nodes are the children of the `html` element under the root.
+    /// [`ParserSink::into_dom`] returns the parsed nodes as the children of the root.
     #[cfg(feature = "html5ever")]
     pub fn parse_html_fragment(
         context: markup5ever::QualName,
@@ -98,8 +113,12 @@ impl ParserSink {
             tokenizer,
             tree_builder,
         };
+        let sink = Self {
+            fragment: true,
+            ..Self::new()
+        };
 
-        html5ever::driver::parse_fragment(Self::new(), opts, context, Vec::new(), scripting_enabled)
+        html5ever::driver::parse_fragment(sink, opts, context, Vec::new(), scripting_enabled)
     }
 
     /// Returns a [`xml5ever::driver::XmlParser<Self>`] that ready for parsing
@@ -437,8 +456,10 @@ mod tests {
             ),
             "<tr><td>x",
         );
-        let html = dom.root().first_child().unwrap();
-        let tr = html.first_child().unwrap();
+        // The parsed nodes are the children of the root, without an <html> wrapper
+        let children: Vec<_> = dom.root().children().collect();
+        assert_eq!(children.len(), 1);
+        let tr = children[0];
         assert_eq!(tr.value().element().unwrap().name.local.as_ref(), "tr");
         let td = tr.first_child().unwrap();
         assert_eq!(td.value().element().unwrap().name.local.as_ref(), "td");
@@ -452,8 +473,7 @@ mod tests {
             ),
             "<path/>",
         );
-        let html = dom.root().first_child().unwrap();
-        let path = html.first_child().unwrap();
+        let path = dom.root().first_child().unwrap();
         let name = &path.value().element().unwrap().name;
         assert_eq!(name.ns.as_ref(), "http://www.w3.org/2000/svg");
         assert_eq!(name.local.as_ref(), "path");
