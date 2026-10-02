@@ -1,6 +1,3 @@
-import typing
-
-
 class _DisplayCharacterToken:  # pragma: no cover
     """
     Internal token representing display characters for tree-like indentation visualization.
@@ -9,7 +6,7 @@ class _DisplayCharacterToken:  # pragma: no cover
     used for generating structured text representations with visual hierarchy.
     """
 
-    __slots__ = ("siblings", "children")
+    __slots__ = ("children", "siblings")
 
     def __init__(self, siblings: bool):
         self.siblings = siblings
@@ -39,10 +36,10 @@ class _Indentation:  # pragma: no cover
     and deindentation while maintaining a visual hierarchy of tokens.
     """
 
-    __slots__ = ("tokens", "ignore_root")
+    __slots__ = ("ignore_root", "tokens")
 
     def __init__(self, ignore_root: bool):
-        self.tokens: typing.List[_DisplayCharacterToken] = []
+        self.tokens: list[_DisplayCharacterToken] = []
         self.ignore_root = ignore_root
 
     def indent(self, siblings: bool):

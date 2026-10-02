@@ -63,7 +63,8 @@ def test_parser():  # this is a copy of test_rustlib.test_parser for markupever.
 
 def test_parse_function():
     assert isinstance(
-        markupever.parse("<html></html>", markupever.XmlOptions()), markupever.dom.TreeDom
+        markupever.parse("<html></html>", markupever.XmlOptions()),
+        markupever.dom.TreeDom,
     )
 
 
@@ -71,12 +72,16 @@ def test_parse_file_function(tmp_path):
     import io
 
     file = io.BytesIO(b"<body></body>")
-    assert isinstance(markupever.parse_file(file, markupever.XmlOptions()), markupever.dom.TreeDom)
+    assert isinstance(
+        markupever.parse_file(file, markupever.XmlOptions()), markupever.dom.TreeDom
+    )
     assert not file.closed
     file.close()
 
     file = io.StringIO("<body></body>")
-    assert isinstance(markupever.parse_file(file, markupever.XmlOptions()), markupever.dom.TreeDom)
+    assert isinstance(
+        markupever.parse_file(file, markupever.XmlOptions()), markupever.dom.TreeDom
+    )
     assert not file.closed
     file.close()
 
@@ -87,7 +92,8 @@ def test_parse_file_function(tmp_path):
 
     file.write_bytes(b"<body></body>")
     assert isinstance(
-        markupever.parse_file(str(file), markupever.HtmlOptions()), markupever.dom.TreeDom
+        markupever.parse_file(str(file), markupever.HtmlOptions()),
+        markupever.dom.TreeDom,
     )
 
     markupever.parse_file(file, markupever.HtmlOptions())
@@ -109,7 +115,9 @@ def test_fragment_context():
     assert dom.serialize(indent=0) == "<tr><td>x</td></tr>"
 
     # In an svg context, elements are created in the SVG namespace
-    options = markupever.HtmlOptions(fragment_context=markupever.dom.QualName("svg", "svg"))
+    options = markupever.HtmlOptions(
+        fragment_context=markupever.dom.QualName("svg", "svg")
+    )
     (path,) = markupever.parse("<path/>", options).root().children()
     assert path.name == markupever.dom.QualName("path", "svg")
 

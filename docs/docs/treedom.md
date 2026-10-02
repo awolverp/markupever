@@ -48,7 +48,7 @@ dom: markupever.dom.TreeDom = markupever.parse(
         <heading>Reminder</heading>
         <body>Don't forget me this weekend!</body></note>
     """,
-    markupever.XmlOptions()
+    markupever.XmlOptions(),
 )
 root = dom.root()
 
@@ -245,6 +245,7 @@ You can specify the operation with `dom.Ordering` class and the `ordering` param
 
     ```python hl_lines="9"
     from markupever import dom
+
     tree = dom.TreeDom()
     root = tree.root()
 
@@ -262,6 +263,7 @@ You can specify the operation with `dom.Ordering` class and the `ordering` param
 
     ```python hl_lines="9"
     from markupever import dom
+
     tree = dom.TreeDom()
     root = tree.root()
 
@@ -279,6 +281,7 @@ You can specify the operation with `dom.Ordering` class and the `ordering` param
 
     ```python hl_lines="9"
     from markupever import dom
+
     tree = dom.TreeDom()
     root = tree.root()
 
@@ -296,6 +299,7 @@ You can specify the operation with `dom.Ordering` class and the `ordering` param
 
     ```python hl_lines="9"
     from markupever import dom
+
     tree = dom.TreeDom()
     root = tree.root()
 

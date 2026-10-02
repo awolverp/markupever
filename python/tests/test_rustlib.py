@@ -199,12 +199,22 @@ def test_element():
         rl.Element(dom, rl.QualName("div", "html", "ns"), {}, False, True)
 
     rl.Element(dom, rl.QualName("div", "html", "ns"), [("a", "b")], False, True)
-    rl.Element(dom, rl.QualName("div", "html", "ns"), [("a", "b"), ("c", "d")], False, True)
     rl.Element(
-        dom, rl.QualName("div", "html", "ns"), [(rl.QualName("a"), "b"), ("c", "d")], False, True
+        dom, rl.QualName("div", "html", "ns"), [("a", "b"), ("c", "d")], False, True
     )
     rl.Element(
-        dom, rl.QualName("div", "html", "ns"), ((rl.QualName("a"), "b"), ("c", "d")), False, True
+        dom,
+        rl.QualName("div", "html", "ns"),
+        [(rl.QualName("a"), "b"), ("c", "d")],
+        False,
+        True,
+    )
+    rl.Element(
+        dom,
+        rl.QualName("div", "html", "ns"),
+        ((rl.QualName("a"), "b"), ("c", "d")),
+        False,
+        True,
     )
 
     with pytest.raises(TypeError):
@@ -217,7 +227,9 @@ def test_element():
         )
 
     with pytest.raises(TypeError):
-        rl.Element(dom, rl.QualName("div", "html", "ns"), [rl.QualName("a")], False, False)
+        rl.Element(
+            dom, rl.QualName("div", "html", "ns"), [rl.QualName("a")], False, False
+        )
 
     x = rl.Element(dom, rl.QualName("div", "html", "ns"), [], False, True)
 
@@ -256,7 +268,11 @@ def test_element_attrs():
     dom = rl.TreeDom()
     x = rl.Element(dom, "body", [("class", "flex"), ("id", "main")], False, False)
     x = rl.Element(
-        dom, "body", [(rl.QualName("class"), "flex"), (rl.QualName("id"), "main")], False, False
+        dom,
+        "body",
+        [(rl.QualName("class"), "flex"), (rl.QualName("id"), "main")],
+        False,
+        False,
     )
 
     with pytest.raises(TypeError):
@@ -300,7 +316,11 @@ def test_element_attrs():
     assert _get_attr(x.attrs, "class") is None
 
     x = rl.Element(
-        dom, "body", [("class", "flex"), ("class", "main"), ("class", "main")], False, False
+        dom,
+        "body",
+        [("class", "flex"), ("class", "main"), ("class", "main")],
+        False,
+        False,
     )
 
     assert len(x.attrs) == 3
@@ -348,7 +368,11 @@ def test_append_prepend():
     assert dom.root().first_child() == doctype
 
     x = rl.Element(
-        dom, rl.QualName("head", "mynamespace"), [("class", "flex"), ("id", "main")], False, False
+        dom,
+        rl.QualName("head", "mynamespace"),
+        [("class", "flex"), ("id", "main")],
+        False,
+        False,
     )
 
     assert dom.namespaces() == {}
@@ -374,7 +398,11 @@ def test_append_prepend():
     assert dom.namespaces() == {"": "mynamespace", "ns": "namespace2"}
 
     y = rl.Element(
-        dom, rl.QualName("head", "namespace3"), [("class", "flex"), ("id", "main")], False, False
+        dom,
+        rl.QualName("head", "namespace3"),
+        [("class", "flex"), ("id", "main")],
+        False,
+        False,
     )
     dom.insert_after(x, y)
 

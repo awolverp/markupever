@@ -25,7 +25,7 @@ tree = markupever.parse(
     </body>
     </html>
     """,
-    markupever.HtmlOptions()
+    markupever.HtmlOptions(),
 )
 ```
 

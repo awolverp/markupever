@@ -72,11 +72,11 @@ Let's use them:
 That's it, we parsed **`index.html`** file and now have a `TreeDom` class. We can navigate that:
 
 ```python
-root = dom.root() # Get root node
+root = dom.root()  # Get root node
 root
 # Document
 
-title = root.select_one("title") # Accepts CSS selectors
+title = root.select_one("title")  # Accepts CSS selectors
 title.name
 # QualName(local="title", ns="http://www.w3.org/1999/xhtml", prefix=None)
 
@@ -173,14 +173,14 @@ Let's use `.parse()` / `.parse_file()` function to parse it (we explained them [
 That's it, we parsed **`file.xml`** file and now have a `TreeDom` class. We can navigate that like what we did in this [section](#parsing-html):
 
 ```python
-root = dom.root() # Get root node
+root = dom.root()  # Get root node
 root
 # Document
 
 root.select_one("bookstore")
 # Element(name=QualName(local="bookstore"), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
 
-for i in root.select("mag|*"): # get all elements which has namespace 'mag'
+for i in root.select("mag|*"):  # get all elements which has namespace 'mag'
     print(i)
 # Element(name=QualName(local="magazine", ns="http://www.example.com/magazines", prefix=Some("mag")), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
 # Element(name=QualName(local="title", ns="http://www.example.com/magazines", prefix=Some("mag")), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
@@ -257,6 +257,7 @@ You can use these properties and methods before calling the `Parser.into_dom()` 
 
 ```python hl_lines="10"
 import markupever
+
 parser = markupever.Parser(options=markupever.HtmlOptions())
 parser.process("... content 1 ...")
 parser.process("... content 2 ...")
@@ -305,8 +306,10 @@ Let's see what parameters we have:
 
     ```python hl_lines="5"
     import markupever
-    
-    dom = markupever.parse("<tr><td>A Text</td></tr>", markupever.HtmlOptions(fragment_context="tbody"))
+
+    dom = markupever.parse(
+        "<tr><td>A Text</td></tr>", markupever.HtmlOptions(fragment_context="tbody")
+    )
     dom.serialize(indent=0)
     # <tr><td>A Text</td></tr>
     ```
@@ -315,8 +318,10 @@ Let's see what parameters we have:
 
     ```python hl_lines="5"
     import markupever
-    
-    dom = markupever.parse("<tr><td>A Text</td></tr>", markupever.HtmlOptions(full_document=False))
+
+    dom = markupever.parse(
+        "<tr><td>A Text</td></tr>", markupever.HtmlOptions(full_document=False)
+    )
     dom.serialize(indent=0)
     # A Text
     ```
@@ -327,6 +332,7 @@ Let's see what parameters we have:
 
     ```python hl_lines="6"
     import markupever
+
     p = markupever.Parser(markupever.HtmlOptions(exact_errors=True))
     p.process("<p>A Text</p>")
     p.finish()
@@ -338,6 +344,7 @@ Let's see what parameters we have:
 
     ```python hl_lines="6"
     import markupever
+
     p = markupever.Parser(markupever.HtmlOptions(exact_errors=False))
     p.process("<p>A Text</p>")
     p.finish()
@@ -383,8 +390,10 @@ Let's see what parameters we have:
 
     ```python hl_lines="5"
     import markupever
-    
-    dom = markupever.parse("<!DOCTYPE html><p>A Text</p>", markupever.HtmlOptions(drop_doctype=True))
+
+    dom = markupever.parse(
+        "<!DOCTYPE html><p>A Text</p>", markupever.HtmlOptions(drop_doctype=True)
+    )
     dom.serialize()
     # <html><head></head><body><p>A Text</p></body></html>
     ```
@@ -393,8 +402,10 @@ Let's see what parameters we have:
 
     ```python hl_lines="5"
     import markupever
-    
-    dom = markupever.parse("<!DOCTYPE html><p>A Text</p>", markupever.HtmlOptions(drop_doctype=False))
+
+    dom = markupever.parse(
+        "<!DOCTYPE html><p>A Text</p>", markupever.HtmlOptions(drop_doctype=False)
+    )
     dom.serialize()
     # <!DOCTYPE html><html><head></head><body><p>A Text</p></body></html>
     ```
@@ -412,6 +423,7 @@ Let's see what parameters we have:
 
     ```python hl_lines="6"
     import markupever
+
     p = markupever.Parser(markupever.XmlOptions(exact_errors=True))
     p.process("<p>A Text</p>")
     p.finish()
@@ -423,6 +435,7 @@ Let's see what parameters we have:
 
     ```python hl_lines="6"
     import markupever
+
     p = markupever.Parser(markupever.XmlOptions(exact_errors=False))
     p.process("<p>A Text</p>")
     p.finish()

@@ -15,7 +15,7 @@ class HtmlOptions:
     """
 
     def __new__(
-        cls: typing.Type,
+        cls: type,
         full_document=...,
         exact_errors=...,
         discard_bom=...,
@@ -23,8 +23,8 @@ class HtmlOptions:
         iframe_srcdoc=...,
         drop_doctype=...,
         quirks_mode=...,
-        fragment_context: typing.Union["QualName", str, None] = ...,
-    ) -> "HtmlOptions":
+        fragment_context: QualName | str | None = ...,
+    ) -> typing.Self:
         """
         Creates a new `HtmlOptions`
 
@@ -40,12 +40,11 @@ class HtmlOptions:
           `QualName("path", "svg")`. A name without a namespace is an HTML element. Default: None (fragments are
           parsed in a `body` context).
         """
-        ...
 
     @property
     def full_document(self) -> bool: ...
     @property
-    def fragment_context(self) -> typing.Optional["QualName"]: ...
+    def fragment_context(self) -> QualName | None: ...
     @property
     def exact_errors(self) -> bool: ...
     @property
@@ -58,7 +57,6 @@ class HtmlOptions:
     def drop_doctype(self) -> bool: ...
     @property
     def quirks_mode(self) -> int: ...
-    def __repr__(self) -> str: ...
 
 class XmlOptions:
     """
@@ -68,11 +66,11 @@ class XmlOptions:
     """
 
     def __new__(
-        cls: typing.Type,
+        cls: type,
         exact_errors=...,
         discard_bom=...,
         profile=...,
-    ) -> "XmlOptions":
+    ) -> typing.Self:
         """
         Creates a new `XmlOptions`
 
@@ -80,7 +78,6 @@ class XmlOptions:
         - `discard_bom`: Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? Default: true.
         - `profile`: Keep a record of how long we spent in each state? Printed when `finish()` is called. Default: false.
         """
-        ...
 
     @property
     def exact_errors(self) -> bool: ...
@@ -88,7 +85,6 @@ class XmlOptions:
     def discard_bom(self) -> bool: ...
     @property
     def profile(self) -> bool: ...
-    def __repr__(self) -> str: ...
 
 class QualName:
     """
@@ -143,35 +139,32 @@ class QualName:
     def __new__(
         cls,
         local: str,
-        ns: typing.Union[
-            str, typing.Literal["html", "xml", "xhtml", "xmlns", "xlink", "svg", "mathml", "*"]
+        ns: str
+        | typing.Literal[
+            "html", "xml", "xhtml", "xmlns", "xlink", "svg", "mathml", "*"
         ] = ...,
-        prefix: typing.Optional[str] = ...,
+        prefix: str | None = ...,
     ): ...
     @property
     def local(self) -> str:
         """The local name (e.g. `table` in `<furn:table>` above)."""
-        ...
     @property
     def ns(self) -> str:
         """The namespace after resolution (e.g. https://furniture.rs in example above)."""
-        ...
     @property
-    def prefix(self) -> typing.Optional[str]:
+    def prefix(self) -> str | None:
         """
         The prefix of qualified (e.g. furn in <furn:table> above).
         Optional (since some namespaces can be empty or inferred),
         and only useful for namespace resolution (since different prefix can still resolve to same namespace)
         """
-        ...
 
-    def copy(self) -> "QualName":
+    def copy(self) -> QualName:
         """
         Create a copy of the current QualName instance.
 
         Returns a new QualName instance with the same local name, namespace, and prefix.
         """
-        ...
 
     def __eq__(self, value) -> bool: ...
     def __ne__(self, value) -> bool: ...
@@ -180,8 +173,7 @@ class QualName:
     def __lt__(self, value) -> bool: ...
     def __le__(self, value) -> bool: ...
     def __hash__(self) -> int: ...
-    def __repr__(self) -> str: ...
 
 class AttrsListItems:
-    def __iter__(self) -> "AttrsListItems": ...
-    def __next__(self) -> typing.Tuple[QualName, str]: ...
+    def __iter__(self) -> AttrsListItems: ...
+    def __next__(self) -> tuple[QualName, str]: ...

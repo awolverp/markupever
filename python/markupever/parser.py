@@ -9,12 +9,9 @@ class Parser:
 
     def __init__(
         self,
-        options: typing.Union[
-            _rustlib.HtmlOptions,
-            _rustlib.XmlOptions,
-            typing.Literal["html"],
-            typing.Literal["xml"],
-        ] = "html",
+        options: typing.Literal["html", "xml"]
+        | _rustlib.HtmlOptions
+        | _rustlib.XmlOptions = "html",
     ):
         """
         An HTML/XML parser, ready to receive unicode input.
@@ -49,7 +46,7 @@ class Parser:
         """
         return not self.is_finished
 
-    def write(self, content: typing.Union[str, bytes]) -> int:
+    def write(self, content: str | bytes) -> int:
         """
         Same as `Parser.process`.
 
@@ -59,7 +56,7 @@ class Parser:
         self.__raw.process(content)
         return len(content)
 
-    def process(self, content: typing.Union[str, bytes]) -> "Parser":
+    def process(self, content: str | bytes) -> "Parser":
         """
         Processes an input.
 
@@ -86,7 +83,7 @@ class Parser:
         self.__state = 2
         return dom
 
-    def errors(self) -> typing.List[str]:
+    def errors(self) -> list[str]:
         """
         Returns the errors which are detected while parsing.
         """
@@ -121,13 +118,10 @@ class Parser:
 
 
 def parse(
-    content: typing.Union[str, bytes],
-    options: typing.Union[
-        _rustlib.HtmlOptions,
-        _rustlib.XmlOptions,
-        typing.Literal["html"],
-        typing.Literal["xml"],
-    ] = "html",
+    content: str | bytes,
+    options: typing.Literal["html", "xml"]
+    | _rustlib.HtmlOptions
+    | _rustlib.XmlOptions = "html",
 ) -> TreeDom:
     """
     Parses HTML or XML content and returns the parsed document tree.
@@ -145,13 +139,10 @@ def parse(
 
 
 def parse_file(
-    path: typing.Union[str, typing.TextIO, typing.BinaryIO],
-    options: typing.Union[
-        _rustlib.HtmlOptions,
-        _rustlib.XmlOptions,
-        typing.Literal["html"],
-        typing.Literal["xml"],
-    ] = "html",
+    path: str | typing.TextIO | typing.BinaryIO,
+    options: typing.Literal["html", "xml"]
+    | _rustlib.HtmlOptions
+    | _rustlib.XmlOptions = "html",
     *,
     chunk_size: int = 10240,
 ) -> TreeDom:

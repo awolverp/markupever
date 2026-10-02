@@ -1,7 +1,8 @@
-from markupever import _rustlib
 from collections import namedtuple
+
 import markupever
 import pytest
+from markupever import _rustlib
 
 
 def test_treedom():
@@ -21,7 +22,9 @@ def test_treedom():
     assert isinstance(lst[0], markupever.dom.Document)
 
 
-def _test_rustlib_node_convert(typ, expected, dom, *args, **kwargs) -> markupever.dom.BaseNode:
+def _test_rustlib_node_convert(
+    typ, expected, dom, *args, **kwargs
+) -> markupever.dom.BaseNode:
     instance = markupever.dom.BaseNode._wrap(typ(dom._raw, *args, **kwargs))
     assert isinstance(instance, expected)
     return instance
@@ -32,14 +35,20 @@ def test_basenode_init():
 
     assert isinstance(dom.root(), markupever.dom.Document)
 
-    _test_rustlib_node_convert(_rustlib.Doctype, markupever.dom.Doctype, dom, "name", "", "")
+    _test_rustlib_node_convert(
+        _rustlib.Doctype, markupever.dom.Doctype, dom, "name", "", ""
+    )
     _test_rustlib_node_convert(_rustlib.Comment, markupever.dom.Comment, dom, "content")
     _test_rustlib_node_convert(_rustlib.Text, markupever.dom.Text, dom, "content")
     _test_rustlib_node_convert(
         _rustlib.Element, markupever.dom.Element, dom, "name", [], False, False
     )
     _test_rustlib_node_convert(
-        _rustlib.ProcessingInstruction, markupever.dom.ProcessingInstruction, dom, "name", "data"
+        _rustlib.ProcessingInstruction,
+        markupever.dom.ProcessingInstruction,
+        dom,
+        "name",
+        "data",
     )
 
     with pytest.raises(TypeError):
@@ -88,7 +97,9 @@ def test_connect_node():
     assert meta_charset.name == "meta"
     assert meta_charset.next_sibling == meta_viewport
 
-    body = head.create_element("body", {"class": "bg-dark"}, ordering=markupever.dom.Ordering.AFTER)
+    body = head.create_element(
+        "body", {"class": "bg-dark"}, ordering=markupever.dom.Ordering.AFTER
+    )
     assert isinstance(body, markupever.dom.Element)
     assert body.parent == html
     assert body.name == "body"
@@ -344,7 +355,9 @@ def test_element():
     root = dom.root()
 
     html = root.create_element(
-        "html", {"lang": "en", "class": "hello world"}, mathml_annotation_xml_integration_point=True
+        "html",
+        {"lang": "en", "class": "hello world"},
+        mathml_annotation_xml_integration_point=True,
     )
     assert html.class_list == ["hello", "world"]
     assert html.template is False
@@ -474,7 +487,8 @@ def test_serializer():
 
     for case in testcases:
         dom = markupever.parse(
-            case.content, markupever.XmlOptions() if case.is_xml else markupever.HtmlOptions()
+            case.content,
+            markupever.XmlOptions() if case.is_xml else markupever.HtmlOptions(),
         )
         assert dom.serialize(case.indent) == case.expected
 

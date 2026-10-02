@@ -1,50 +1,50 @@
+[project]
+name = "markupever"
+requires-python = ">=3.10"
+
+authors = [{ name = "awolverp", email = "awolverp@gmail.com" }]
+keywords = ["css", "cssselect", "html", "markup", "markupever", "parser", "selector", "xml"]
+
+classifiers = [
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Programming Language :: Rust",
+  "Typing :: Typed",
+]
+
+dynamic = ["description", "license", "readme", "version"]
+
+[dependency-groups]
+dev = [
+  { include-group = "ci" },
+  { include-group = "lint" },
+]
+ci = [
+  { include-group = "maturin" },
+  { include-group = "test" },
+]
+lint = ["ruff>=0.16.9"]
+maturin = ["maturin==1.14.1"]
+test = ["pytest>=9.1.1"]
+
 [build-system]
 requires = ["maturin>=1.7,<2.0"]
 build-backend = "maturin"
 
-[project]
-name = "markupever"
-requires-python = ">=3.8"
-
-keywords = ["markupever", "html", "xml", "parser", "markup", "selector", "cssselect", "css"]
-authors = [
-  {name = "awolverp", email = "awolverp@gmail.com"}
-]
-
-classifiers = [
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python :: Implementation :: PyPy",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
-    "Programming Language :: Python",
-    "Programming Language :: Rust",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: POSIX :: Linux",
-    "Operating System :: Microsoft :: Windows",
-    "Operating System :: MacOS",
-    "Typing :: Typed",
-]
-
-dynamic = [
-    'description',
-    'license',
-    'readme',
-    'version'
-]
-
-[project.optional-dependencies]
-tests = [
-    "pytest",
-]
-
 [tool.maturin]
-python-source = "python"
 features = ["pyo3/extension-module"]
 module-name = "markupever._rustlib"
+python-source = "python"

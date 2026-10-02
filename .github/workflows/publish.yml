@@ -4,50 +4,56 @@ on:
   push:
     tags:
       - "*"
-
   workflow_dispatch:
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
-
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  linux:
+    runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
         platform:
           - {
+              runner: ubuntu-latest,
               target: x86_64,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
+              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11 graalpy3.11 graalpy3.12",
             }
           - {
-              target: x86,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
+              runner: ubuntu-latest,
+              target: i686,
+              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11",
             }
           - {
+              runner: ubuntu-latest,
               target: aarch64,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
+              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11 graalpy3.11 graalpy3.12",
             }
           - {
+              runner: ubuntu-latest,
               target: armv7,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
+              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t",
             }
           - {
+              runner: ubuntu-latest,
               target: s390x,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
+              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t",
             }
           - {
+              runner: ubuntu-latest,
               target: ppc64le,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
+              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t",
+            }
+          - {
+              runner: ubuntu-latest,
+              target: riscv64gc-unknown-linux-gnu,
+              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t",
             }
 
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@v6.2.0
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
@@ -59,39 +65,38 @@ jobs:
           manylinux: auto
           rust-toolchain: nightly
 
-      - uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@v4
         with:
           name: wheels-linux-${{ matrix.platform.target }}
           path: dist
 
-  build-musllinux:
-    runs-on: ubuntu-latest
+  musllinux:
+    runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
         platform:
           - {
+              runner: ubuntu-latest,
               target: x86_64,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
+              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11",
             }
           - {
-              target: x86,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
-            }
-          - {
+              runner: ubuntu-latest,
               target: aarch64,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
+              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11",
             }
           - {
+              runner: ubuntu-latest,
               target: armv7,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
+              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t pypy3.11",
             }
 
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@v6.2.0
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
@@ -100,125 +105,124 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --interpreter ${{ matrix.platform.interpreter }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          manylinux: musllinux_1_2
+          manylinux: musllinux_1_1
           rust-toolchain: nightly
 
-      - uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@v4
         with:
           name: wheels-musllinux-${{ matrix.platform.target }}
           path: dist
 
-  build-windows:
-    runs-on: windows-latest
+  windows:
+    runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
         platform:
           - {
+              runner: windows-latest,
               target: x64,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
+              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t",
             }
-          - { target: x86, interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t" }
-
+          - {
+              runner: windows-latest,
+              target: x86,
+              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t",
+            }
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v5.0.0
         with:
           persist-credentials: false
-
-      - uses: actions/setup-python@v6.2.0
+      - uses: actions/setup-python@v6.0.0
         with:
-          python-version: "3.x"
+          python-version: 3.x
           architecture: ${{ matrix.platform.target }}
-
-      - uses: PyO3/maturin-action@v1.51.0
+      - uses: PyO3/maturin-action@v1.49.4
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --interpreter ${{ matrix.platform.interpreter }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           rust-toolchain: nightly
 
-      - uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@v4.6.2
         with:
           name: wheels-windows-${{ matrix.platform.target }}
           path: dist
 
-  build-macos:
-    runs-on: macos-latest
+  macos:
+    runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
         platform:
           - {
+              runner: macos-latest,
               target: x86_64,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
+              interpreter: "3.10 3.11 3.12 3.13 3.13t 3.14 3.14t pypy3.11",
             }
           - {
+              runner: macos-latest,
               target: aarch64,
-              interpreter: "3.10 3.11 3.12 3.13 3.14 3.14t 3.15 3.15t pypy3.11",
+              interpreter: "3.10 3.11 3.12 3.13 3.13t 3.14 3.14t pypy3.11",
             }
-
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v5.0.0
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@v6.2.0
+      - uses: actions/setup-python@v6.0.0
         with:
-          python-version: "3.x"
+          python-version: 3.x
 
-      - uses: PyO3/maturin-action@v1.51.0
+      - uses: PyO3/maturin-action@v1.49.4
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --interpreter ${{ matrix.platform.interpreter }}
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           rust-toolchain: nightly
 
-      - uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@v4.6.2
         with:
           name: wheels-macos-${{ matrix.platform.target }}
           path: dist
-
   build-sdist:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
-      - name: Build sdist
-        uses: PyO3/maturin-action@v1.51.0
+      - uses: PyO3/maturin-action@v1.51.0
         with:
           command: sdist
           args: --out dist
           rust-toolchain: nightly
 
-      - name: Upload sdist
-        uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@v4
         with:
           name: wheels-sdist
           path: dist
 
   release:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-    needs:
-      - build-linux
-      - build-musllinux
-      - build-windows
-      - build-macos
-      - build-sdist
-
+    if: ${{ startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' }}
+    needs: [linux, musllinux, windows, macos, build-sdist]
     permissions:
-      id-token: write
-      contents: write
+      id-token: write # signing release artifacts
+      contents: write # uploading release artifacts
+      attestations: write
 
     steps:
-      - uses: actions/download-artifact@v8.0.1
+      - uses: actions/download-artifact@v5
+
+      - uses: actions/attest-build-provenance@v3
         with:
-          pattern: wheels-*
-          merge-multiple: true
-          path: dist
+          subject-path: "wheels-*/*"
 
       - name: Publish to PyPI
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: pypa/gh-action-pypi-publish@release/v1
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        uses: PyO3/maturin-action@v1.51.0
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:
-          packages-dir: dist
+          command: upload
+          args: --non-interactive --skip-existing wheels-*/*
+          rust-toolchain: nightly

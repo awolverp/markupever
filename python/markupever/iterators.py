@@ -1,6 +1,6 @@
-from . import _rustlib
 import typing
 
+from . import _rustlib
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from . import dom
@@ -66,7 +66,7 @@ class Children(_IteratorMetaClass):
 class EdgeTraverse:
     """Open or close edge of a node (The returning type of `Traverse`)."""
 
-    __slots__ = ("node", "closed")
+    __slots__ = ("closed", "node")
 
     def __init__(self, node: "dom.BaseNode", closed: bool) -> None:
         self.node = node
@@ -100,7 +100,7 @@ class Descendants(_IteratorMetaClass):
 class Select:
     """An iterator that uses CSS selectors to match and find nodes."""
 
-    __slots__ = ("__raw", "__limit", "__offset")
+    __slots__ = ("__limit", "__offset", "__raw")
 
     def __init__(
         self, value: "dom.BaseNode", expr: str, *, limit: int = 0, offset: int = 0

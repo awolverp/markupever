@@ -71,7 +71,7 @@ How to use markupever alongside `aiohttp` library.
     # Create a ClientSession instance
     async with aiohttp.ClientSession() as session:
         # Send a GET request to google
-        async with session.get('https://www.google.com/') as resp:
+        async with session.get("https://www.google.com/") as resp:
             # Parse the result using markupever
             dom = markupever.parse(await resp.read(), markupever.HtmlOptions())
     ```
@@ -90,7 +90,7 @@ How to use markupever alongside `PycURL` library.
     c = pycurl.Curl()
 
     # Define Options ...
-    c.setopt(c.URL, 'https://www.google.com/')
+    c.setopt(c.URL, "https://www.google.com/")
     c.setopt(c.CAINFO, certifi.where())
 
     # Setup markupever to recieve response

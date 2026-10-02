@@ -8,7 +8,7 @@ from ._rustlib import QualName as QualName
 class TreeDom:
     __slots__ = ("_raw",)
 
-    def __init__(self, *, raw: typing.Optional[_rustlib.TreeDom] = None):
+    def __init__(self, *, raw: _rustlib.TreeDom | None = None):
         """
         A tree structure specialized for HTML and XML documents, utilizing Rust's `Vec` type as its backend.
 
@@ -21,7 +21,7 @@ class TreeDom:
             assert isinstance(raw, _rustlib.TreeDom)
             self._raw = raw
 
-    def namespaces(self) -> typing.Dict[str, str]:
+    def namespaces(self) -> dict[str, str]:
         """
         Returns a dictionary of namespace prefixes and their corresponding namespace URIs defined in the DOM.
         """
@@ -42,7 +42,7 @@ class TreeDom:
     def serialize_bytes(
         self,
         indent: int = 4,
-        is_html: typing.Optional[bool] = None,
+        is_html: bool | None = None,
         include_self: bool = True,
     ) -> bytes:
         """Shorthand for `self.root().serialize_bytes(is_html)`"""
@@ -53,7 +53,7 @@ class TreeDom:
     def serialize(
         self,
         indent: int = 4,
-        is_html: typing.Optional[bool] = None,
+        is_html: bool | None = None,
         include_self: bool = True,
     ) -> str:
         """Shorthand for `self.root().serialize(is_html)`"""
@@ -108,7 +108,7 @@ class TreeDom:
 class _ConfigNode:
     __slots__ = ("basetype", "invalid_ordering")
 
-    def __init__(self, basetype: typing.Optional[type], invalid_ordering: typing.Tuple[int]):
+    def __init__(self, basetype: type | None, invalid_ordering: tuple[int]):
         self.basetype = basetype
         self.invalid_ordering = invalid_ordering
 
@@ -146,18 +146,16 @@ class BaseNode:
     _SUBCLASS_WRAP = {}
 
     def __init__(self, node: typing.Any):
-        if self._CONFIG.basetype is not None and not isinstance(node, self._CONFIG.basetype):
+        if self._CONFIG.basetype is not None and not isinstance(
+            node, self._CONFIG.basetype
+        ):
             raise TypeError(
-                "expected {} for node, got {} - It's recommended to use nodes `create_*` methods for creating nodes and don't call directly markupever.nodes classes.".format(
-                    self._CONFIG.basetype.__name__, type(node).__name__
-                )
+                f"expected {self._CONFIG.basetype.__name__} for node, got {type(node).__name__} - It's recommended to use nodes `create_*` methods for creating nodes and don't call directly markupever.nodes classes."
             )
 
         if not _rustlib._is_node_impl(node):
             raise TypeError(
-                "expected one of _rustlib nodes implementations (such as _rustlib.Element, _rustlib.Comment, ...), got {}".format(
-                    type(node).__name__
-                )
+                f"expected one of _rustlib nodes implementations (such as _rustlib.Element, _rustlib.Comment, ...), got {type(node).__name__}"
             )
 
         self._raw = node
@@ -168,7 +166,7 @@ class BaseNode:
             _type = cls._SUBCLASS_WRAP[type(node)]
         except KeyError:
             raise TypeError(
-                "the type of node is not acceptable ({}).".format(type(node).__name__)
+                f"the type of node is not acceptable ({type(node).__name__})."
             ) from None
 
         return _type(node)
@@ -359,7 +357,7 @@ class BaseNode:
     def serialize_bytes(
         self,
         indent: int = 4,
-        is_html: typing.Optional[bool] = None,
+        is_html: bool | None = None,
         include_self: bool = True,
     ) -> bytes:
         """
@@ -374,7 +372,7 @@ class BaseNode:
     def serialize(
         self,
         indent: int = 4,
-        is_html: typing.Optional[bool] = None,
+        is_html: bool | None = None,
         include_self: bool = True,
     ) -> str:
         """
@@ -384,9 +382,9 @@ class BaseNode:
         - is_html (bool, optional): Whether to serialize as HTML. Defaults to None.
         - include_self (bool, optional): Whether to include the current node in serialization. Defaults to True.
         """
-        return self.serialize_bytes(indent, is_html=is_html, include_self=include_self).decode(
-            "utf-8"
-        )
+        return self.serialize_bytes(
+            indent, is_html=is_html, include_self=include_self
+        ).decode("utf-8")
 
     def __eq__(self, value):
         if isinstance(value, BaseNode):
@@ -449,7 +447,9 @@ class Document(BaseNode):
         self._connect_node(ordering, dom, node)
         return Doctype(node)
 
-    def create_comment(self, content: str, *, ordering: int = Ordering.APPEND) -> "Comment":
+    def create_comment(
+        self, content: str, *, ordering: int = Ordering.APPEND
+    ) -> "Comment":
         """
         Create and connect a `Comment` to this node depends on `ordering` value.
         """
@@ -470,10 +470,10 @@ class Document(BaseNode):
     def create_element(
         self,
         name: str,
-        attrs: typing.Union[
-            typing.Sequence[typing.Tuple[typing.Union[_rustlib.QualName, str], str]],
-            typing.Dict[typing.Union[_rustlib.QualName, str], str],
-        ] = [],
+        attrs: (
+            typing.Sequence[tuple[_rustlib.QualName | str, str]]
+            | dict[_rustlib.QualName | str, str]
+        ) = (),
         template: bool = False,
         mathml_annotation_xml_integration_point: bool = False,
         *,
@@ -487,7 +487,9 @@ class Document(BaseNode):
         if isinstance(attrs, dict):
             attrs = list(attrs.items())
 
-        node = _rustlib.Element(dom, name, attrs, template, mathml_annotation_xml_integration_point)
+        node = _rustlib.Element(
+            dom, name, attrs, template, mathml_annotation_xml_integration_point
+        )
         self._connect_node(ordering, dom, node)
         return Element(node)
 
@@ -664,13 +666,13 @@ class AttrsList:
     def __init__(self, attrs: _rustlib.AttrsList):
         self.__raw = attrs
 
-    def append(self, key: typing.Union[_rustlib.QualName, str], value: str):
+    def append(self, key: _rustlib.QualName | str, value: str):
         """
         Appends a key-value pair into attributes list.
         """
         self.__raw.push(key, value)
 
-    def insert(self, index: int, key: typing.Union[_rustlib.QualName, str], value: str):
+    def insert(self, index: int, key: _rustlib.QualName | str, value: str):
         """
         Inserts a key-value pair at position `index` within the list, shifting all elements after it to the right.
         """
@@ -678,10 +680,10 @@ class AttrsList:
 
     def _find_by_key(
         self,
-        key: typing.Union[_rustlib.QualName, str],
+        key: _rustlib.QualName | str,
         default: _D = None,
         start: int = 0,
-    ) -> typing.Tuple[typing.Union[str, _D], int]:
+    ) -> tuple[str | _D, int]:
         for index, item in itertools.islice(enumerate(self.__raw.items()), start, None):
             k, v = item
 
@@ -692,7 +694,7 @@ class AttrsList:
 
     def _find_by_item(
         self,
-        key: typing.Union[_rustlib.QualName, str],
+        key: _rustlib.QualName | str,
         value: str,
         start: int = 0,
     ) -> int:
@@ -706,7 +708,7 @@ class AttrsList:
 
     def index(
         self,
-        key: typing.Union[typing.Union[_rustlib.QualName, str], tuple],
+        key: _rustlib.QualName | str | tuple,
         start: int = 0,
     ) -> int:
         """
@@ -729,10 +731,10 @@ class AttrsList:
 
     def get(
         self,
-        key: typing.Union[_rustlib.QualName, str],
+        key: _rustlib.QualName | str,
         default: _D = None,
         start: int = 0,
-    ) -> typing.Union[str, _D]:
+    ) -> str | _D:
         """
         Retrieve the value associated with a given key in the attributes list. Returns the value
         associated with the key if found, otherwise the default value.
@@ -753,7 +755,7 @@ class AttrsList:
         """
         self.__raw.dedup()  # pragma: no cover
 
-    def pop(self, index: int = -1) -> typing.Tuple[_rustlib.QualName, str]:
+    def pop(self, index: int = -1) -> tuple[_rustlib.QualName, str]:
         """
         Remove and return item at index (default last).
 
@@ -766,7 +768,7 @@ class AttrsList:
 
     def remove(
         self,
-        key: typing.Union[typing.Union[_rustlib.QualName, str], tuple],
+        key: _rustlib.QualName | str | tuple,
         start: int = 0,
     ) -> None:
         """
@@ -784,7 +786,7 @@ class AttrsList:
         """Reverses the order of elements in the list."""
         self.__raw.reverse()
 
-    def extend(self, m: typing.Union[dict, typing.Iterable[tuple]]):
+    def extend(self, m: dict | typing.Iterable[tuple]):
         """
         Extend the attributes list by appending key-value pairs from the iterable or dictionary.
         """
@@ -798,7 +800,7 @@ class AttrsList:
         """Clears the attributes list, removing all values."""
         self.__raw.clear()
 
-    def items(self) -> typing.Iterator[typing.Tuple[QualName, str]]:
+    def items(self) -> typing.Iterator[tuple[QualName, str]]:
         """Returns a generator of attribute key-value pairs."""
         return self.__raw.items()
 
@@ -818,7 +820,7 @@ class AttrsList:
         """Returns a generator of attribute keys."""
         return self.keys()
 
-    def __contains__(self, key: typing.Union[typing.Union[_rustlib.QualName, str], tuple]) -> bool:
+    def __contains__(self, key: _rustlib.QualName | str | tuple) -> bool:
         """
         Returns `True` if the list has the specified key, else `False`.
         """
@@ -829,7 +831,7 @@ class AttrsList:
 
         return index > -1
 
-    def __delitem__(self, index: typing.Union[int, str, _rustlib.QualName]) -> None:
+    def __delitem__(self, index: int | str | _rustlib.QualName) -> None:
         """
         Remove an item from the list by its index or key.
 
@@ -846,8 +848,8 @@ class AttrsList:
 
     def __setitem__(
         self,
-        index: typing.Union[int, str, _rustlib.QualName],
-        val: typing.Union[str, typing.Tuple[typing.Union[_rustlib.QualName, str], str]],
+        index: int | str | _rustlib.QualName,
+        val: str | tuple[_rustlib.QualName | str, str],
     ) -> None:
         """
         Set an attribute by index or key.
@@ -871,10 +873,10 @@ class AttrsList:
         self.__raw.update_item(index, val[0], val[1])
 
     @typing.overload
-    def __getitem__(self, index: typing.Union[str, _rustlib.QualName]) -> str: ...
+    def __getitem__(self, index: str | _rustlib.QualName) -> str: ...
 
     @typing.overload
-    def __getitem__(self, index: int) -> typing.Tuple[_rustlib.QualName, str]: ...
+    def __getitem__(self, index: int) -> tuple[_rustlib.QualName, str]: ...
 
     def __getitem__(self, index):
         if not isinstance(index, int):
@@ -901,7 +903,7 @@ class Element(BaseNode):
         return self._raw.name
 
     @name.setter
-    def name(self, value: typing.Union[str, _rustlib.QualName]) -> None:
+    def name(self, value: str | _rustlib.QualName) -> None:
         self._raw.name = value
 
     @property
@@ -911,10 +913,8 @@ class Element(BaseNode):
     @attrs.setter
     def attrs(
         self,
-        value: typing.Union[
-            typing.Sequence[typing.Tuple[typing.Union[_rustlib.QualName, str], str]],
-            typing.Dict[typing.Union[_rustlib.QualName, str], str],
-        ],
+        value: typing.Sequence[tuple[_rustlib.QualName | str, str]]
+        | dict[_rustlib.QualName | str, str],
     ) -> None:
         if isinstance(value, dict):
             value = list(value.items())
@@ -938,7 +938,7 @@ class Element(BaseNode):
         self._raw.mathml_annotation_xml_integration_point = value
 
     @property
-    def id(self) -> typing.Optional[str]:
+    def id(self) -> str | None:
         """
         Returns the `id` attribute of the element as `str`.
 
@@ -948,7 +948,7 @@ class Element(BaseNode):
         return self._raw.id()
 
     @property
-    def class_list(self) -> typing.List[str]:
+    def class_list(self) -> list[str]:
         """
         Returns the `class` attribute of the element as `list[str]`.
 
@@ -998,10 +998,10 @@ class Element(BaseNode):
     def create_element(
         self,
         name: str,
-        attrs: typing.Union[
-            typing.Sequence[typing.Tuple[typing.Union[_rustlib.QualName, str], str]],
-            typing.Dict[typing.Union[_rustlib.QualName, str], str],
-        ] = [],
+        attrs: (
+            typing.Sequence[tuple[_rustlib.QualName | str, str]]
+            | dict[_rustlib.QualName | str, str]
+        ) = (),
         template: bool = False,
         mathml_annotation_xml_integration_point: bool = False,
         *,
@@ -1015,7 +1015,9 @@ class Element(BaseNode):
         if isinstance(attrs, dict):
             attrs = list(attrs.items())
 
-        node = _rustlib.Element(dom, name, attrs, template, mathml_annotation_xml_integration_point)
+        node = _rustlib.Element(
+            dom, name, attrs, template, mathml_annotation_xml_integration_point
+        )
         self._connect_node(ordering, dom, node)
         return Element(node)
 
@@ -1040,7 +1042,9 @@ class ProcessingInstruction(BaseNode):
     be ignored by any other applications which don't recognize the instruction.
     """
 
-    _CONFIG = _ConfigNode(_rustlib.ProcessingInstruction, (Ordering.APPEND, Ordering.PREPEND))
+    _CONFIG = _ConfigNode(
+        _rustlib.ProcessingInstruction, (Ordering.APPEND, Ordering.PREPEND)
+    )
 
     @property
     def target(self) -> str:

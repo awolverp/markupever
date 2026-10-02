@@ -134,8 +134,9 @@ We want to extract the `href` attributes from it, and we have three ways to achi
 
     ```python title="main.py"
     import markupever
-    with open("index.html", "rb") as fd: # (2)!
-        dom = markupever.parse(fd.read(), markupever.HtmlOptions()) # (1)!
+
+    with open("index.html", "rb") as fd:  # (2)!
+        dom = markupever.parse(fd.read(), markupever.HtmlOptions())  # (1)!
 
     for element in dom.select("a[href]"):
         print(element.attrs["href"])
@@ -151,8 +152,9 @@ We want to extract the `href` attributes from it, and we have three ways to achi
 
     ```python title="main.py"
     import markupever
-    dom = markupever.parse_file("index.html", markupever.HtmlOptions()) # (1)!
-    
+
+    dom = markupever.parse_file("index.html", markupever.HtmlOptions())  # (1)!
+
     for element in dom.select("a[href]"):
         print(element.attrs["href"])
     ```
@@ -165,12 +167,13 @@ We want to extract the `href` attributes from it, and we have three ways to achi
 
     ```python title="main.py"
     import markupever
-    parser = markupever.Parser(markupever.HtmlOptions()) # (1)!
 
-    with open("index.html", "rb") as fd: # (2)!
-        for line in fd: # Read line by line (3)
+    parser = markupever.Parser(markupever.HtmlOptions())  # (1)!
+
+    with open("index.html", "rb") as fd:  # (2)!
+        for line in fd:  # Read line by line (3)
             parser.process(line)
-    
+
     parser.finish()
     dom = parser.into_dom()
 
