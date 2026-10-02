@@ -1,6 +1,6 @@
 use super::dom::IDTreeDOM;
 use super::interface;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use std::cell::{Cell, Ref, RefCell};
 
 /// Markup parser that implemented [`markup5ever::interface::TreeSink`]
@@ -13,6 +13,9 @@ pub struct ParserSink {
     lineno: Cell<u64>,
     // Whether this sink is parsing a fragment, whose nodes html5ever puts in an <html> root element
     fragment: bool,
+    // Attribute names of the elements passed to add_attrs_if_missing (only <html> and <body>),
+    // so that repeated calls don't each scan the element's attributes
+    attr_names: RefCell<HashMap<ego_tree::NodeId, HashSet<markup5ever::QualName>>>,
 }
 
 impl Default for ParserSink {
@@ -33,6 +36,7 @@ impl ParserSink {
             namespaces: RefCell::new(HashMap::new()),
             lineno: Cell::new(1),
             fragment: false,
+            attr_names: RefCell::new(HashMap::new()),
         }
     }
 
@@ -359,13 +363,26 @@ impl markup5ever::interface::TreeSink for ParserSink {
     fn add_attrs_if_missing(&self, target: &Self::Handle, attrs: Vec<markup5ever::Attribute>) {
         let mut tree = self.tree.borrow_mut();
         let mut node = tree.get_mut(*target).unwrap();
+        let mut attr_names = self.attr_names.borrow_mut();
 
         if let Some(element) = node.value().element_mut() {
-            element.attrs.extend(
-                attrs
-                    .into_iter()
-                    .map(|x| (x.name.into(), crate::atomic::make_atomic_tendril(x.value))),
-            );
+            // Only the sink changes attributes during parsing, so the index stays accurate
+            let names = attr_names.entry(*target).or_insert_with(|| {
+                element
+                    .attrs
+                    .iter()
+                    .map(|(name, _)| (**name).clone())
+                    .collect()
+            });
+
+            for attr in attrs {
+                if names.insert(attr.name.clone()) {
+                    element.attrs.push((
+                        attr.name.into(),
+                        crate::atomic::make_atomic_tendril(attr.value),
+                    ));
+                }
+            }
         } else {
             unreachable!("add_attrs_if_missing called on a non-element node")
         }
@@ -439,6 +456,34 @@ mod tests {
         );
     }
 
+    #[test]
+    fn html_add_attrs_if_missing() {
+        let parser = ParserSink::parse_html(true, Default::default(), Default::default());
+        let dom = parser
+            .one("<body a=1><body a=2 b=3><body b=4 c=5>")
+            .into_dom();
+
+        let html = dom.root().last_child().unwrap();
+        let body = html.last_child().unwrap();
+        let attrs: Vec<_> = body
+            .value()
+            .element()
+            .unwrap()
+            .attrs
+            .iter()
+            .map(|(k, v)| (k.local.to_string(), v.to_string()))
+            .collect();
+
+        assert_eq!(
+            attrs,
+            [
+                ("a".to_string(), "1".to_string()),
+                ("b".to_string(), "3".to_string()),
+                ("c".to_string(), "5".to_string()),
+            ]
+        );
+    }
+  
     #[test]
     fn html_fragment_parsing() {
         fn parse_fragment(context: markup5ever::QualName, html: &str) -> IDTreeDOM {
