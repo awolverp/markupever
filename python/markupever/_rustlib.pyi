@@ -23,22 +23,29 @@ class HtmlOptions:
         iframe_srcdoc=...,
         drop_doctype=...,
         quirks_mode=...,
+        fragment_context: typing.Union["QualName", str, None] = ...,
     ) -> "HtmlOptions":
         """
         Creates a new `HtmlOptions`
 
-        - `full_document`: Is this a complete document? (means includes html, head, and body tag). Default: true.
+        - `full_document`: Is this a complete document? (means includes html, head, and body tag). Default: true,
+          or false if `fragment_context` is given.
         - `exact_errors`: Report all parse errors described in the spec, at some performance penalty? Default: false.
         - `discard_bom`: Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? Default: true.
         - `profile`: Keep a record of how long we spent in each state? Printed when `finish()` is called. Default: false.
         - `iframe_srcdoc`: Is this an `iframe srcdoc` document? Default: false.
         - `drop_doctype`: Should we drop the DOCTYPE (if any) from the tree? Default: false.
         - `quirks_mode`: Initial TreeBuilder quirks mode. Default: QUIRKS_MODE_OFF.
+        - `fragment_context`: Parse a fragment as if it were the contents of this context element, e.g. `"td"` or
+          `QualName("path", "svg")`. A name without a namespace is an HTML element. Default: None (fragments are
+          parsed in a `body` context).
         """
         ...
 
     @property
     def full_document(self) -> bool: ...
+    @property
+    def fragment_context(self) -> typing.Optional["QualName"]: ...
     @property
     def exact_errors(self) -> bool: ...
     @property

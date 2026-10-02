@@ -581,10 +581,10 @@ def test_serialize():
 
     dom = parser.into_dom()
 
-    assert rl.serialize(dom.root(), 0, is_html=True) == b"<html><hello>Ali</hello></html>"
+    assert rl.serialize(dom.root(), 0, is_html=True) == b"<hello>Ali</hello>"
     assert (
         rl.serialize(dom.root(), 0, is_html=False)
-        == b'<html xmlns="http://www.w3.org/1999/xhtml"><hello>Ali</hello></html>'
+        == b'<hello xmlns="http://www.w3.org/1999/xhtml">Ali</hello>'
     )
 
     parser = rl.Parser(rl.XmlOptions())
