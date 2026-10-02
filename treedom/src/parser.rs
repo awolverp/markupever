@@ -1,6 +1,6 @@
 use super::dom::IDTreeDOM;
 use super::interface;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use std::cell::{Cell, Ref, RefCell};
 
 /// Markup parser that implemented [`markup5ever::interface::TreeSink`]
@@ -11,6 +11,11 @@ pub struct ParserSink {
     quirks_mode: Cell<markup5ever::interface::QuirksMode>,
     namespaces: RefCell<HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
     lineno: Cell<u64>,
+    // Whether this sink is parsing a fragment, whose nodes html5ever puts in an <html> root element
+    fragment: bool,
+    // Attribute names of the elements passed to add_attrs_if_missing (only <html> and <body>),
+    // so that repeated calls don't each scan the element's attributes
+    attr_names: RefCell<HashMap<ego_tree::NodeId, HashSet<markup5ever::QualName>>>,
 }
 
 impl Default for ParserSink {
@@ -30,6 +35,8 @@ impl ParserSink {
             quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
             namespaces: RefCell::new(HashMap::new()),
             lineno: Cell::new(1),
+            fragment: false,
+            attr_names: RefCell::new(HashMap::new()),
         }
     }
 
@@ -49,9 +56,21 @@ impl ParserSink {
     }
 
     /// Consumes the self and returns [`IDTreeDOM`]
+    ///
+    /// For a fragment, the parsed nodes are the children of the root.
     pub fn into_dom(self) -> IDTreeDOM {
+        let mut tree = self.tree.into_inner();
+
+        // The fragment parsing algorithm returns the children of the <html> root element
+        if self.fragment {
+            if let Some(html) = tree.root().first_child().map(|x| x.id()) {
+                tree.root_mut().reparent_from_id_append(html);
+                tree.get_mut(html).unwrap().detach();
+            }
+        }
+
         IDTreeDOM {
-            tree: self.tree.into_inner(),
+            tree,
             namespaces: self.namespaces.into_inner(),
         }
     }
@@ -63,26 +82,47 @@ impl ParserSink {
         tokenizer: html5ever::tokenizer::TokenizerOpts,
         tree_builder: html5ever::tree_builder::TreeBuilderOpts,
     ) -> html5ever::driver::Parser<Self> {
-        let opts = html5ever::driver::ParseOpts {
-            tokenizer,
-            tree_builder,
-        };
-
         if full_document {
+            let opts = html5ever::driver::ParseOpts {
+                tokenizer,
+                tree_builder,
+            };
             html5ever::driver::parse_document(Self::new(), opts)
         } else {
-            html5ever::driver::parse_fragment(
-                Self::new(),
-                opts,
+            Self::parse_html_fragment(
                 html5ever::QualName::new(
                     None,
                     markup5ever::namespace_url!("http://www.w3.org/1999/xhtml"),
                     markup5ever::local_name!("body"),
                 ),
-                Vec::new(),
-                true,
+                tokenizer,
+                tree_builder,
             )
         }
+    }
+
+    /// Returns a [`html5ever::driver::Parser<Self>`] that ready for parsing a fragment
+    /// in the given context element (like setting `innerHTML` on it)
+    ///
+    /// The context may be in any namespace, e.g. `td`, `svg path`, or `math mi`.
+    /// [`ParserSink::into_dom`] returns the parsed nodes as the children of the root.
+    #[cfg(feature = "html5ever")]
+    pub fn parse_html_fragment(
+        context: markup5ever::QualName,
+        tokenizer: html5ever::tokenizer::TokenizerOpts,
+        tree_builder: html5ever::tree_builder::TreeBuilderOpts,
+    ) -> html5ever::driver::Parser<Self> {
+        let scripting_enabled = tree_builder.scripting_enabled;
+        let opts = html5ever::driver::ParseOpts {
+            tokenizer,
+            tree_builder,
+        };
+        let sink = Self {
+            fragment: true,
+            ..Self::new()
+        };
+
+        html5ever::driver::parse_fragment(sink, opts, context, Vec::new(), scripting_enabled)
     }
 
     /// Returns a [`xml5ever::driver::XmlParser<Self>`] that ready for parsing
@@ -329,13 +369,26 @@ impl markup5ever::interface::TreeSink for ParserSink {
     fn add_attrs_if_missing(&self, target: &Self::Handle, attrs: Vec<markup5ever::Attribute>) {
         let mut tree = self.tree.borrow_mut();
         let mut node = tree.get_mut(*target).unwrap();
+        let mut attr_names = self.attr_names.borrow_mut();
 
         if let Some(element) = node.value().element_mut() {
-            element.attrs.extend(
-                attrs
-                    .into_iter()
-                    .map(|x| (x.name.into(), crate::atomic::make_atomic_tendril(x.value))),
-            );
+            // Only the sink changes attributes during parsing, so the index stays accurate
+            let names = attr_names.entry(*target).or_insert_with(|| {
+                element
+                    .attrs
+                    .iter()
+                    .map(|(name, _)| (**name).clone())
+                    .collect()
+            });
+
+            for attr in attrs {
+                if names.insert(attr.name.clone()) {
+                    element.attrs.push((
+                        attr.name.into(),
+                        crate::atomic::make_atomic_tendril(attr.value),
+                    ));
+                }
+            }
         } else {
             unreachable!("add_attrs_if_missing called on a non-element node")
         }
@@ -410,39 +463,71 @@ mod tests {
     }
 
     #[test]
-    fn html_foster_parenting() {
-        // Text inside <table> is foster-parented via append_based_on_parent_node
+    fn html_add_attrs_if_missing() {
         let parser = ParserSink::parse_html(true, Default::default(), Default::default());
         let dom = parser
-            .one("<table>foo<tr><td>bar</td></tr></table>")
+            .one("<body a=1><body a=2 b=3><body b=4 c=5>")
             .into_dom();
 
         let html = dom.root().last_child().unwrap();
         let body = html.last_child().unwrap();
-        let children: Vec<_> = body.children().collect();
+        let attrs: Vec<_> = body
+            .value()
+            .element()
+            .unwrap()
+            .attrs
+            .iter()
+            .map(|(k, v)| (k.local.to_string(), v.to_string()))
+            .collect();
 
-        assert_eq!(&*children[0].value().text().unwrap().contents, "foo");
         assert_eq!(
-            children[1].value().element().unwrap().name.local.as_ref(),
-            "table",
+            attrs,
+            [
+                ("a".to_string(), "1".to_string()),
+                ("b".to_string(), "3".to_string()),
+                ("c".to_string(), "5".to_string()),
+            ]
         );
     }
-
+  
     #[test]
-    fn html_mathml_annotation_xml() {
-        // html5ever holds the elem_name Ref across is_mathml_annotation_xml_integration_point
-        let parser = ParserSink::parse_html(true, Default::default(), Default::default());
-        let dom = parser
-            .one(r#"<math><annotation-xml encoding="text/html"><div>foo</div></annotation-xml></math>"#)
-            .into_dom();
+    fn html_fragment_parsing() {
+        fn parse_fragment(context: markup5ever::QualName, html: &str) -> IDTreeDOM {
+            ParserSink::parse_html_fragment(context, Default::default(), Default::default())
+                .one(html)
+                .into_dom()
+        }
 
-        let html = dom.root().last_child().unwrap();
-        let body = html.last_child().unwrap();
-        let math = body.first_child().unwrap();
-        let annotation = math.first_child().unwrap();
-        let div = annotation.first_child().unwrap();
+        // In a tbody context, table rows are kept rather than dropped
+        let dom = parse_fragment(
+            markup5ever::QualName::new(
+                None,
+                markup5ever::namespace_url!("http://www.w3.org/1999/xhtml"),
+                markup5ever::local_name!("tbody"),
+            ),
+            "<tr><td>x",
+        );
+        // The parsed nodes are the children of the root, without an <html> wrapper
+        let children: Vec<_> = dom.root().children().collect();
+        assert_eq!(children.len(), 1);
+        let tr = children[0];
+        assert_eq!(tr.value().element().unwrap().name.local.as_ref(), "tr");
+        let td = tr.first_child().unwrap();
+        assert_eq!(td.value().element().unwrap().name.local.as_ref(), "td");
 
-        assert_eq!(div.value().element().unwrap().name.local.as_ref(), "div",);
+        // In an svg context, elements are created in the SVG namespace
+        let dom = parse_fragment(
+            markup5ever::QualName::new(
+                None,
+                markup5ever::namespace_url!("http://www.w3.org/2000/svg"),
+                markup5ever::local_name!("svg"),
+            ),
+            "<path/>",
+        );
+        let path = dom.root().first_child().unwrap();
+        let name = &path.value().element().unwrap().name;
+        assert_eq!(name.ns.as_ref(), "http://www.w3.org/2000/svg");
+        assert_eq!(name.local.as_ref(), "path");
     }
 
     #[test]
@@ -514,5 +599,41 @@ mod tests {
             r#"<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd"><suite name="TestSuite"><test name="TestProject"><classes><class name="package.firstClassName"></class><class name="package.secondClassName"></class></classes></test></suite>"#,
             String::from_utf8_lossy(&buf)
         );
+    }
+    
+    #[test]
+    fn html_foster_parenting() {
+        // Text inside <table> is foster-parented via append_based_on_parent_node
+        let parser = ParserSink::parse_html(true, Default::default(), Default::default());
+        let dom = parser
+            .one("<table>foo<tr><td>bar</td></tr></table>")
+            .into_dom();
+
+        let html = dom.root().last_child().unwrap();
+        let body = html.last_child().unwrap();
+        let children: Vec<_> = body.children().collect();
+
+        assert_eq!(&*children[0].value().text().unwrap().contents, "foo");
+        assert_eq!(
+            children[1].value().element().unwrap().name.local.as_ref(),
+            "table",
+        );
+    }
+
+    #[test]
+    fn html_mathml_annotation_xml() {
+        // html5ever holds the elem_name Ref across is_mathml_annotation_xml_integration_point
+        let parser = ParserSink::parse_html(true, Default::default(), Default::default());
+        let dom = parser
+            .one(r#"<math><annotation-xml encoding="text/html"><div>foo</div></annotation-xml></math>"#)
+            .into_dom();
+
+        let html = dom.root().last_child().unwrap();
+        let body = html.last_child().unwrap();
+        let math = body.first_child().unwrap();
+        let annotation = math.first_child().unwrap();
+        let div = annotation.first_child().unwrap();
+
+        assert_eq!(div.value().element().unwrap().name.local.as_ref(), "div",);
     }
 }
