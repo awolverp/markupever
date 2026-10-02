@@ -348,10 +348,16 @@ impl markup5ever::interface::TreeSink for ParserSink {
         prev_item_index: &Self::Handle,
         child: markup5ever::interface::NodeOrText<Self::Handle>,
     ) {
-        let tree = self.tree.borrow_mut();
-        let item = tree.get(*item_index).unwrap();
+        // Release the borrow before delegating: append/append_before_sibling borrow mutably
+        let has_parent = self
+            .tree
+            .borrow()
+            .get(*item_index)
+            .unwrap()
+            .parent()
+            .is_some();
 
-        if item.parent().is_some() {
+        if has_parent {
             self.append_before_sibling(item_index, child);
         } else {
             self.append(prev_item_index, child);
@@ -404,7 +410,7 @@ impl markup5ever::interface::TreeSink for ParserSink {
 
     // Returns true if the adjusted current node is an HTML integration point and the token is a start tag.
     fn is_mathml_annotation_xml_integration_point(&self, target: &Self::Handle) -> bool {
-        let tree = self.tree.borrow_mut();
+        let tree = self.tree.borrow();
         let item = tree.get(*target).unwrap();
 
         if let Some(x) = item.value().element() {
@@ -593,5 +599,41 @@ mod tests {
             r#"<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd"><suite name="TestSuite"><test name="TestProject"><classes><class name="package.firstClassName"></class><class name="package.secondClassName"></class></classes></test></suite>"#,
             String::from_utf8_lossy(&buf)
         );
+    }
+    
+    #[test]
+    fn html_foster_parenting() {
+        // Text inside <table> is foster-parented via append_based_on_parent_node
+        let parser = ParserSink::parse_html(true, Default::default(), Default::default());
+        let dom = parser
+            .one("<table>foo<tr><td>bar</td></tr></table>")
+            .into_dom();
+
+        let html = dom.root().last_child().unwrap();
+        let body = html.last_child().unwrap();
+        let children: Vec<_> = body.children().collect();
+
+        assert_eq!(&*children[0].value().text().unwrap().contents, "foo");
+        assert_eq!(
+            children[1].value().element().unwrap().name.local.as_ref(),
+            "table",
+        );
+    }
+
+    #[test]
+    fn html_mathml_annotation_xml() {
+        // html5ever holds the elem_name Ref across is_mathml_annotation_xml_integration_point
+        let parser = ParserSink::parse_html(true, Default::default(), Default::default());
+        let dom = parser
+            .one(r#"<math><annotation-xml encoding="text/html"><div>foo</div></annotation-xml></math>"#)
+            .into_dom();
+
+        let html = dom.root().last_child().unwrap();
+        let body = html.last_child().unwrap();
+        let math = body.first_child().unwrap();
+        let annotation = math.first_child().unwrap();
+        let div = annotation.first_child().unwrap();
+
+        assert_eq!(div.value().element().unwrap().name.local.as_ref(), "div",);
     }
 }
