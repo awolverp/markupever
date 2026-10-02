@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/4fc58bbf-3fde-47a1-aa42-ae100ba1029a" alt="MarkupEver">
+  <img src="https://github.com/user-attachments/assets/75ca729c-1eb0-405e-be03-f8a7cea5cba2" alt="MarkupEver">
 </p>
 <p align="center">
     <em>The fast, most optimal, and correct HTML & XML parsing library</em>
