@@ -1,22 +1,21 @@
 [package]
 name = "treedom"
-description = "A TreeDom based on ego-tree crate and supports markup5ever (optimized for markupever library)."
 version.workspace = true
 edition.workspace = true
+description = "A TreeDom based on ego-tree crate and supports markup5ever (optimized for markupever library)."
 readme.workspace = true
-license.workspace = true
 homepage.workspace = true
 repository.workspace = true
-authors.workspace = true
+license.workspace = true
 
 [dependencies]
+ego-tree = { version = "0.11.0" }
+hashbrown = { version = "0.17", default-features = false }
 html5ever = { version = "0.39.0", optional = true }
 markup5ever = { version = "0.39.0" }
 parking_lot = { version = "0.12" }
-xml5ever = { version = "0.39.0", optional = true }
 tendril = { version = "^0.5" }
-hashbrown = { version = "0.17", default-features = false}
-ego-tree = { version = "0.11.0" }
+xml5ever = { version = "0.39.0", optional = true }
 
 [features]
 default = ["html5ever", "xml5ever"]
