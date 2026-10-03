@@ -546,3 +546,14 @@ def test_attach_beside_orphan():
             orphan.create_element("b", ordering=ordering)
 
     assert dom.serialize(indent=0) == "<p>x</p>"
+
+
+def test_serializer_children_raw_text():
+    dom = markupever.parse(
+        "<script>if (a < b && c) {}</script><style>a > b { }</style><p>a < b</p>",
+        markupever.HtmlOptions(full_document=False),
+    )
+    script, style, p = dom.root().children()
+    assert script.serialize(indent=0, include_self=False) == "if (a < b && c) {}"
+    assert style.serialize(indent=0, include_self=False) == "a > b { }"
+    assert p.serialize(indent=0, include_self=False) == "a &lt; b"

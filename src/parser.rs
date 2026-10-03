@@ -485,7 +485,16 @@ pub fn serialize(
     let traversal_scope = if include_self {
         ::treedom::markup5ever::serialize::TraversalScope::IncludeNode
     } else {
-        ::treedom::markup5ever::serialize::TraversalScope::ChildrenOnly(None)
+        // The serializer needs the parent's name to know whether its text
+        // children are raw text (as in <script> or <style>).
+        let name = dom
+            .get(node.id)
+            .unwrap()
+            .value()
+            .element()
+            .map(|element| element.name.clone());
+
+        ::treedom::markup5ever::serialize::TraversalScope::ChildrenOnly(name)
     };
 
     if !is_html {
