@@ -115,7 +115,7 @@ jobs:
         run: uv pip install --group ci
 
       - name: "Run maturin"
-        run: maturin develop --features use-small-offset
+        run: maturin develop
 
       - name: "Run pytest"
         run: pytest -v
