@@ -579,6 +579,27 @@ mod tests {
         assert_eq!(HTML, String::from_utf8_lossy(&buf));
     }
 
+    #[cfg(feature = "html5ever")]
+    #[test]
+    fn html_serializer_preserves_whitespace() {
+        use crate::Serializer;
+
+        const HTML: &str = "<!DOCTYPE html><html><head>\n</head>\n<body><p><b>a</b> <i>b</i></p>\n<pre>  x\n\n</pre>\n</body></html>";
+
+        let parser = ParserSink::parse_html(true, Default::default(), Default::default());
+        let dom = parser.one(HTML).into_dom();
+
+        let mut buf: Vec<u8> = Vec::new();
+        html5ever::serialize::serialize(
+            &mut buf,
+            &Serializer::new(&dom, dom.root().id(), 0),
+            Default::default(),
+        )
+        .unwrap();
+
+        assert_eq!(HTML, String::from_utf8_lossy(&buf));
+    }
+
     #[cfg(feature = "xml5ever")]
     #[test]
     fn xml_serializer() {
