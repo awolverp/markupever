@@ -195,72 +195,72 @@ impl PyTreeDom {
 
     fn insert_before(
         &self,
-        parent: crate::nodes::PyNodeRef,
-        child: crate::nodes::PyNodeRef,
+        sibling: crate::nodes::PyNodeRef,
+        new_sibling: crate::nodes::PyNodeRef,
     ) -> pyo3::PyResult<()> {
-        let parent = parent.as_node_guard();
-        let child = child.as_node_guard();
+        let sibling = sibling.as_node_guard();
+        let new_sibling = new_sibling.as_node_guard();
 
-        if !Arc::ptr_eq(&self.dom, &parent.tree) {
+        if !Arc::ptr_eq(&self.dom, &sibling.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "the given parent parent is not for this dom",
+                "the given sibling is not for this dom",
             ));
         }
 
-        if !Arc::ptr_eq(&self.dom, &child.tree) {
+        if !Arc::ptr_eq(&self.dom, &new_sibling.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "the given parent child is not for this dom",
+                "the given new sibling is not for this dom",
             ));
         }
 
-        if parent.id == child.id {
+        if sibling.id == new_sibling.id {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "Cannot append node as a child to itself",
+                "Cannot insert node as a sibling of itself",
             ));
         }
 
         let mut tree = self.dom.lock();
-        let mut parent = tree.get_mut(parent.id).unwrap();
+        let mut sibling = tree.get_mut(sibling.id).unwrap();
 
-        parent.insert_id_before(child.id);
+        sibling.insert_id_before(new_sibling.id);
 
-        self.add_new_namespace(tree, child.id);
+        self.add_new_namespace(tree, new_sibling.id);
 
         Ok(())
     }
 
     fn insert_after(
         &self,
-        parent: crate::nodes::PyNodeRef,
-        child: crate::nodes::PyNodeRef,
+        sibling: crate::nodes::PyNodeRef,
+        new_sibling: crate::nodes::PyNodeRef,
     ) -> pyo3::PyResult<()> {
-        let parent = parent.as_node_guard();
-        let child = child.as_node_guard();
+        let sibling = sibling.as_node_guard();
+        let new_sibling = new_sibling.as_node_guard();
 
-        if !Arc::ptr_eq(&self.dom, &parent.tree) {
+        if !Arc::ptr_eq(&self.dom, &sibling.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "the given parent parent is not for this dom",
+                "the given sibling is not for this dom",
             ));
         }
 
-        if !Arc::ptr_eq(&self.dom, &child.tree) {
+        if !Arc::ptr_eq(&self.dom, &new_sibling.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "the given parent child is not for this dom",
+                "the given new sibling is not for this dom",
             ));
         }
 
-        if parent.id == child.id {
+        if sibling.id == new_sibling.id {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "Cannot append node as a child to itself",
+                "Cannot insert node as a sibling of itself",
             ));
         }
 
         let mut tree = self.dom.lock();
-        let mut parent = tree.get_mut(parent.id).unwrap();
+        let mut sibling = tree.get_mut(sibling.id).unwrap();
 
-        parent.insert_id_after(child.id);
+        sibling.insert_id_after(new_sibling.id);
 
-        self.add_new_namespace(tree, child.id);
+        self.add_new_namespace(tree, new_sibling.id);
 
         Ok(())
     }
