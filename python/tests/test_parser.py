@@ -130,3 +130,12 @@ def test_fragment_context():
     assert markupever.HtmlOptions().full_document
     with pytest.raises(ValueError):
         markupever.HtmlOptions(full_document=True, fragment_context="td")
+
+
+def test_meta_content_ending_in_charset():
+    # html5ever 0.39 panicked extracting an encoding from this content attribute.
+    for content in ("charset", "text/html; charset", "charset  "):
+        dom = markupever.parse(
+            f'<meta http-equiv="Content-Type" content="{content}"><p>x</p>'
+        )
+        assert dom.select_one("p").text() == "x"

@@ -171,7 +171,7 @@ impl ElementAttributes {
             let mut classes = self
                 .list
                 .iter()
-                .filter(|(name, _)| name.local.as_ref() == "class")
+                .filter(|(name, _)| &*name.local == "class")
                 .flat_map(|(_, value)| {
                     value
                         .split_ascii_whitespace()
