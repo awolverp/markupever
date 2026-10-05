@@ -17,7 +17,7 @@ class _IteratorMetaClass:
     def __init__(self, value: "dom.BaseNode[_Node]"):
         self._raw = iter(self._BASECLASS(value._raw))
 
-    def __iter__(self):
+    def __iter__(self) -> typing.Iterator["dom.Node"]:
         """Returns `iter(self)`"""
         return self
 
@@ -73,7 +73,7 @@ class EdgeTraverse:
         self.node = node
         self.closed = closed
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.closed:
             return f"EdgeTraverse[closed]({self.node})"
 
@@ -88,7 +88,7 @@ class Traverse:
     def __init__(self, value: "dom.BaseNode[_Node]"):
         self._raw = iter(_rustlib.iter.Traverse(value._raw))
 
-    def __iter__(self):
+    def __iter__(self) -> typing.Iterator[EdgeTraverse]:
         """Returns `iter(self)`"""
         return self
 
@@ -123,7 +123,7 @@ class Select:
         self.__limit = limit or -1
         self.__offset = offset - 1
 
-    def __iter__(self):
+    def __iter__(self) -> typing.Iterator["dom.Element"]:
         return self
 
     def __next__(self) -> "dom.Element":

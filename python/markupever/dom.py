@@ -106,7 +106,7 @@ class TreeDom:
 
         return res[:-1]  # remove the last '\n'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"TreeDom(len={len(self)}, namespaces={self.namespaces()})"
 
 
@@ -189,7 +189,9 @@ class BaseNode(typing.Generic[_R_co]):
             )
         return Document(node)
 
-    def _connect_node(self, ordering: int, dom, child):
+    def _connect_node(
+        self, ordering: int, dom: _rustlib.TreeDom, child: "_Node"
+    ) -> None:
         if ordering in self._CONFIG.invalid_ordering:
             raise ValueError("This ordering value is not acceptable for this type.")
 
@@ -346,7 +348,7 @@ class BaseNode(typing.Generic[_R_co]):
         else:
             return node
 
-    def strings(self, strip: bool = False):
+    def strings(self, strip: bool = False) -> typing.Iterator[str]:
         """
         Retrieve text content from descendant text nodes.
 
@@ -402,13 +404,13 @@ class BaseNode(typing.Generic[_R_co]):
             indent, is_html=is_html, include_self=include_self
         ).decode("utf-8")
 
-    def __eq__(self, value):
+    def __eq__(self, value: object) -> bool:
         if isinstance(value, BaseNode):
             value = value._raw
 
         return self._raw == value
 
-    def __ne__(self, value):  # pragma: no cover
+    def __ne__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, BaseNode):
             value = value._raw
 
@@ -552,37 +554,37 @@ class Comment(BaseNode[_rustlib.Comment]):
     def content(self, value: str) -> None:
         self._raw.content = value
 
-    def __eq__(self, value):
+    def __eq__(self, value: object) -> bool:
         if isinstance(value, str):
             return self._raw.content == value
 
         return super().__eq__(value)
 
-    def __ne__(self, value):  # pragma: no cover
+    def __ne__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content != value
 
         return super().__ne__(value)
 
-    def __le__(self, value):  # pragma: no cover
+    def __le__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content <= value
 
         return NotImplemented
 
-    def __lt__(self, value):  # pragma: no cover
+    def __lt__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content < value
 
         return NotImplemented
 
-    def __ge__(self, value):  # pragma: no cover
+    def __ge__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content >= value
 
         return NotImplemented
 
-    def __gt__(self, value):  # pragma: no cover
+    def __gt__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content > value
 
@@ -602,37 +604,37 @@ class Text(BaseNode[_rustlib.Text]):
     def content(self, value: str) -> None:
         self._raw.content = value
 
-    def __eq__(self, value):
+    def __eq__(self, value: object) -> bool:
         if isinstance(value, str):
             return self._raw.content == value
 
         return super().__eq__(value)
 
-    def __ne__(self, value):  # pragma: no cover
+    def __ne__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content != value
 
         return super().__ne__(value)
 
-    def __le__(self, value):  # pragma: no cover
+    def __le__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content <= value
 
         return NotImplemented
 
-    def __lt__(self, value):  # pragma: no cover
+    def __lt__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content < value
 
         return NotImplemented
 
-    def __ge__(self, value):  # pragma: no cover
+    def __ge__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content >= value
 
         return NotImplemented
 
-    def __gt__(self, value):  # pragma: no cover
+    def __gt__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content > value
 
@@ -658,13 +660,13 @@ class AttrsList:
     def __init__(self, attrs: _rustlib.AttrsList):
         self.__raw = attrs
 
-    def append(self, key: _rustlib.QualName | str, value: str):
+    def append(self, key: _rustlib.QualName | str, value: str) -> None:
         """
         Appends a key-value pair into attributes list.
         """
         self.__raw.push(key, value)
 
-    def insert(self, index: int, key: _rustlib.QualName | str, value: str):
+    def insert(self, index: int, key: _rustlib.QualName | str, value: str) -> None:
         """
         Inserts a key-value pair at position `index` within the list, shifting all elements after it to the right.
         """
@@ -791,7 +793,7 @@ class AttrsList:
         self,
         m: dict[_rustlib.QualName | str, str]
         | typing.Iterable[tuple[_rustlib.QualName | str, str]],
-    ):
+    ) -> None:
         """
         Extend the attributes list by appending key-value pairs from the iterable or dictionary.
         """
@@ -826,7 +828,7 @@ class AttrsList:
         """Returns `len(self)`."""
         return len(self.__raw)
 
-    def __iter__(self):
+    def __iter__(self) -> typing.Iterator[QualName]:
         """Returns a generator of attribute keys."""
         return self.keys()
 
@@ -891,7 +893,9 @@ class AttrsList:
     @typing.overload
     def __getitem__(self, index: int) -> tuple[_rustlib.QualName, str]: ...
 
-    def __getitem__(self, index):
+    def __getitem__(
+        self, index: int | str | _rustlib.QualName
+    ) -> str | tuple[_rustlib.QualName, str]:
         if not isinstance(index, int):
             _, index_i = self._find_by_key(index)
             if index_i == -1:
