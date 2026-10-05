@@ -11,8 +11,9 @@ pub struct ParserSink {
     quirks_mode: Cell<markup5ever::interface::QuirksMode>,
     namespaces: RefCell<HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
     lineno: Cell<u64>,
-    // Whether this sink is parsing a fragment, whose nodes html5ever puts in an <html> root element
-    fragment: bool,
+    // The context element if this sink is parsing a fragment, whose nodes html5ever puts in an
+    // <html> root element
+    fragment_context: Option<markup5ever::QualName>,
     // Attribute names of the elements passed to add_attrs_if_missing (only <html> and <body>),
     // so that repeated calls don't each scan the element's attributes
     attr_names: RefCell<HashMap<ego_tree::NodeId, HashSet<markup5ever::QualName>>>,
@@ -35,7 +36,7 @@ impl ParserSink {
             quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
             namespaces: RefCell::new(HashMap::new()),
             lineno: Cell::new(1),
-            fragment: false,
+            fragment_context: None,
             attr_names: RefCell::new(HashMap::new()),
         }
     }
@@ -62,7 +63,7 @@ impl ParserSink {
         let mut tree = self.tree.into_inner();
 
         // The fragment parsing algorithm returns the children of the <html> root element
-        if self.fragment {
+        if self.fragment_context.is_some() {
             if let Some(html) = tree.root().first_child().map(|x| x.id()) {
                 tree.root_mut().reparent_from_id_append(html);
                 tree.get_mut(html).unwrap().detach();
@@ -72,6 +73,7 @@ impl ParserSink {
         IDTreeDOM {
             tree,
             namespaces: self.namespaces.into_inner(),
+            fragment_context: self.fragment_context,
         }
     }
 
@@ -118,7 +120,7 @@ impl ParserSink {
             tree_builder,
         };
         let sink = Self {
-            fragment: true,
+            fragment_context: Some(context.clone()),
             ..Self::new()
         };
 
@@ -514,6 +516,11 @@ mod tests {
         assert_eq!(&*tr.value().element().unwrap().name.local, "tr");
         let td = tr.first_child().unwrap();
         assert_eq!(&*td.value().element().unwrap().name.local, "td");
+        // The DOM remembers the context
+        assert_eq!(
+            dom.fragment_context().map(|name| &*name.local),
+            Some("tbody")
+        );
 
         // In an svg context, elements are created in the SVG namespace
         let dom = parse_fragment(

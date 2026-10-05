@@ -139,3 +139,32 @@ def test_meta_content_ending_in_charset():
             f'<meta http-equiv="Content-Type" content="{content}"><p>x</p>'
         )
         assert dom.select_one("p").text() == "x"
+
+
+def test_fragment_context_serialize():
+    # A fragment is serialized as the children of its context element, so that it round-trips.
+    src = 'console.log("<br>") &amp;'
+    for context, text, html in [
+        ("script", src, src),
+        ("style", src, src),
+        ("xmp", src, src),
+        ("plaintext", src, src),
+        ("textarea", 'console.log("<br>") &', 'console.log("&lt;br&gt;") &amp;'),
+        ("title", 'console.log("<br>") &', 'console.log("&lt;br&gt;") &amp;'),
+    ]:
+        options = markupever.HtmlOptions(fragment_context=context)
+        dom = markupever.parse(src, options)
+        assert dom.root().text() == text
+        assert dom.serialize() == html
+        assert dom.root().serialize(include_self=False) == html
+        assert markupever.parse(dom.serialize(), options).root().text() == text
+
+    # Text in other contexts is escaped.
+    dom = markupever.parse("a &lt; b", markupever.HtmlOptions(full_document=False))
+    assert dom.serialize() == "a &lt; b"
+
+    # Descendants of the fragment's nodes are serialized as usual.
+    dom = markupever.parse(
+        "<p>a &lt; b</p>", markupever.HtmlOptions(fragment_context="div")
+    )
+    assert dom.serialize() == "<p>a &lt; b</p>"

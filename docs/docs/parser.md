@@ -300,7 +300,7 @@ Let's see what parameters we have:
     # <p>A Text</p>
     ```
 
-* **`fragment_context`** - Parses a fragment as if it were the contents of this context element (like setting `innerHTML` on it). Pass a tag name such as `"td"`, or a `QualName` for an element in another namespace, such as `QualName("svg", "svg")`; a name without a namespace is an HTML element. Implies `full_document=False`. default: None (fragments are parsed in a `body` context).
+* **`fragment_context`** - Parses a fragment as if it were the contents of this context element (like setting `innerHTML` on it). Pass a tag name such as `"td"`, or a `QualName` for an element in another namespace, such as `QualName("svg", "svg")`; a name without a namespace is an HTML element. Implies `full_document=False`. The parsed tree is serialized as the contents of the context element, so that, for example, text parsed in a `script` context isn't escaped. default: None (fragments are parsed in a `body` context).
 
 === "\"tbody\""
 

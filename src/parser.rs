@@ -482,17 +482,19 @@ pub fn serialize(
 
     let serializer = ::treedom::Serializer::new(&dom, node.id, indent);
 
-    let traversal_scope = if include_self {
+    let value = dom.get(node.id).unwrap().value();
+
+    let traversal_scope = if let Some(context) = value.document().and(dom.fragment_context()) {
+        // A fragment's nodes are the children of the document node, but were parsed as
+        // children of the context element, so serialize them as its children: for example,
+        // text parsed in a <script> context is raw text.
+        ::treedom::markup5ever::serialize::TraversalScope::ChildrenOnly(Some(context.clone()))
+    } else if include_self {
         ::treedom::markup5ever::serialize::TraversalScope::IncludeNode
     } else {
         // The serializer needs the parent's name to know whether its text
         // children are raw text (as in <script> or <style>).
-        let name = dom
-            .get(node.id)
-            .unwrap()
-            .value()
-            .element()
-            .map(|element| element.name.clone());
+        let name = value.element().map(|element| element.name.clone());
 
         ::treedom::markup5ever::serialize::TraversalScope::ChildrenOnly(name)
     };
