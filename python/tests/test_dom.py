@@ -511,6 +511,9 @@ def test_serializer_preserves_whitespace():
     ]:
         dom = markupever.parse(content, options)
         assert dom.serialize(indent=0) == content
+        # indent=0 is the default.
+        assert dom.serialize() == content
+        assert dom.serialize_bytes() == content.encode()
 
 
 def test_add_itself():
