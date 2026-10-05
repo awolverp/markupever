@@ -12,8 +12,8 @@ license.workspace = true
 members = ["matching", "treedom"]
 
 [workspace.package]
-version = "0.3.6"
-edition = "2021"
+version = "0.3.7"
+edition = "2024"
 readme = "README.md"
 homepage = "https://github.com/awolverp/markupever"
 repository = "https://github.com/awolverp/markupever.git"
