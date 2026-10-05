@@ -333,13 +333,22 @@ def test_select():
     assert count == 1
 
     count = 0
-    for tag in dom.select("p", offset=3):
+    for tag in dom.select("p", offset=2):
         count += 1
         assert isinstance(tag, markupever.dom.Element)
         assert tag.name == "p"
         assert tag.id is None
 
     assert count == 1
+
+    # offset is the 0-based position of the first match.
+    assert [tag.id for tag in dom.select("p", offset=0)] == ["title", "text", None]
+    assert [tag.id for tag in dom.select("p", offset=1)] == ["text", None]
+    assert [tag.id for tag in dom.select("p", offset=1, limit=1)] == ["text"]
+    assert list(dom.select("p", offset=3)) == []
+    assert dom.select_one("p", offset=0).id == "title"
+    assert dom.select_one("p", offset=1).id == "text"
+    assert dom.select_one("p", offset=3) is None
 
     tag = dom.select_one("nav.nav2")
     assert tag.name == "nav"

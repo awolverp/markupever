@@ -40,10 +40,10 @@ for element in tree.select("[class^=par-]"):
 # Element(name=QualName(local="p", ns="http://www.w3.org/1999/xhtml", prefix=None), attrs=[(QualName(local="class"), "par-one")], template=false, integration_point=false)
 # Element(name=QualName(local="p", ns="http://www.w3.org/1999/xhtml", prefix=None), attrs=[(QualName(local="class"), "par-two")], template=false, integration_point=false)
 
-print(tree.select_one("p", offset=3))
+print(tree.select_one("p", offset=2))
 # Element(name=QualName(local="p", ns="http://www.w3.org/1999/xhtml", prefix=None), attrs=[(QualName(local="class"), "end-par")], template=false, integration_point=false)
 
-for element in tree.select("[class*=par]", offset=3, limit=1):
+for element in tree.select("[class*=par]", offset=2, limit=1):
     print(element)
 # Element(name=QualName(local="p", ns="http://www.w3.org/1999/xhtml", prefix=None), attrs=[(QualName(local="class"), "end-par")], template=false, integration_point=false)
 ```
