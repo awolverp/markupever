@@ -852,6 +852,16 @@ class AttrsList:
 
         self.__raw.remove(index)
 
+    @typing.overload
+    def __setitem__(self, index: int, val: tuple[_rustlib.QualName | str, str]) -> None: ...
+
+    @typing.overload
+    def __setitem__(
+        self,
+        index: str | _rustlib.QualName,
+        val: str | tuple[_rustlib.QualName | str, str],
+    ) -> None: ...
+
     def __setitem__(
         self,
         index: int | str | _rustlib.QualName,
@@ -865,7 +875,10 @@ class AttrsList:
         a new attribute is pushed. If the key exists, the attribute is updated.
 
         - index: An integer index or a string/QualName key to set.
-        - val: A value to set, either as a string or a (key, value) tuple.
+        - val: A value to set, either as a string or a (key, value) tuple. With an integer
+          index, it must be a (key, value) tuple.
+
+        Raises `TypeError` if the index is an integer and the value is a string.
         """
         if not isinstance(index, int):
             key, value = (index, val) if isinstance(val, str) else val
@@ -876,6 +889,9 @@ class AttrsList:
                 return
 
             val = (key, value)
+
+        if isinstance(val, str):
+            raise TypeError("an attribute index must be assigned a (key, value) tuple, not a str")
 
         self.__raw.update_item(index, val[0], val[1])
 

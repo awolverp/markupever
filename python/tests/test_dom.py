@@ -406,6 +406,13 @@ def test_element():
     html.attrs.insert(0, "onclick", "alert")
     assert html.attrs[0] == (markupever.dom.QualName("onclick"), "alert")
 
+    # An attribute index must be assigned a (key, value) tuple.
+    with pytest.raises(TypeError):
+        html.attrs[0] = "confirm"  # type: ignore[call-overload]
+    assert html.attrs[0] == (markupever.dom.QualName("onclick"), "alert")
+    html.attrs[0] = ("onload", "init")
+    assert html.attrs[0] == (markupever.dom.QualName("onload"), "init")
+
     html.attrs = [("id", "id1"), ("id", "id2"), ("data-role", "button")]
     assert html.id == "id1"
 
