@@ -1,4 +1,4 @@
-use pyo3::types::PyModuleMethods;
+use pyo3::types::{PyAnyMethods, PyModuleMethods};
 
 mod iterator;
 mod traverse;
@@ -20,5 +20,14 @@ pub fn register_iter_module(m: &pyo3::Bound<'_, pyo3::types::PyModule>) -> pyo3:
     iter_module.add_class::<traverse::PyTraverse>()?;
     iter_module.add_class::<traverse::PyDescendants>()?;
 
-    m.add_submodule(&iter_module)
+    m.add_submodule(&iter_module)?;
+
+    // Register it like a submodule of a package, so that `import markupever._rustlib.iter`
+    // works.
+    let name = format!("{}.iter", m.name()?);
+    iter_module.setattr("__name__", &name)?;
+    m.py()
+        .import("sys")?
+        .getattr("modules")?
+        .set_item(name, iter_module)
 }

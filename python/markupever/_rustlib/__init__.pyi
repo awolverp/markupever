@@ -1,5 +1,7 @@
 import typing
 
+from . import iter as iter
+
 __all__ = [
     "QUIRKS_MODE_FULL",
     "QUIRKS_MODE_LIMITED",
@@ -21,6 +23,7 @@ __all__ = [
     "__author__",
     "__version__",
     "_is_node_impl",
+    "iter",
     "serialize",
 ]
 
