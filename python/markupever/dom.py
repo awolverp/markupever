@@ -66,7 +66,7 @@ class TreeDom:
         for rn in _rustlib.iter.Iterator(self._raw):
             yield BaseNode._wrap(rn)
 
-    def __eq__(self, val: "TreeDom") -> bool:
+    def __eq__(self, val: object) -> bool:
         if not isinstance(val, TreeDom):
             return False
 
@@ -108,7 +108,7 @@ class TreeDom:
 class _ConfigNode:
     __slots__ = ("basetype", "invalid_ordering")
 
-    def __init__(self, basetype: type | None, invalid_ordering: tuple[int]):
+    def __init__(self, basetype: type | None, invalid_ordering: tuple[int, ...]):
         self.basetype = basetype
         self.invalid_ordering = invalid_ordering
 
@@ -143,7 +143,7 @@ class BaseNode:
     __slots__ = ("_raw",)
 
     _CONFIG: _ConfigNode = _ConfigNode(None, ())
-    _SUBCLASS_WRAP = {}
+    _SUBCLASS_WRAP: typing.ClassVar[dict[type, type["BaseNode"]]] = {}
 
     def __init__(self, node: typing.Any):
         if self._CONFIG.basetype is not None and not isinstance(
@@ -469,7 +469,7 @@ class Document(BaseNode):
 
     def create_element(
         self,
-        name: str,
+        name: str | _rustlib.QualName,
         attrs: (
             typing.Sequence[tuple[_rustlib.QualName | str, str]]
             | dict[_rustlib.QualName | str, str]
@@ -681,16 +681,15 @@ class AttrsList:
     def _find_by_key(
         self,
         key: _rustlib.QualName | str,
-        default: _D = None,
         start: int = 0,
-    ) -> tuple[str | _D, int]:
+    ) -> tuple[str | None, int]:
         for index, item in itertools.islice(enumerate(self.__raw.items()), start, None):
             k, v = item
 
             if k == key:
                 return v, index
 
-        return default, -1
+        return None, -1
 
     def _find_by_item(
         self,
@@ -708,7 +707,7 @@ class AttrsList:
 
     def index(
         self,
-        key: _rustlib.QualName | str | tuple,
+        key: _rustlib.QualName | str | tuple[_rustlib.QualName | str, str],
         start: int = 0,
     ) -> int:
         """
@@ -720,7 +719,7 @@ class AttrsList:
         Raises `ValueError` if no matching key or key-value pair is found.
         """
         if isinstance(key, tuple):
-            index = self._find_by_item(*key, start=start)
+            index = self._find_by_item(key[0], key[1], start=start)
         else:
             _, index = self._find_by_key(key, start=start)
 
@@ -729,12 +728,22 @@ class AttrsList:
 
         return index
 
+    @typing.overload
+    def get(
+        self, key: _rustlib.QualName | str, default: None = None, start: int = 0
+    ) -> str | None: ...
+
+    @typing.overload
+    def get(
+        self, key: _rustlib.QualName | str, default: _D, start: int = 0
+    ) -> str | _D: ...
+
     def get(
         self,
         key: _rustlib.QualName | str,
-        default: _D = None,
+        default: _D | None = None,
         start: int = 0,
-    ) -> str | _D:
+    ) -> str | _D | None:
         """
         Retrieve the value associated with a given key in the attributes list. Returns the value
         associated with the key if found, otherwise the default value.
@@ -768,7 +777,7 @@ class AttrsList:
 
     def remove(
         self,
-        key: _rustlib.QualName | str | tuple,
+        key: _rustlib.QualName | str | tuple[_rustlib.QualName | str, str],
         start: int = 0,
     ) -> None:
         """
@@ -786,14 +795,23 @@ class AttrsList:
         """Reverses the order of elements in the list."""
         self.__raw.reverse()
 
-    def extend(self, m: dict | typing.Iterable[tuple]):
+    def extend(
+        self,
+        m: dict[_rustlib.QualName | str, str]
+        | typing.Iterable[tuple[_rustlib.QualName | str, str]],
+    ):
         """
         Extend the attributes list by appending key-value pairs from the iterable or dictionary.
         """
+        items: typing.Iterable[tuple[_rustlib.QualName | str, str]]
         if isinstance(m, dict):
-            m = m.items()
+            # A dict is also an iterable of its keys, so type checkers can't tell from
+            # isinstance() which of the two types m has.
+            items = typing.cast("dict[_rustlib.QualName | str, str]", m).items()
+        else:
+            items = m
 
-        for key, val in m:
+        for key, val in items:
             self.__raw.push(key, val)
 
     def clear(self) -> None:
@@ -820,12 +838,14 @@ class AttrsList:
         """Returns a generator of attribute keys."""
         return self.keys()
 
-    def __contains__(self, key: _rustlib.QualName | str | tuple) -> bool:
+    def __contains__(
+        self, key: _rustlib.QualName | str | tuple[_rustlib.QualName | str, str]
+    ) -> bool:
         """
         Returns `True` if the list has the specified key, else `False`.
         """
         if isinstance(key, tuple):
-            index = self._find_by_item(*key)
+            index = self._find_by_item(key[0], key[1])
         else:
             _, index = self._find_by_key(key)
 
@@ -862,13 +882,14 @@ class AttrsList:
         - val: A value to set, either as a string or a (key, value) tuple.
         """
         if not isinstance(index, int):
-            if isinstance(val, str):
-                val = (index, val)
+            key, value = (index, val) if isinstance(val, str) else val
 
             _, index = self._find_by_key(index)
             if index == -1:
-                self.__raw.push(*val)
+                self.__raw.push(key, value)
                 return
+
+            val = (key, value)
 
         self.__raw.update_item(index, val[0], val[1])
 
@@ -997,7 +1018,7 @@ class Element(BaseNode):
 
     def create_element(
         self,
-        name: str,
+        name: str | _rustlib.QualName,
         attrs: (
             typing.Sequence[tuple[_rustlib.QualName | str, str]]
             | dict[_rustlib.QualName | str, str]

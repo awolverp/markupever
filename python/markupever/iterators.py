@@ -4,12 +4,13 @@ from . import _rustlib
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from . import dom
+    from ._rustlib import _Node
 
 
 class _IteratorMetaClass:
     """Bridge _rustlib iterators to Python"""
 
-    _BASECLASS: typing.Callable[["dom.BaseNode"], typing.Iterable]
+    _BASECLASS: typing.Callable[["_Node"], typing.Iterator["_Node"]]
 
     __slots__ = ("_raw",)
 
@@ -79,10 +80,17 @@ class EdgeTraverse:
         return f"EdgeTraverse[opened]({self.node})"
 
 
-class Traverse(_IteratorMetaClass):
+class Traverse:
     """Iterator which traverses a tree."""
 
-    _BASECLASS = _rustlib.iter.Traverse
+    __slots__ = ("_raw",)
+
+    def __init__(self, value: "dom.BaseNode"):
+        self._raw = iter(_rustlib.iter.Traverse(value._raw))
+
+    def __iter__(self):
+        """Returns `iter(self)`"""
+        return self
 
     def __next__(self) -> EdgeTraverse:
         from .dom import BaseNode
