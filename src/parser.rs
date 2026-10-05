@@ -2,7 +2,7 @@
 ///
 /// # Note
 /// this type is immutable.
-#[pyo3::pyclass(name = "HtmlOptions", module = "markupselect._rustlib", frozen)]
+#[pyo3::pyclass(name = "HtmlOptions", module = "markupever._rustlib", frozen)]
 pub struct PyHtmlOptions {
     exact_errors: bool,
     discard_bom: bool,
@@ -139,7 +139,7 @@ impl PyHtmlOptions {
     }
 }
 
-#[pyo3::pyclass(name = "XmlOptions", module = "markupselect._rustlib", frozen)]
+#[pyo3::pyclass(name = "XmlOptions", module = "markupever._rustlib", frozen)]
 pub struct PyXmlOptions {
     exact_errors: bool,
     discard_bom: bool,

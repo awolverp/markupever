@@ -624,3 +624,11 @@ def test_serialize():
 
     assert rl.serialize(dom.root(), 0) == b"<hello>Ali</hello>"
     assert rl.serialize(dom.root(), 0, is_html=False) == b"<hello>Ali</hello>"
+
+
+def test_class_modules():
+    classes = [value for value in vars(rl).values() if isinstance(value, type)]
+    assert rl.HtmlOptions in classes
+
+    for cls in classes:
+        assert cls.__module__ == "markupever._rustlib", cls
