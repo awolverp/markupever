@@ -14,14 +14,14 @@ class _IteratorMetaClass:
 
     __slots__ = ("_raw",)
 
-    def __init__(self, value: "dom.BaseNode"):
+    def __init__(self, value: "dom.BaseNode[_Node]"):
         self._raw = iter(self._BASECLASS(value._raw))
 
     def __iter__(self):
         """Returns `iter(self)`"""
         return self
 
-    def __next__(self) -> "dom.BaseNode":
+    def __next__(self) -> "dom.Node":
         """Returns `next(self)`"""
         from .dom import BaseNode
 
@@ -69,7 +69,7 @@ class EdgeTraverse:
 
     __slots__ = ("closed", "node")
 
-    def __init__(self, node: "dom.BaseNode", closed: bool) -> None:
+    def __init__(self, node: "dom.Node", closed: bool) -> None:
         self.node = node
         self.closed = closed
 
@@ -85,7 +85,7 @@ class Traverse:
 
     __slots__ = ("_raw",)
 
-    def __init__(self, value: "dom.BaseNode"):
+    def __init__(self, value: "dom.BaseNode[_Node]"):
         self._raw = iter(_rustlib.iter.Traverse(value._raw))
 
     def __iter__(self):
@@ -111,7 +111,12 @@ class Select:
     __slots__ = ("__limit", "__offset", "__raw")
 
     def __init__(
-        self, value: "dom.BaseNode", expr: str, *, limit: int = 0, offset: int = 0
+        self,
+        value: "dom.BaseNode[_Node]",
+        expr: str,
+        *,
+        limit: int = 0,
+        offset: int = 0,
     ) -> None:
         self.__raw = iter(_rustlib.Select(value._raw, expr))
 
