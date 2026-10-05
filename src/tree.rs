@@ -63,14 +63,25 @@ fn check_insert_into(
     parent: ::treedom::NodeId,
     child: ::treedom::NodeId,
 ) -> pyo3::PyResult<()> {
-    let parent = tree.get(parent).unwrap();
-
-    if parent.id() == child || parent.ancestors().any(|ancestor| ancestor.id() == child) {
-        return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+    if parent == child {
+        return Err(pyo3::exceptions::PyRuntimeError::new_err(
             "Cannot insert a node into itself or its descendant",
         ));
     }
 
+    if tree.get(child).unwrap().first_child().is_none() {
+        return Ok(());
+    }
+
+    let mut node = tree.get(parent).unwrap();
+    while let Some(ancestor) = node.parent() {
+        if ancestor.id() == child {
+            return Err(pyo3::exceptions::PyRuntimeError::new_err(
+                "Cannot insert a node into itself or its descendant",
+            ));
+        }
+        node = ancestor;
+    }
     Ok(())
 }
 
