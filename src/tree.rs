@@ -56,6 +56,39 @@ impl PyTreeDom {
     }
 }
 
+/// Checks that `child` can be inserted as a child of `parent`: a node can't be inserted into
+/// itself or one of its descendants, which would make it its own ancestor.
+fn check_insert_into(
+    tree: &::treedom::IDTreeDOM,
+    parent: ::treedom::NodeId,
+    child: ::treedom::NodeId,
+) -> pyo3::PyResult<()> {
+    let parent = tree.get(parent).unwrap();
+
+    if parent.id() == child || parent.ancestors().any(|ancestor| ancestor.id() == child) {
+        return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+            "Cannot insert a node into itself or its descendant",
+        ));
+    }
+
+    Ok(())
+}
+
+/// Checks that `new_sibling` can be inserted as a sibling of `sibling`.
+fn check_insert_beside(
+    tree: &::treedom::IDTreeDOM,
+    sibling: ::treedom::NodeId,
+    new_sibling: ::treedom::NodeId,
+) -> pyo3::PyResult<()> {
+    let parent = tree.get(sibling).unwrap().parent().ok_or_else(|| {
+        pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
+            "Cannot insert a sibling of a node that has no parent",
+        )
+    })?;
+
+    check_insert_into(tree, parent.id(), new_sibling)
+}
+
 #[pyo3::pymethods]
 impl PyTreeDom {
     /// Creates a new [`PyTreeDom`]
@@ -148,6 +181,8 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        check_insert_into(&tree, parent.id, child.id)?;
+
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.append_id(child.id);
@@ -184,6 +219,8 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        check_insert_into(&tree, parent.id, child.id)?;
+
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.prepend_id(child.id);
@@ -195,72 +232,76 @@ impl PyTreeDom {
 
     fn insert_before(
         &self,
-        parent: crate::nodes::PyNodeRef,
-        child: crate::nodes::PyNodeRef,
+        sibling: crate::nodes::PyNodeRef,
+        new_sibling: crate::nodes::PyNodeRef,
     ) -> pyo3::PyResult<()> {
-        let parent = parent.as_node_guard();
-        let child = child.as_node_guard();
+        let sibling = sibling.as_node_guard();
+        let new_sibling = new_sibling.as_node_guard();
 
-        if !Arc::ptr_eq(&self.dom, &parent.tree) {
+        if !Arc::ptr_eq(&self.dom, &sibling.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "the given parent parent is not for this dom",
+                "the given sibling is not for this dom",
             ));
         }
 
-        if !Arc::ptr_eq(&self.dom, &child.tree) {
+        if !Arc::ptr_eq(&self.dom, &new_sibling.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "the given parent child is not for this dom",
+                "the given new sibling is not for this dom",
             ));
         }
 
-        if parent.id == child.id {
+        if sibling.id == new_sibling.id {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "Cannot append node as a child to itself",
+                "Cannot insert node as a sibling of itself",
             ));
         }
 
         let mut tree = self.dom.lock();
-        let mut parent = tree.get_mut(parent.id).unwrap();
+        check_insert_beside(&tree, sibling.id, new_sibling.id)?;
 
-        parent.insert_id_before(child.id);
+        let mut sibling = tree.get_mut(sibling.id).unwrap();
 
-        self.add_new_namespace(tree, child.id);
+        sibling.insert_id_before(new_sibling.id);
+
+        self.add_new_namespace(tree, new_sibling.id);
 
         Ok(())
     }
 
     fn insert_after(
         &self,
-        parent: crate::nodes::PyNodeRef,
-        child: crate::nodes::PyNodeRef,
+        sibling: crate::nodes::PyNodeRef,
+        new_sibling: crate::nodes::PyNodeRef,
     ) -> pyo3::PyResult<()> {
-        let parent = parent.as_node_guard();
-        let child = child.as_node_guard();
+        let sibling = sibling.as_node_guard();
+        let new_sibling = new_sibling.as_node_guard();
 
-        if !Arc::ptr_eq(&self.dom, &parent.tree) {
+        if !Arc::ptr_eq(&self.dom, &sibling.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "the given parent parent is not for this dom",
+                "the given sibling is not for this dom",
             ));
         }
 
-        if !Arc::ptr_eq(&self.dom, &child.tree) {
+        if !Arc::ptr_eq(&self.dom, &new_sibling.tree) {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "the given parent child is not for this dom",
+                "the given new sibling is not for this dom",
             ));
         }
 
-        if parent.id == child.id {
+        if sibling.id == new_sibling.id {
             return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
-                "Cannot append node as a child to itself",
+                "Cannot insert node as a sibling of itself",
             ));
         }
 
         let mut tree = self.dom.lock();
-        let mut parent = tree.get_mut(parent.id).unwrap();
+        check_insert_beside(&tree, sibling.id, new_sibling.id)?;
 
-        parent.insert_id_after(child.id);
+        let mut sibling = tree.get_mut(sibling.id).unwrap();
 
-        self.add_new_namespace(tree, child.id);
+        sibling.insert_id_after(new_sibling.id);
+
+        self.add_new_namespace(tree, new_sibling.id);
 
         Ok(())
     }
@@ -307,6 +348,10 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        // Moving a node's children into the node itself or one of its descendants would make a
+        // node its own ancestor.
+        check_insert_into(&tree, parent.id, child.id)?;
+
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.reparent_from_id_append(child.id);
@@ -335,6 +380,10 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        // Moving a node's children into the node itself or one of its descendants would make a
+        // node its own ancestor.
+        check_insert_into(&tree, parent.id, child.id)?;
+
         let mut parent = tree.get_mut(parent.id).unwrap();
 
         parent.reparent_from_id_prepend(child.id);

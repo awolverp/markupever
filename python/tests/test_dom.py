@@ -498,3 +498,51 @@ def test_add_itself():
 
     with pytest.raises(RuntimeError):
         tag.attach(tag)
+
+
+def test_attach_into_descendant():
+    dom = markupever.parse(
+        "<div><p><b>x</b></p></div>", markupever.HtmlOptions(full_document=False)
+    )
+    div = dom.select_one("div")
+    p = dom.select_one("p")
+    b = dom.select_one("b")
+
+    for ordering in (
+        markupever.dom.Ordering.APPEND,
+        markupever.dom.Ordering.PREPEND,
+        markupever.dom.Ordering.BEFORE,
+        markupever.dom.Ordering.AFTER,
+    ):
+        with pytest.raises(RuntimeError):
+            b.attach(div, ordering=ordering)
+
+    with pytest.raises(RuntimeError):
+        p.attach(p, ordering=markupever.dom.Ordering.AFTER)
+
+    for reparent in (dom._raw.reparent_append, dom._raw.reparent_prepend):
+        with pytest.raises(RuntimeError):
+            reparent(p._raw, p._raw)
+        with pytest.raises(RuntimeError):
+            reparent(b._raw, div._raw)
+
+    assert dom.serialize(indent=0) == "<div><p><b>x</b></p></div>"
+
+    # Moving a node within its own subtree's parent is fine.
+    b.attach(dom.root().create_text("y"), ordering=markupever.dom.Ordering.AFTER)
+    div.attach(b)
+    assert dom.serialize(indent=0) == "<div><p>y</p><b>x</b></div>"
+
+
+def test_attach_beside_orphan():
+    dom = markupever.parse("<p>x</p>", markupever.HtmlOptions(full_document=False))
+    orphan = dom.root().create_element("span")
+    orphan.detach()
+
+    for ordering in (markupever.dom.Ordering.BEFORE, markupever.dom.Ordering.AFTER):
+        with pytest.raises(RuntimeError):
+            orphan.attach(dom.select_one("p"), ordering=ordering)
+        with pytest.raises(RuntimeError):
+            orphan.create_element("b", ordering=ordering)
+
+    assert dom.serialize(indent=0) == "<p>x</p>"
