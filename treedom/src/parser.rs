@@ -444,7 +444,7 @@ mod tests {
 
         assert!(children[0].value().is_doctype());
         assert_eq!(
-            children[1].value().element().unwrap().name.local.as_ref(),
+            &*children[1].value().element().unwrap().name.local,
             "html",
         );
 
@@ -453,11 +453,11 @@ mod tests {
         let children: Vec<_> = html.children().collect();
 
         assert_eq!(
-            children[0].value().element().unwrap().name.local.as_ref(),
+            &*children[0].value().element().unwrap().name.local,
             "head",
         );
         assert_eq!(
-            children[1].value().element().unwrap().name.local.as_ref(),
+            &*children[1].value().element().unwrap().name.local,
             "body",
         );
     }
@@ -511,9 +511,9 @@ mod tests {
         let children: Vec<_> = dom.root().children().collect();
         assert_eq!(children.len(), 1);
         let tr = children[0];
-        assert_eq!(tr.value().element().unwrap().name.local.as_ref(), "tr");
+        assert_eq!(&*tr.value().element().unwrap().name.local, "tr");
         let td = tr.first_child().unwrap();
-        assert_eq!(td.value().element().unwrap().name.local.as_ref(), "td");
+        assert_eq!(&*td.value().element().unwrap().name.local, "td");
 
         // In an svg context, elements are created in the SVG namespace
         let dom = parse_fragment(
@@ -526,8 +526,8 @@ mod tests {
         );
         let path = dom.root().first_child().unwrap();
         let name = &path.value().element().unwrap().name;
-        assert_eq!(name.ns.as_ref(), "http://www.w3.org/2000/svg");
-        assert_eq!(name.local.as_ref(), "path");
+        assert_eq!(&*name.ns, "http://www.w3.org/2000/svg");
+        assert_eq!(&*name.local, "path");
     }
 
     #[test]
@@ -546,7 +546,7 @@ mod tests {
         assert!(children[0].value().is_processing_instruction());
         assert!(children[1].value().is_doctype());
         assert_eq!(
-            children[2].value().element().unwrap().name.local.as_ref(),
+            &*children[2].value().element().unwrap().name.local,
             "suite",
         );
 
@@ -555,7 +555,7 @@ mod tests {
         let children: Vec<_> = suite.children().collect();
 
         assert_eq!(
-            children[0].value().element().unwrap().name.local.as_ref(),
+            &*children[0].value().element().unwrap().name.local,
             "test",
         );
     }
@@ -615,7 +615,7 @@ mod tests {
 
         assert_eq!(&*children[0].value().text().unwrap().contents, "foo");
         assert_eq!(
-            children[1].value().element().unwrap().name.local.as_ref(),
+            &*children[1].value().element().unwrap().name.local,
             "table",
         );
     }
@@ -634,6 +634,6 @@ mod tests {
         let annotation = math.first_child().unwrap();
         let div = annotation.first_child().unwrap();
 
-        assert_eq!(div.value().element().unwrap().name.local.as_ref(), "div",);
+        assert_eq!(&*div.value().element().unwrap().name.local, "div",);
     }
 }
