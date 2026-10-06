@@ -632,3 +632,12 @@ def test_class_modules():
 
     for cls in classes:
         assert cls.__module__ == "markupever._rustlib", cls
+
+def test_iter_submodule():
+    import markupever._rustlib.iter
+
+    assert markupever._rustlib.iter is rl.iter
+    assert rl.iter.__name__ == "markupever._rustlib.iter"
+
+    for name in rl.iter.__all__:
+        assert getattr(rl.iter, name).__module__ == "markupever._rustlib.iter", name

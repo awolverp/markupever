@@ -162,8 +162,10 @@ def test_connect_node():
     assert p.text(strip=True) == "content 1content 2"
     assert p.text(separator="\t", strip=True) == "content 1\tcontent 2"
 
-    assert text.has_siblings
-    assert p.has_children
+    assert text.has_siblings is True
+    assert p.has_children is True
+    assert text.has_children is False
+    assert root.has_siblings is False
     assert p.tree() == dom
 
     assert (

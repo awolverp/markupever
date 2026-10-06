@@ -229,12 +229,12 @@ class BaseNode:
     @property
     def has_siblings(self) -> bool:
         """Returns `True` if the node has sibling."""
-        return self._raw.has_siblings
+        return self._raw.has_siblings()
 
     @property
     def has_children(self) -> bool:
         """Returns `True` if the node has children."""
-        return self._raw.has_children
+        return self._raw.has_children()
 
     def tree(self) -> "TreeDom":
         """Returns the TreeDom instance representing the tree to which this node is connected."""
