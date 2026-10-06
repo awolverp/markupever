@@ -9,6 +9,7 @@ pub type NamespaceMap = HashMap<markup5ever::Prefix, markup5ever::Namespace>;
 pub struct IDTreeDOM {
     pub(super) tree: ego_tree::Tree<interface::Interface>,
     pub(super) namespaces: NamespaceMap,
+    pub(super) fragment_context: Option<markup5ever::QualName>,
 }
 
 impl IDTreeDOM {
@@ -19,6 +20,7 @@ impl IDTreeDOM {
         Self {
             tree: ego_tree::Tree::new(root.into()),
             namespaces,
+            fragment_context: None,
         }
     }
 
@@ -30,6 +32,7 @@ impl IDTreeDOM {
         Self {
             tree: ego_tree::Tree::with_capacity(root.into(), capacity),
             namespaces,
+            fragment_context: None,
         }
     }
 
@@ -39,6 +42,12 @@ impl IDTreeDOM {
 
     pub fn namespaces_mut(&mut self) -> &mut NamespaceMap {
         &mut self.namespaces
+    }
+
+    /// Returns the context element that this DOM was parsed in, if it was parsed as a fragment.
+    /// Its root's children are the fragment's nodes.
+    pub fn fragment_context(&self) -> Option<&markup5ever::QualName> {
+        self.fragment_context.as_ref()
     }
 }
 
@@ -70,6 +79,7 @@ impl std::fmt::Debug for IDTreeDOM {
             f.debug_struct("IDTreeDOM")
                 .field("tree", &self.tree)
                 .field("namespaces", &self.namespaces)
+                .field("fragment_context", &self.fragment_context)
                 .finish()?;
         }
 
