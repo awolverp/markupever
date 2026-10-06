@@ -78,6 +78,7 @@ jobs:
           manylinux: auto
           args: >-
             --release
+            --locked
             --out dist
             --interpreter ${{ matrix.platform.interpreter }}
             --compatibility pypi
@@ -136,6 +137,7 @@ jobs:
           manylinux: musllinux_1_2
           args: >-
             --release
+            --locked
             --out dist
             --interpreter ${{ matrix.platform.interpreter }}
             --compatibility pypi
@@ -185,6 +187,7 @@ jobs:
           sccache: ${{ github.ref_type != 'tag' }}
           args: >-
             --release
+            --locked
             --out dist
             --interpreter ${{ matrix.platform.interpreter }}
             --compatibility pypi
@@ -217,6 +220,7 @@ jobs:
           sccache: ${{ github.ref_type != 'tag' }}
           args: >-
             --release
+            --locked
             --out dist
             --interpreter ${{ matrix.platform.interpreter }}
             --compatibility pypi
