@@ -174,7 +174,7 @@ class QualName:
             "html", "xml", "xhtml", "xmlns", "xlink", "svg", "mathml", "*"
         ] = ...,
         prefix: str | None = ...,
-    ): ...
+    ) -> QualName: ...
     @property
     def local(self) -> str:
         """The local name (e.g. `table` in `<furn:table>` above)."""

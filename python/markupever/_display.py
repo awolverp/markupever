@@ -12,7 +12,7 @@ class _DisplayCharacterToken:  # pragma: no cover
         self.siblings = siblings
         self.children = False
 
-    def __str__(self):
+    def __str__(self) -> str:
         # match (siblings, children)
         # (true, true) => "│   ",
         # (true, false) => "├── ",
@@ -42,7 +42,7 @@ class _Indentation:  # pragma: no cover
         self.tokens: list[_DisplayCharacterToken] = []
         self.ignore_root = ignore_root
 
-    def indent(self, siblings: bool):
+    def indent(self, siblings: bool) -> "_Indentation":
         length = len(self.tokens)
         if length > 0:
             self.tokens[length - 1].children = True
@@ -50,7 +50,7 @@ class _Indentation:  # pragma: no cover
         self.tokens.append(_DisplayCharacterToken(siblings))
         return self
 
-    def deindent(self):
+    def deindent(self) -> "_Indentation":
         self.tokens.pop()
         return self
 

@@ -4,23 +4,24 @@ from . import _rustlib
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from . import dom
+    from ._rustlib import _Node
 
 
 class _IteratorMetaClass:
     """Bridge _rustlib iterators to Python"""
 
-    _BASECLASS: typing.Callable[["dom.BaseNode"], typing.Iterable]
+    _BASECLASS: typing.Callable[["_Node"], typing.Iterator["_Node"]]
 
     __slots__ = ("_raw",)
 
-    def __init__(self, value: "dom.BaseNode"):
+    def __init__(self, value: "dom.BaseNode[_Node]"):
         self._raw = iter(self._BASECLASS(value._raw))
 
-    def __iter__(self):
+    def __iter__(self) -> typing.Iterator["dom.Node"]:
         """Returns `iter(self)`"""
         return self
 
-    def __next__(self) -> "dom.BaseNode":
+    def __next__(self) -> "dom.Node":
         """Returns `next(self)`"""
         from .dom import BaseNode
 
@@ -68,21 +69,28 @@ class EdgeTraverse:
 
     __slots__ = ("closed", "node")
 
-    def __init__(self, node: "dom.BaseNode", closed: bool) -> None:
+    def __init__(self, node: "dom.Node", closed: bool) -> None:
         self.node = node
         self.closed = closed
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.closed:
             return f"EdgeTraverse[closed]({self.node})"
 
         return f"EdgeTraverse[opened]({self.node})"
 
 
-class Traverse(_IteratorMetaClass):
+class Traverse:
     """Iterator which traverses a tree."""
 
-    _BASECLASS = _rustlib.iter.Traverse
+    __slots__ = ("_raw",)
+
+    def __init__(self, value: "dom.BaseNode[_Node]"):
+        self._raw = iter(_rustlib.iter.Traverse(value._raw))
+
+    def __iter__(self) -> typing.Iterator[EdgeTraverse]:
+        """Returns `iter(self)`"""
+        return self
 
     def __next__(self) -> EdgeTraverse:
         from .dom import BaseNode
@@ -103,14 +111,19 @@ class Select:
     __slots__ = ("__limit", "__offset", "__raw")
 
     def __init__(
-        self, value: "dom.BaseNode", expr: str, *, limit: int = 0, offset: int = 0
+        self,
+        value: "dom.BaseNode[_Node]",
+        expr: str,
+        *,
+        limit: int = 0,
+        offset: int = 0,
     ) -> None:
         self.__raw = iter(_rustlib.Select(value._raw, expr))
 
         self.__limit = limit or -1
         self.__offset = offset - 1
 
-    def __iter__(self):
+    def __iter__(self) -> typing.Iterator["dom.Element"]:
         return self
 
     def __next__(self) -> "dom.Element":

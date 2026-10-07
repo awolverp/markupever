@@ -4,6 +4,11 @@ import typing
 from . import _rustlib, iterators
 from ._rustlib import QualName as QualName
 
+if typing.TYPE_CHECKING:  # pragma: no cover
+    from ._rustlib import _Node
+
+_R_co = typing.TypeVar("_R_co", bound="_Node", covariant=True)
+
 
 class TreeDom:
     __slots__ = ("_raw",)
@@ -61,12 +66,12 @@ class TreeDom:
             indent=indent, is_html=is_html, include_self=include_self
         )  # pragma: no cover
 
-    def __iter__(self) -> typing.Generator["BaseNode", typing.Any, None]:
+    def __iter__(self) -> typing.Iterator["Node"]:
         """Iterates the nodes in insert order - don't matter which are orphan which not."""
         for rn in _rustlib.iter.Iterator(self._raw):
             yield BaseNode._wrap(rn)
 
-    def __eq__(self, val: "TreeDom") -> bool:
+    def __eq__(self, val: object) -> bool:
         if not isinstance(val, TreeDom):
             return False
 
@@ -101,14 +106,14 @@ class TreeDom:
 
         return res[:-1]  # remove the last '\n'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"TreeDom(len={len(self)}, namespaces={self.namespaces()})"
 
 
 class _ConfigNode:
     __slots__ = ("basetype", "invalid_ordering")
 
-    def __init__(self, basetype: type | None, invalid_ordering: tuple[int]):
+    def __init__(self, basetype: type | None, invalid_ordering: tuple[int, ...]):
         self.basetype = basetype
         self.invalid_ordering = invalid_ordering
 
@@ -126,7 +131,7 @@ class Ordering:
     """Means create and insert the node as the `prev_sibling`."""
 
 
-class BaseNode:
+class BaseNode(typing.Generic[_R_co]):
     """
     Base class for DOM nodes, providing core tree navigation, manipulation, and serialization methods.
 
@@ -140,12 +145,11 @@ class BaseNode:
     Subclasses should define their specific node type configuration via _CONFIG.
     """
 
-    __slots__ = ("_raw",)
+    __slots__ = ("__raw",)
 
     _CONFIG: _ConfigNode = _ConfigNode(None, ())
-    _SUBCLASS_WRAP = {}
 
-    def __init__(self, node: typing.Any):
+    def __init__(self, node: _R_co):
         if self._CONFIG.basetype is not None and not isinstance(
             node, self._CONFIG.basetype
         ):
@@ -158,20 +162,36 @@ class BaseNode:
                 f"expected one of _rustlib nodes implementations (such as _rustlib.Element, _rustlib.Comment, ...), got {type(node).__name__}"
             )
 
-        self._raw = node
+        self.__raw = node
+
+    @property
+    def _raw(self) -> _R_co:
+        # A read-only property, so that BaseNode can be covariant in _R_co.
+        return self.__raw
 
     @classmethod
-    def _wrap(cls, node: typing.Any) -> "BaseNode":
-        try:
-            _type = cls._SUBCLASS_WRAP[type(node)]
-        except KeyError:
+    def _wrap(cls, node: "_Node") -> "Node":
+        if isinstance(node, _rustlib.Element):
+            return Element(node)
+        if isinstance(node, _rustlib.Text):
+            return Text(node)
+        if isinstance(node, _rustlib.Comment):
+            return Comment(node)
+        if isinstance(node, _rustlib.Doctype):
+            return Doctype(node)
+        if isinstance(node, _rustlib.ProcessingInstruction):
+            return ProcessingInstruction(node)
+        # Checked last, because mypy doesn't narrow isinstance() with a class whose
+        # __new__ returns NoReturn.
+        if not isinstance(node, _rustlib.Document):
             raise TypeError(
                 f"the type of node is not acceptable ({type(node).__name__})."
-            ) from None
+            )
+        return Document(node)
 
-        return _type(node)
-
-    def _connect_node(self, ordering: int, dom, child):
+    def _connect_node(
+        self, ordering: int, dom: _rustlib.TreeDom, child: "_Node"
+    ) -> None:
         if ordering in self._CONFIG.invalid_ordering:
             raise ValueError("This ordering value is not acceptable for this type.")
 
@@ -192,36 +212,32 @@ class BaseNode:
                 "ordering must be one of Ordering variables like Ordering.APPEND, Ordering.PREPEND, ..."
             )
 
-    def __init_subclass__(cls):
-        assert cls._CONFIG.basetype is not None
-        BaseNode._SUBCLASS_WRAP[cls._CONFIG.basetype] = cls
-
     @property
-    def parent(self) -> typing.Optional["BaseNode"]:
+    def parent(self) -> typing.Optional["Node"]:
         """Returns the parent of this node."""
         parent = self._raw.parent()
         return BaseNode._wrap(parent) if parent is not None else None
 
     @property
-    def prev_sibling(self) -> typing.Optional["BaseNode"]:
+    def prev_sibling(self) -> typing.Optional["Node"]:
         """Returns the previous sibling of this node."""
         prev_sibling = self._raw.prev_sibling()
         return BaseNode._wrap(prev_sibling) if prev_sibling is not None else None
 
     @property
-    def next_sibling(self) -> typing.Optional["BaseNode"]:
+    def next_sibling(self) -> typing.Optional["Node"]:
         """Returns the next sibling of this node."""
         next_sibling = self._raw.next_sibling()
         return BaseNode._wrap(next_sibling) if next_sibling is not None else None
 
     @property
-    def first_child(self) -> typing.Optional["BaseNode"]:
+    def first_child(self) -> typing.Optional["Node"]:
         """Returns the first child of this node."""
         first_child = self._raw.first_child()
         return BaseNode._wrap(first_child) if first_child is not None else None
 
     @property
-    def last_child(self) -> typing.Optional["BaseNode"]:
+    def last_child(self) -> typing.Optional["Node"]:
         """Returns the last child of this node."""
         last_child = self._raw.last_child()
         return BaseNode._wrap(last_child) if last_child is not None else None
@@ -272,7 +288,9 @@ class BaseNode:
         """Returns an iterator which iterates over this node and its descendants."""
         return iterators.Descendants(self)
 
-    def attach(self, node: "BaseNode", *, ordering: int = Ordering.APPEND) -> None:
+    def attach(
+        self, node: "BaseNode[_Node]", *, ordering: int = Ordering.APPEND
+    ) -> None:
         """
         Attaches a node to the current node with a specified ordering.
 
@@ -330,7 +348,7 @@ class BaseNode:
         else:
             return node
 
-    def strings(self, strip: bool = False):
+    def strings(self, strip: bool = False) -> typing.Iterator[str]:
         """
         Retrieve text content from descendant text nodes.
 
@@ -392,47 +410,23 @@ class BaseNode:
             indent, is_html=is_html, include_self=include_self
         ).decode("utf-8")
 
-    def __eq__(self, value):
+    def __eq__(self, value: object) -> bool:
         if isinstance(value, BaseNode):
             value = value._raw
 
         return self._raw == value
 
-    def __ne__(self, value):  # pragma: no cover
+    def __ne__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, BaseNode):
             value = value._raw
 
         return self._raw != value
 
-    def __le__(self, value):  # pragma: no cover
-        if isinstance(value, BaseNode):
-            value = value._raw
-
-        return self._raw <= value
-
-    def __lt__(self, value):  # pragma: no cover
-        if isinstance(value, BaseNode):
-            value = value._raw
-
-        return self._raw < value
-
-    def __ge__(self, value):  # pragma: no cover
-        if isinstance(value, BaseNode):
-            value = value._raw
-
-        return self._raw >= value
-
-    def __gt__(self, value):  # pragma: no cover
-        if isinstance(value, BaseNode):
-            value = value._raw
-
-        return self._raw > value
-
     def __repr__(self) -> str:  # pragma: no cover
         return repr(self._raw)
 
 
-class Document(BaseNode):
+class Document(BaseNode[_rustlib.Document]):
     """The root of a document."""
 
     _CONFIG = _ConfigNode(_rustlib.Document, (Ordering.AFTER, Ordering.BEFORE))
@@ -475,7 +469,7 @@ class Document(BaseNode):
 
     def create_element(
         self,
-        name: str,
+        name: str | _rustlib.QualName,
         attrs: (
             typing.Sequence[tuple[_rustlib.QualName | str, str]]
             | dict[_rustlib.QualName | str, str]
@@ -511,7 +505,7 @@ class Document(BaseNode):
         return ProcessingInstruction(node)
 
 
-class Doctype(BaseNode):
+class Doctype(BaseNode[_rustlib.Doctype]):
     """
     the doctype is the required <!doctype html> preamble found at the top of all documents.
     Its sole purpose is to prevent a browser from switching into so-called "quirks mode"
@@ -547,7 +541,7 @@ class Doctype(BaseNode):
         self._raw.public_id = value
 
 
-class Comment(BaseNode):
+class Comment(BaseNode[_rustlib.Comment]):
     """
     The Comment interface represents textual notations within markup; although it is generally not
     visually shown, such comments are available to be read in the source view.
@@ -566,44 +560,44 @@ class Comment(BaseNode):
     def content(self, value: str) -> None:
         self._raw.content = value
 
-    def __eq__(self, value):
+    def __eq__(self, value: object) -> bool:
         if isinstance(value, str):
             return self._raw.content == value
 
         return super().__eq__(value)
 
-    def __ne__(self, value):  # pragma: no cover
+    def __ne__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content != value
 
         return super().__ne__(value)
 
-    def __le__(self, value):  # pragma: no cover
+    def __le__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content <= value
 
-        return super().__le__(value)
+        return NotImplemented
 
-    def __lt__(self, value):  # pragma: no cover
+    def __lt__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content < value
 
-        return super().__lt__(value)
+        return NotImplemented
 
-    def __ge__(self, value):  # pragma: no cover
+    def __ge__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content >= value
 
-        return super().__ge__(value)
+        return NotImplemented
 
-    def __gt__(self, value):  # pragma: no cover
+    def __gt__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content > value
 
-        return super().__gt__(value)
+        return NotImplemented
 
 
-class Text(BaseNode):
+class Text(BaseNode[_rustlib.Text]):
     """A text node."""
 
     _CONFIG = _ConfigNode(_rustlib.Text, (Ordering.APPEND, Ordering.PREPEND))
@@ -616,41 +610,41 @@ class Text(BaseNode):
     def content(self, value: str) -> None:
         self._raw.content = value
 
-    def __eq__(self, value):
+    def __eq__(self, value: object) -> bool:
         if isinstance(value, str):
             return self._raw.content == value
 
         return super().__eq__(value)
 
-    def __ne__(self, value):  # pragma: no cover
+    def __ne__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content != value
 
         return super().__ne__(value)
 
-    def __le__(self, value):  # pragma: no cover
+    def __le__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content <= value
 
-        return super().__le__(value)
+        return NotImplemented
 
-    def __lt__(self, value):  # pragma: no cover
+    def __lt__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content < value
 
-        return super().__lt__(value)
+        return NotImplemented
 
-    def __ge__(self, value):  # pragma: no cover
+    def __ge__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content >= value
 
-        return super().__ge__(value)
+        return NotImplemented
 
-    def __gt__(self, value):  # pragma: no cover
+    def __gt__(self, value: object) -> bool:  # pragma: no cover
         if isinstance(value, str):
             return self._raw.content > value
 
-        return super().__gt__(value)
+        return NotImplemented
 
 
 _D = typing.TypeVar("_D")
@@ -672,13 +666,13 @@ class AttrsList:
     def __init__(self, attrs: _rustlib.AttrsList):
         self.__raw = attrs
 
-    def append(self, key: _rustlib.QualName | str, value: str):
+    def append(self, key: _rustlib.QualName | str, value: str) -> None:
         """
         Appends a key-value pair into attributes list.
         """
         self.__raw.push(key, value)
 
-    def insert(self, index: int, key: _rustlib.QualName | str, value: str):
+    def insert(self, index: int, key: _rustlib.QualName | str, value: str) -> None:
         """
         Inserts a key-value pair at position `index` within the list, shifting all elements after it to the right.
         """
@@ -687,16 +681,15 @@ class AttrsList:
     def _find_by_key(
         self,
         key: _rustlib.QualName | str,
-        default: _D = None,
         start: int = 0,
-    ) -> tuple[str | _D, int]:
+    ) -> tuple[str | None, int]:
         for index, item in itertools.islice(enumerate(self.__raw.items()), start, None):
             k, v = item
 
             if k == key:
                 return v, index
 
-        return default, -1
+        return None, -1
 
     def _find_by_item(
         self,
@@ -714,7 +707,7 @@ class AttrsList:
 
     def index(
         self,
-        key: _rustlib.QualName | str | tuple,
+        key: _rustlib.QualName | str | tuple[_rustlib.QualName | str, str],
         start: int = 0,
     ) -> int:
         """
@@ -726,7 +719,7 @@ class AttrsList:
         Raises `ValueError` if no matching key or key-value pair is found.
         """
         if isinstance(key, tuple):
-            index = self._find_by_item(*key, start=start)
+            index = self._find_by_item(key[0], key[1], start=start)
         else:
             _, index = self._find_by_key(key, start=start)
 
@@ -735,12 +728,22 @@ class AttrsList:
 
         return index
 
+    @typing.overload
+    def get(
+        self, key: _rustlib.QualName | str, default: None = None, start: int = 0
+    ) -> str | None: ...
+
+    @typing.overload
+    def get(
+        self, key: _rustlib.QualName | str, default: _D, start: int = 0
+    ) -> str | _D: ...
+
     def get(
         self,
         key: _rustlib.QualName | str,
-        default: _D = None,
+        default: _D | None = None,
         start: int = 0,
-    ) -> str | _D:
+    ) -> str | _D | None:
         """
         Retrieve the value associated with a given key in the attributes list. Returns the value
         associated with the key if found, otherwise the default value.
@@ -774,7 +777,7 @@ class AttrsList:
 
     def remove(
         self,
-        key: _rustlib.QualName | str | tuple,
+        key: _rustlib.QualName | str | tuple[_rustlib.QualName | str, str],
         start: int = 0,
     ) -> None:
         """
@@ -792,14 +795,23 @@ class AttrsList:
         """Reverses the order of elements in the list."""
         self.__raw.reverse()
 
-    def extend(self, m: dict | typing.Iterable[tuple]):
+    def extend(
+        self,
+        m: dict[_rustlib.QualName | str, str]
+        | typing.Iterable[tuple[_rustlib.QualName | str, str]],
+    ) -> None:
         """
         Extend the attributes list by appending key-value pairs from the iterable or dictionary.
         """
+        items: typing.Iterable[tuple[_rustlib.QualName | str, str]]
         if isinstance(m, dict):
-            m = m.items()
+            # A dict is also an iterable of its keys, so type checkers can't tell from
+            # isinstance() which of the two types m has.
+            items = typing.cast("dict[_rustlib.QualName | str, str]", m).items()
+        else:
+            items = m
 
-        for key, val in m:
+        for key, val in items:
             self.__raw.push(key, val)
 
     def clear(self) -> None:
@@ -822,16 +834,18 @@ class AttrsList:
         """Returns `len(self)`."""
         return len(self.__raw)
 
-    def __iter__(self):
+    def __iter__(self) -> typing.Iterator[QualName]:
         """Returns a generator of attribute keys."""
         return self.keys()
 
-    def __contains__(self, key: _rustlib.QualName | str | tuple) -> bool:
+    def __contains__(
+        self, key: _rustlib.QualName | str | tuple[_rustlib.QualName | str, str]
+    ) -> bool:
         """
         Returns `True` if the list has the specified key, else `False`.
         """
         if isinstance(key, tuple):
-            index = self._find_by_item(*key)
+            index = self._find_by_item(key[0], key[1])
         else:
             _, index = self._find_by_key(key)
 
@@ -868,13 +882,14 @@ class AttrsList:
         - val: A value to set, either as a string or a (key, value) tuple.
         """
         if not isinstance(index, int):
-            if isinstance(val, str):
-                val = (index, val)
+            key, value = (index, val) if isinstance(val, str) else val
 
             _, index = self._find_by_key(index)
             if index == -1:
-                self.__raw.push(*val)
+                self.__raw.push(key, value)
                 return
+
+            val = (key, value)
 
         self.__raw.update_item(index, val[0], val[1])
 
@@ -884,7 +899,9 @@ class AttrsList:
     @typing.overload
     def __getitem__(self, index: int) -> tuple[_rustlib.QualName, str]: ...
 
-    def __getitem__(self, index):
+    def __getitem__(
+        self, index: int | str | _rustlib.QualName
+    ) -> str | tuple[_rustlib.QualName, str]:
         if not isinstance(index, int):
             _, index_i = self._find_by_key(index)
             if index_i == -1:
@@ -899,7 +916,7 @@ class AttrsList:
         return repr(self.__raw)
 
 
-class Element(BaseNode):
+class Element(BaseNode[_rustlib.Element]):
     """An element node."""
 
     _CONFIG = _ConfigNode(_rustlib.Element, ())
@@ -1003,7 +1020,7 @@ class Element(BaseNode):
 
     def create_element(
         self,
-        name: str,
+        name: str | _rustlib.QualName,
         attrs: (
             typing.Sequence[tuple[_rustlib.QualName | str, str]]
             | dict[_rustlib.QualName | str, str]
@@ -1041,7 +1058,7 @@ class Element(BaseNode):
         return ProcessingInstruction(node)
 
 
-class ProcessingInstruction(BaseNode):
+class ProcessingInstruction(BaseNode[_rustlib.ProcessingInstruction]):
     """
     The ProcessingInstruction interface represents a processing instruction; that is,
     a Node which embeds an instruction targeting a specific application but that can
@@ -1067,3 +1084,9 @@ class ProcessingInstruction(BaseNode):
     @data.setter
     def data(self, value: str) -> None:
         self._raw.data = value
+
+
+Node: typing.TypeAlias = (
+    Document | Doctype | Comment | Text | Element | ProcessingInstruction
+)
+"""Any node."""
