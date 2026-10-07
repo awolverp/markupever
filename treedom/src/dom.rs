@@ -240,7 +240,10 @@ impl<'a> Serializer<'a> {
                         serializer.write_processing_instruction(&pi.target, &pi.data)?
                     }
                     interface::Interface::Text(text) => {
-                        if !text.contents.trim_ascii().is_empty() {
+                        // Without indentation, whitespace is significant: write it unchanged.
+                        if self.indent == 0 {
+                            serializer.write_text(&text.contents)?;
+                        } else if !text.contents.trim_ascii().is_empty() {
                             serializer.write_text(text.contents.trim_ascii_end())?;
                         }
                     }

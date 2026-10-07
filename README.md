@@ -68,8 +68,5 @@ body = html.create_element("body")
 body.create_text("Hello Everyone ...")
 
 print(root.serialize())
-# <!DOCTYPE html>
-# <html lang="en">
-#   <body>Hello Everyone ...</body>
-# </html>
+# <!DOCTYPE html><html lang="en"><body>Hello Everyone ...</body></html>
 ```

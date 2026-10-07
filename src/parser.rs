@@ -452,7 +452,7 @@ impl PyParser {
 }
 
 #[pyo3::pyfunction]
-#[pyo3(signature=(node, indent=4, include_self=true, is_html=None))]
+#[pyo3(signature=(node, indent=0, include_self=true, is_html=None))]
 pub fn serialize(
     node: crate::nodes::PyNodeRef,
     indent: usize,

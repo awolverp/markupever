@@ -41,7 +41,7 @@ class TreeDom:
 
     def serialize_bytes(
         self,
-        indent: int = 4,
+        indent: int = 0,
         is_html: bool | None = None,
         include_self: bool = True,
     ) -> bytes:
@@ -52,7 +52,7 @@ class TreeDom:
 
     def serialize(
         self,
-        indent: int = 4,
+        indent: int = 0,
         is_html: bool | None = None,
         include_self: bool = True,
     ) -> str:
@@ -356,14 +356,17 @@ class BaseNode:
 
     def serialize_bytes(
         self,
-        indent: int = 4,
+        indent: int = 0,
         is_html: bool | None = None,
         include_self: bool = True,
     ) -> bytes:
         """
         Serialize the current node and its subtree to bytes.
 
-        - indent (int, optional): Number of spaces for indentation. Defaults to 4.
+        - indent (int, optional): If nonzero, pretty-print the output, indenting each level of elements by this
+          many spaces. Pretty-printing adds and removes whitespace, which can change the meaning of the document:
+          for example, it changes the rendering of whitespace between inline elements, and the contents of
+          `<pre>`, `<textarea>`, and `<script>` elements. Defaults to 0, which serializes the document exactly.
         - is_html (bool, optional): Whether to serialize as HTML. Defaults to None.
         - include_self (bool, optional): Whether to include the current node in serialization. Defaults to True.
         """
@@ -371,14 +374,17 @@ class BaseNode:
 
     def serialize(
         self,
-        indent: int = 4,
+        indent: int = 0,
         is_html: bool | None = None,
         include_self: bool = True,
     ) -> str:
         """
         Serialize the current node and its subtree to string.
 
-        - indent (int, optional): Number of spaces for indentation. Defaults to 4.
+        - indent (int, optional): If nonzero, pretty-print the output, indenting each level of elements by this
+          many spaces. Pretty-printing adds and removes whitespace, which can change the meaning of the document:
+          for example, it changes the rendering of whitespace between inline elements, and the contents of
+          `<pre>`, `<textarea>`, and `<script>` elements. Defaults to 0, which serializes the document exactly.
         - is_html (bool, optional): Whether to serialize as HTML. Defaults to None.
         - include_self (bool, optional): Whether to include the current node in serialization. Defaults to True.
         """

@@ -477,7 +477,7 @@ def test_serializer():
             '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Complex Test</title>\n  <style>\n    body { font-family: Arial, sans-serif; }\n    .highlight { background-color: yellow; }\n  </style>\n</head>\n<body>\n  <header>\n    <h1>Welcome to the Test Page</h1>\n  </header>\n  <nav>\n    <ul>\n      <li><a href="#home">Home</a></li>\n      <li><a href="#about">About</a></li>\n      <li><a href="#contact">Contact</a></li>\n    </ul>\n  </nav>\n  <main>\n    <section id="home">\n      <p>Home content goes here.</p>\n    </section>\n    <section id="about">\n      <p>About content goes here.</p>\n    </section>\n    <section id="contact">\n      <p>Contact content goes here.</p>\n    </section>\n  </main>\n  <footer>\n    <p>&copy; 2025 Test Page. All rights reserved.</p>\n  </footer>\n</body>\n</html>\n',
             False,
             0,
-            '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Complex Test</title><style>\n    body { font-family: Arial, sans-serif; }\n    .highlight { background-color: yellow; }</style></head><body><header><h1>Welcome to the Test Page</h1></header><nav><ul><li><a href="#home">Home</a></li><li><a href="#about">About</a></li><li><a href="#contact">Contact</a></li></ul></nav><main><section id="home"><p>Home content goes here.</p></section><section id="about"><p>About content goes here.</p></section><section id="contact"><p>Contact content goes here.</p></section></main><footer><p>© 2025 Test Page. All rights reserved.</p></footer></body></html>',
+            '<!DOCTYPE html><html lang="en"><head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Complex Test</title>\n  <style>\n    body { font-family: Arial, sans-serif; }\n    .highlight { background-color: yellow; }\n  </style>\n</head>\n<body>\n  <header>\n    <h1>Welcome to the Test Page</h1>\n  </header>\n  <nav>\n    <ul>\n      <li><a href="#home">Home</a></li>\n      <li><a href="#about">About</a></li>\n      <li><a href="#contact">Contact</a></li>\n    </ul>\n  </nav>\n  <main>\n    <section id="home">\n      <p>Home content goes here.</p>\n    </section>\n    <section id="about">\n      <p>About content goes here.</p>\n    </section>\n    <section id="contact">\n      <p>Contact content goes here.</p>\n    </section>\n  </main>\n  <footer>\n    <p>© 2025 Test Page. All rights reserved.</p>\n  </footer>\n\n\n</body></html>',
         ),
         _SerializerIndent(
             '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Complex Test</title>\n  <style>\n    body { font-family: Arial, sans-serif; }\n    .highlight { background-color: yellow; }\n  </style>\n</head>\n<body>\n  <header>\n    <h1>Welcome to the Test Page</h1>\n  </header>\n  <nav>\n    <ul>\n      <li><a href="#home">Home</a></li>\n      <li><a href="#about">About</a></li>\n      <li><a href="#contact">Contact</a></li>\n    </ul>\n  </nav>\n  <main>\n    <section id="home">\n      <p>Home content goes here.</p>\n    </section>\n    <section id="about">\n      <p>About content goes here.</p>\n    </section>\n    <section id="contact">\n      <p>Contact content goes here.</p>\n    </section>\n  </main>\n  <footer>\n    <p>&copy; 2025 Test Page. All rights reserved.</p>\n  </footer>\n</body>\n</html>\n',
@@ -493,6 +493,29 @@ def test_serializer():
             markupever.XmlOptions() if case.is_xml else markupever.HtmlOptions(),
         )
         assert dom.serialize(case.indent) == case.expected
+
+
+def test_serializer_preserves_whitespace():
+    for content, options in [
+        (
+            "<p><b>a</b> <i>b</i></p>\n<p>c </p>",
+            markupever.HtmlOptions(full_document=False),
+        ),
+        (
+            "<pre>  x\n\n</pre><textarea>  y\n</textarea>",
+            markupever.HtmlOptions(full_document=False),
+        ),
+        (
+            "<script> if (a < b) {}\n</script><style> p { }\n</style>",
+            markupever.HtmlOptions(full_document=False),
+        ),
+        ("<a> <b>x </b>\n  <c></c>\t</a>", markupever.XmlOptions()),
+    ]:
+        dom = markupever.parse(content, options)
+        assert dom.serialize(indent=0) == content
+        # indent=0 is the default.
+        assert dom.serialize() == content
+        assert dom.serialize_bytes() == content.encode()
 
 
 def test_add_itself():

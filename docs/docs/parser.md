@@ -89,14 +89,9 @@ title.text()
 title.parent.name
 # QualName(local="head", ns="http://www.w3.org/1999/xhtml", prefix=None)
 
-ul = root.select_one("ul")
-ul.serialize()
-# <ul>
-#     <li><a href="https://www.example.com">Example Website</a></li>
-#     <li><a href="https://www.wikipedia.org">Wikipedia</a></li>
-#     <li><a href="https://www.bbc.com">BBC</a></li>
-#     <li><a href="https://www.microsoft.com">Microsoft</a></li>
-# </ul>
+li = root.select_one("li")
+li.serialize()
+# <li><a href="https://www.example.com">Example Website</a></li>
 ```
 
 !!! tip "Common task"
@@ -127,6 +122,28 @@ root.serialize()
 #     </ul>
 # </body></html>
 ```
+
+!!! warning "Pretty-printing"
+
+    Pass `indent` to pretty-print the output, indenting each level of elements by that many spaces:
+    ```python
+    root.serialize(indent=4)
+    # <!DOCTYPE html>
+    # <html>
+    #     <head>
+    #         <title>Incomplete Html</title>
+    #     </head>
+    #     <body>
+    #         <ul>
+    #             <li>
+    #                 <a href="https://www.example.com">Example Website</a>
+    #             </li>
+    # ...
+    ```
+
+    Pretty-printing adds and removes whitespace, which can change the meaning of the document: for example, it
+    changes the rendering of whitespace between inline elements, and the contents of `<pre>`, `<textarea>`, and
+    `<script>` elements. Use it only for display, and leave `indent` at its default of 0 to serialize the document exactly.
 
 ## Parsing XML
 Imagine this **`file.xml`** file:
@@ -187,13 +204,9 @@ for i in root.select("mag|*"):  # get all elements which has namespace 'mag'
 # Element(name=QualName(local="publisher", ns="http://www.example.com/magazines", prefix=Some("mag")), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
 # Element(name=QualName(local="month", ns="http://www.example.com/magazines", prefix=Some("mag")), attrs=[], template=false, mathml_annotation_xml_integration_point=false)
 
-book = root.select_one("book")
-book.serialize()
-# <bk:book xmlns:bk="http://www.example.com/books">
-#   <bk:title>Programming for Beginners</bk:title>
-#   <bk:author>Jane Doe</bk:author>
-#   <bk:year>2021</bk:year>
-# </bk:book>
+title = root.select_one("book title")
+title.serialize()
+# <bk:title xmlns:bk="http://www.example.com/books">Programming for Beginners</bk:title>
 ```
 
 ## Using Parser
