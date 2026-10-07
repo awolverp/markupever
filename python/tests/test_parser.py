@@ -72,16 +72,12 @@ def test_parse_file_function(tmp_path):
     import io
 
     file = io.BytesIO(b"<body></body>")
-    assert isinstance(
-        markupever.parse_file(file, markupever.XmlOptions()), markupever.dom.TreeDom
-    )
+    assert isinstance(markupever.parse_file(file, markupever.XmlOptions()), markupever.dom.TreeDom)
     assert not file.closed
     file.close()
 
     file = io.StringIO("<body></body>")
-    assert isinstance(
-        markupever.parse_file(file, markupever.XmlOptions()), markupever.dom.TreeDom
-    )
+    assert isinstance(markupever.parse_file(file, markupever.XmlOptions()), markupever.dom.TreeDom)
     assert not file.closed
     file.close()
 
@@ -115,9 +111,7 @@ def test_fragment_context():
     assert dom.serialize(indent=0) == "<tr><td>x</td></tr>"
 
     # In an svg context, elements are created in the SVG namespace
-    options = markupever.HtmlOptions(
-        fragment_context=markupever.dom.QualName("svg", "svg")
-    )
+    options = markupever.HtmlOptions(fragment_context=markupever.dom.QualName("svg", "svg"))
     (path,) = markupever.parse("<path/>", options).root().children()
     assert path.name == markupever.dom.QualName("path", "svg")
 
@@ -135,9 +129,7 @@ def test_fragment_context():
 def test_meta_content_ending_in_charset():
     # html5ever 0.39 panicked extracting an encoding from this content attribute.
     for content in ("charset", "text/html; charset", "charset  "):
-        dom = markupever.parse(
-            f'<meta http-equiv="Content-Type" content="{content}"><p>x</p>'
-        )
+        dom = markupever.parse(f'<meta http-equiv="Content-Type" content="{content}"><p>x</p>')
         assert dom.select_one("p").text() == "x"
 
 
@@ -164,7 +156,5 @@ def test_fragment_context_serialize():
     assert dom.serialize() == "a &lt; b"
 
     # Descendants of the fragment's nodes are serialized as usual.
-    dom = markupever.parse(
-        "<p>a &lt; b</p>", markupever.HtmlOptions(fragment_context="div")
-    )
+    dom = markupever.parse("<p>a &lt; b</p>", markupever.HtmlOptions(fragment_context="div"))
     assert dom.serialize() == "<p>a &lt; b</p>"

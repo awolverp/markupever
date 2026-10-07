@@ -27,8 +27,8 @@ fn _is_node_impl(object: &pyo3::Bound<'_, pyo3::PyAny>) -> bool {
 
 #[pymodule(gil_used = false)]
 mod _rustlib {
-    use pyo3::types::PyModuleMethods;
     use pyo3::PyResult;
+    use pyo3::types::PyModuleMethods;
 
     #[pymodule_export]
     use crate::qualname::PyQualName;
@@ -66,7 +66,7 @@ mod _rustlib {
     #[pymodule_init]
     fn init(m: &pyo3::Bound<'_, pyo3::types::PyModule>) -> PyResult<()> {
         m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-        m.add("__author__", "awolverp")?;
+        m.add("__author__", "Ali Pooralijan <awolverp@gmail.com>")?;
 
         crate::iter::register_iter_module(m)?;
 

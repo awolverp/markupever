@@ -119,9 +119,7 @@ class Parser:
 
 def parse(
     content: str | bytes,
-    options: typing.Literal["html", "xml"]
-    | _rustlib.HtmlOptions
-    | _rustlib.XmlOptions = "html",
+    options: typing.Literal["html", "xml"] | _rustlib.HtmlOptions | _rustlib.XmlOptions = "html",
 ) -> TreeDom:
     """
     Parses HTML or XML content and returns the parsed document tree.
@@ -140,9 +138,7 @@ def parse(
 
 def parse_file(
     path: str | typing.TextIO | typing.BinaryIO,
-    options: typing.Literal["html", "xml"]
-    | _rustlib.HtmlOptions
-    | _rustlib.XmlOptions = "html",
+    options: typing.Literal["html", "xml"] | _rustlib.HtmlOptions | _rustlib.XmlOptions = "html",
     *,
     chunk_size: int = 10240,
 ) -> TreeDom:
@@ -168,7 +164,7 @@ def parse_file(
         path = str(path)
 
     if isinstance(path, str):
-        path = open(path, "rb")
+        path = open(path, "rb")  # ruff: ignore[SIM115]
         close = True
 
     try:

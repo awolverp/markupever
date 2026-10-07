@@ -35,7 +35,7 @@ hashbrown = {
 matching = { path = "matching" }
 parking_lot = { version = "0.12" }
 pyo3 = {
-  version = "0.29",
+  version = "0.29.3",
   default-features = false,
   features = [
     "extension-module",
@@ -43,9 +43,6 @@ pyo3 = {
   ]
 }
 treedom = { path = "treedom" }
-
-[build-dependencies]
-pyo3-build-config = { version = "0.29", features = ["resolve-config"] }
 
 [lints.clippy]
 dbg_macro = "warn"

@@ -62,7 +62,7 @@ impl PyHtmlOptions {
             (Some(true), Some(_)) => {
                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(
                     "full_document=True cannot be combined with fragment_context",
-                ))
+                ));
             }
             (Some(full_document), _) => full_document,
             (None, fragment_context) => fragment_context.is_none(),
@@ -235,7 +235,7 @@ impl ParserState {
             _ => {
                 return Err(pyo3::PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
                     "The parser is completed parsing",
-                ))
+                ));
             }
         }
 

@@ -691,11 +691,9 @@ impl PyAttrsListItems {
         args: &pyo3::Bound<'_, pyo3::types::PyTuple>,
         kwds: Option<&pyo3::Bound<'_, pyo3::types::PyDict>>,
     ) -> pyo3::PyResult<Self> {
-        Err(
-            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                "You cannot create PyAttrsListItens instance directly; this structure is design only for communicating with element attributes."
-            )
-        )
+        Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+            "You cannot create PyAttrsListItens instance directly; this structure is design only for communicating with element attributes.",
+        ))
     }
 
     fn __iter__(self_: pyo3::PyRef<'_, Self>) -> pyo3::PyRef<'_, Self> {
@@ -773,11 +771,9 @@ impl PyAttrsList {
         args: &pyo3::Bound<'_, pyo3::types::PyTuple>,
         kwds: Option<&pyo3::Bound<'_, pyo3::types::PyDict>>,
     ) -> pyo3::PyResult<Self> {
-        Err(
-            pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
-                "You cannot create PyAttrsList instance directly; this structure is design only for communicating with element attributes."
-            )
-        )
+        Err(pyo3::PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+            "You cannot create PyAttrsList instance directly; this structure is design only for communicating with element attributes.",
+        ))
     }
 
     fn clear(&self) {

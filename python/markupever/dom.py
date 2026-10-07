@@ -2,7 +2,7 @@ import itertools
 import typing
 
 from . import _rustlib, iterators
-from ._rustlib import QualName as QualName
+from ._rustlib import QualName as QualName  # ruff: ignore[PLC0414]
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from ._rustlib import _Node
@@ -150,9 +150,7 @@ class BaseNode(typing.Generic[_R_co]):
     _CONFIG: _ConfigNode = _ConfigNode(None, ())
 
     def __init__(self, node: _R_co):
-        if self._CONFIG.basetype is not None and not isinstance(
-            node, self._CONFIG.basetype
-        ):
+        if self._CONFIG.basetype is not None and not isinstance(node, self._CONFIG.basetype):
             raise TypeError(
                 f"expected {self._CONFIG.basetype.__name__} for node, got {type(node).__name__} - It's recommended to use nodes `create_*` methods for creating nodes and don't call directly markupever.nodes classes."
             )
@@ -184,14 +182,10 @@ class BaseNode(typing.Generic[_R_co]):
         # Checked last, because mypy doesn't narrow isinstance() with a class whose
         # __new__ returns NoReturn.
         if not isinstance(node, _rustlib.Document):
-            raise TypeError(
-                f"the type of node is not acceptable ({type(node).__name__})."
-            )
+            raise TypeError(f"the type of node is not acceptable ({type(node).__name__}).")
         return Document(node)
 
-    def _connect_node(
-        self, ordering: int, dom: _rustlib.TreeDom, child: "_Node"
-    ) -> None:
+    def _connect_node(self, ordering: int, dom: _rustlib.TreeDom, child: "_Node") -> None:
         if ordering in self._CONFIG.invalid_ordering:
             raise ValueError("This ordering value is not acceptable for this type.")
 
@@ -288,9 +282,7 @@ class BaseNode(typing.Generic[_R_co]):
         """Returns an iterator which iterates over this node and its descendants."""
         return iterators.Descendants(self)
 
-    def attach(
-        self, node: "BaseNode[_Node]", *, ordering: int = Ordering.APPEND
-    ) -> None:
+    def attach(self, node: "BaseNode[_Node]", *, ordering: int = Ordering.APPEND) -> None:
         """
         Attaches a node to the current node with a specified ordering.
 
@@ -302,7 +294,7 @@ class BaseNode(typing.Generic[_R_co]):
         Note: The node's previous attachment status is irrelevant to this operation.
         """
         if isinstance(node._raw, _rustlib.Document):
-            raise ValueError("you cannot attach a Document node to another node.")
+            raise ValueError("you cannot attach a Document node to another node.")  # ruff: ignore[TRY004]
 
         self._connect_node(ordering, self._raw.tree(), node._raw)
 
@@ -314,7 +306,7 @@ class BaseNode(typing.Generic[_R_co]):
         Note: This method cannot be used to move a node to another tree.
         """
         if isinstance(self._raw, _rustlib.Document):
-            raise ValueError("you cannot detach Document node.")
+            raise ValueError("you cannot detach Document node.")  # ruff: ignore[TRY004]
 
         self._raw.tree().detach(self._raw)
 
@@ -406,9 +398,9 @@ class BaseNode(typing.Generic[_R_co]):
         - is_html (bool, optional): Whether to serialize as HTML. Defaults to None.
         - include_self (bool, optional): Whether to include the current node in serialization. Defaults to True.
         """
-        return self.serialize_bytes(
-            indent, is_html=is_html, include_self=include_self
-        ).decode("utf-8")
+        return self.serialize_bytes(indent, is_html=is_html, include_self=include_self).decode(
+            "utf-8"
+        )
 
     def __eq__(self, value: object) -> bool:
         if isinstance(value, BaseNode):
@@ -447,9 +439,7 @@ class Document(BaseNode[_rustlib.Document]):
         self._connect_node(ordering, dom, node)
         return Doctype(node)
 
-    def create_comment(
-        self, content: str, *, ordering: int = Ordering.APPEND
-    ) -> "Comment":
+    def create_comment(self, content: str, *, ordering: int = Ordering.APPEND) -> "Comment":
         """
         Create and connect a `Comment` to this node depends on `ordering` value.
         """
@@ -487,9 +477,7 @@ class Document(BaseNode[_rustlib.Document]):
         if isinstance(attrs, dict):
             attrs = list(attrs.items())
 
-        node = _rustlib.Element(
-            dom, name, attrs, template, mathml_annotation_xml_integration_point
-        )
+        node = _rustlib.Element(dom, name, attrs, template, mathml_annotation_xml_integration_point)
         self._connect_node(ordering, dom, node)
         return Element(node)
 
@@ -734,9 +722,7 @@ class AttrsList:
     ) -> str | None: ...
 
     @typing.overload
-    def get(
-        self, key: _rustlib.QualName | str, default: _D, start: int = 0
-    ) -> str | _D: ...
+    def get(self, key: _rustlib.QualName | str, default: _D, start: int = 0) -> str | _D: ...
 
     def get(
         self,
@@ -1038,9 +1024,7 @@ class Element(BaseNode[_rustlib.Element]):
         if isinstance(attrs, dict):
             attrs = list(attrs.items())
 
-        node = _rustlib.Element(
-            dom, name, attrs, template, mathml_annotation_xml_integration_point
-        )
+        node = _rustlib.Element(dom, name, attrs, template, mathml_annotation_xml_integration_point)
         self._connect_node(ordering, dom, node)
         return Element(node)
 
@@ -1065,9 +1049,7 @@ class ProcessingInstruction(BaseNode[_rustlib.ProcessingInstruction]):
     be ignored by any other applications which don't recognize the instruction.
     """
 
-    _CONFIG = _ConfigNode(
-        _rustlib.ProcessingInstruction, (Ordering.APPEND, Ordering.PREPEND)
-    )
+    _CONFIG = _ConfigNode(_rustlib.ProcessingInstruction, (Ordering.APPEND, Ordering.PREPEND))
 
     @property
     def target(self) -> str:
@@ -1086,7 +1068,5 @@ class ProcessingInstruction(BaseNode[_rustlib.ProcessingInstruction]):
         self._raw.data = value
 
 
-Node: typing.TypeAlias = (
-    Document | Doctype | Comment | Text | Element | ProcessingInstruction
-)
+Node: typing.TypeAlias = Document | Doctype | Comment | Text | Element | ProcessingInstruction
 """Any node."""

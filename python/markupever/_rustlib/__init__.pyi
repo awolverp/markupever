@@ -170,9 +170,7 @@ class QualName:
         cls,
         local: str,
         ns: str
-        | typing.Literal[
-            "html", "xml", "xhtml", "xmlns", "xlink", "svg", "mathml", "*"
-        ] = ...,
+        | typing.Literal["html", "xml", "xhtml", "xmlns", "xlink", "svg", "mathml", "*"] = ...,
         prefix: str | None = ...,
     ) -> QualName: ...
     @property
@@ -205,9 +203,7 @@ class QualName:
     def __hash__(self) -> int: ...
 
 _QualNameOrStr: typing.TypeAlias = QualName | str
-_Node: typing.TypeAlias = (
-    Document | Doctype | Comment | Text | Element | ProcessingInstruction
-)
+_Node: typing.TypeAlias = Document | Doctype | Comment | Text | Element | ProcessingInstruction
 
 @typing.final
 class TreeDom:
@@ -255,9 +251,7 @@ class Document(_NodeMethods):
 
 @typing.final
 class Doctype(_NodeMethods):
-    def __new__(
-        cls, treedom: TreeDom, name: str, public_id: str, system_id: str
-    ) -> Doctype: ...
+    def __new__(cls, treedom: TreeDom, name: str, public_id: str, system_id: str) -> Doctype: ...
     name: str
     public_id: str
     system_id: str
@@ -297,9 +291,7 @@ class Element(_NodeMethods):
 
 @typing.final
 class ProcessingInstruction(_NodeMethods):
-    def __new__(
-        cls, treedom: TreeDom, data: str, target: str
-    ) -> ProcessingInstruction: ...
+    def __new__(cls, treedom: TreeDom, data: str, target: str) -> ProcessingInstruction: ...
     data: str
     target: str
 

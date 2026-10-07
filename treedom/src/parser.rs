@@ -63,11 +63,11 @@ impl ParserSink {
         let mut tree = self.tree.into_inner();
 
         // The fragment parsing algorithm returns the children of the <html> root element
-        if self.fragment_context.is_some() {
-            if let Some(html) = tree.root().first_child().map(|x| x.id()) {
-                tree.root_mut().reparent_from_id_append(html);
-                tree.get_mut(html).unwrap().detach();
-            }
+        if self.fragment_context.is_some()
+            && let Some(html) = tree.root().first_child().map(|x| x.id())
+        {
+            tree.root_mut().reparent_from_id_append(html);
+            tree.get_mut(html).unwrap().detach();
         }
 
         IDTreeDOM {
@@ -291,11 +291,11 @@ impl markup5ever::interface::TreeSink for ParserSink {
                 parent.append_id(handle);
             }
             markup5ever::interface::NodeOrText::AppendText(text) => {
-                if let Some(mut last_index) = parent.last_child() {
-                    if let Some(textval) = last_index.value().text_mut() {
-                        textval.push_non_atomic(text);
-                        return;
-                    }
+                if let Some(mut last_index) = parent.last_child()
+                    && let Some(textval) = last_index.value().text_mut()
+                {
+                    textval.push_non_atomic(text);
+                    return;
                 }
 
                 parent.append(interface::Interface::new(
@@ -445,23 +445,14 @@ mod tests {
         let children: Vec<_> = root.children().collect();
 
         assert!(children[0].value().is_doctype());
-        assert_eq!(
-            &*children[1].value().element().unwrap().name.local,
-            "html",
-        );
+        assert_eq!(&*children[1].value().element().unwrap().name.local, "html",);
 
         let html = children[1];
 
         let children: Vec<_> = html.children().collect();
 
-        assert_eq!(
-            &*children[0].value().element().unwrap().name.local,
-            "head",
-        );
-        assert_eq!(
-            &*children[1].value().element().unwrap().name.local,
-            "body",
-        );
+        assert_eq!(&*children[0].value().element().unwrap().name.local, "head",);
+        assert_eq!(&*children[1].value().element().unwrap().name.local, "body",);
     }
 
     #[test]
@@ -491,7 +482,7 @@ mod tests {
             ]
         );
     }
-  
+
     #[test]
     fn html_fragment_parsing() {
         fn parse_fragment(context: markup5ever::QualName, html: &str) -> IDTreeDOM {
@@ -552,19 +543,13 @@ mod tests {
 
         assert!(children[0].value().is_processing_instruction());
         assert!(children[1].value().is_doctype());
-        assert_eq!(
-            &*children[2].value().element().unwrap().name.local,
-            "suite",
-        );
+        assert_eq!(&*children[2].value().element().unwrap().name.local, "suite",);
 
         let suite = children[2];
 
         let children: Vec<_> = suite.children().collect();
 
-        assert_eq!(
-            &*children[0].value().element().unwrap().name.local,
-            "test",
-        );
+        assert_eq!(&*children[0].value().element().unwrap().name.local, "test",);
     }
 
     #[cfg(feature = "html5ever")]
@@ -628,7 +613,7 @@ mod tests {
             String::from_utf8_lossy(&buf)
         );
     }
-    
+
     #[test]
     fn html_foster_parenting() {
         // Text inside <table> is foster-parented via append_based_on_parent_node
@@ -642,10 +627,7 @@ mod tests {
         let children: Vec<_> = body.children().collect();
 
         assert_eq!(&*children[0].value().text().unwrap().contents, "foo");
-        assert_eq!(
-            &*children[1].value().element().unwrap().name.local,
-            "table",
-        );
+        assert_eq!(&*children[1].value().element().unwrap().name.local, "table",);
     }
 
     #[test]

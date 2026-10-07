@@ -1,5 +1,5 @@
-use std::sync::atomic;
 use std::sync::Arc;
+use std::sync::atomic;
 
 /// Iterates the nodes in insert order - don't matter which are orphan which not
 #[pyo3::pyclass(name = "Iterator", module = "markupever._rustlib.iter", frozen)]
@@ -119,10 +119,10 @@ impl PyChildren {
     fn __next__(&mut self) -> pyo3::PyResult<crate::nodes::NodeGuard> {
         let mut is_same = false;
 
-        if let (Some(x), Some(y)) = (&self.front, &self.back) {
-            if x.id == y.id {
-                is_same = true;
-            }
+        if let (Some(x), Some(y)) = (&self.front, &self.back)
+            && x.id == y.id
+        {
+            is_same = true;
         }
 
         let node = {

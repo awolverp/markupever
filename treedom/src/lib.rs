@@ -11,8 +11,8 @@ pub use parser::ParserSink;
 pub use markup5ever;
 pub use tendril;
 
-pub use ego_tree::iter;
 pub use ego_tree::NodeId;
+pub use ego_tree::iter;
 pub type NodeRef<'a> = ego_tree::NodeRef<'a, interface::Interface>;
 pub type NodeMut<'a> = ego_tree::NodeMut<'a, interface::Interface>;
 

@@ -163,7 +163,6 @@ dependencies = [
  "matching",
  "parking_lot",
  "pyo3",
- "pyo3-build-config",
  "treedom",
 ]
 

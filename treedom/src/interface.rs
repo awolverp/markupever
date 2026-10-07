@@ -1,4 +1,4 @@
-use crate::atomic::{make_atomic_tendril, AtomicTendril};
+use crate::atomic::{AtomicTendril, make_atomic_tendril};
 use std::cell::OnceCell;
 use tendril::StrTendril;
 

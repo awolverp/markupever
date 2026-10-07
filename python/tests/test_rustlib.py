@@ -31,7 +31,7 @@ def test_qualname():
     assert q1 != "b"
 
     with pytest.raises(TypeError):
-        q1 >= 1
+        _ = q1 >= 1  # pyright: ignore[reportOperatorIssue]
 
     repr(q1)
 
@@ -199,9 +199,7 @@ def test_element():
         rl.Element(dom, rl.QualName("div", "html", "ns"), {}, False, True)
 
     rl.Element(dom, rl.QualName("div", "html", "ns"), [("a", "b")], False, True)
-    rl.Element(
-        dom, rl.QualName("div", "html", "ns"), [("a", "b"), ("c", "d")], False, True
-    )
+    rl.Element(dom, rl.QualName("div", "html", "ns"), [("a", "b"), ("c", "d")], False, True)
     rl.Element(
         dom,
         rl.QualName("div", "html", "ns"),
@@ -227,9 +225,7 @@ def test_element():
         )
 
     with pytest.raises(TypeError):
-        rl.Element(
-            dom, rl.QualName("div", "html", "ns"), [rl.QualName("a")], False, False
-        )
+        rl.Element(dom, rl.QualName("div", "html", "ns"), [rl.QualName("a")], False, False)
 
     x = rl.Element(dom, rl.QualName("div", "html", "ns"), [], False, True)
 
@@ -632,6 +628,7 @@ def test_class_modules():
 
     for cls in classes:
         assert cls.__module__ == "markupever._rustlib", cls
+
 
 def test_iter_submodule():
     import markupever._rustlib.iter

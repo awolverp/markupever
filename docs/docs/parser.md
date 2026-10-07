@@ -320,9 +320,7 @@ Let's see what parameters we have:
     ```python hl_lines="5"
     import markupever
 
-    dom = markupever.parse(
-        "<tr><td>A Text</td></tr>", markupever.HtmlOptions(fragment_context="tbody")
-    )
+    dom = markupever.parse("<tr><td>A Text</td></tr>", markupever.HtmlOptions(fragment_context="tbody"))
     dom.serialize(indent=0)
     # <tr><td>A Text</td></tr>
     ```
@@ -332,9 +330,7 @@ Let's see what parameters we have:
     ```python hl_lines="5"
     import markupever
 
-    dom = markupever.parse(
-        "<tr><td>A Text</td></tr>", markupever.HtmlOptions(full_document=False)
-    )
+    dom = markupever.parse("<tr><td>A Text</td></tr>", markupever.HtmlOptions(full_document=False))
     dom.serialize(indent=0)
     # A Text
     ```
@@ -404,9 +400,7 @@ Let's see what parameters we have:
     ```python hl_lines="5"
     import markupever
 
-    dom = markupever.parse(
-        "<!DOCTYPE html><p>A Text</p>", markupever.HtmlOptions(drop_doctype=True)
-    )
+    dom = markupever.parse("<!DOCTYPE html><p>A Text</p>", markupever.HtmlOptions(drop_doctype=True))
     dom.serialize()
     # <html><head></head><body><p>A Text</p></body></html>
     ```
@@ -416,9 +410,7 @@ Let's see what parameters we have:
     ```python hl_lines="5"
     import markupever
 
-    dom = markupever.parse(
-        "<!DOCTYPE html><p>A Text</p>", markupever.HtmlOptions(drop_doctype=False)
-    )
+    dom = markupever.parse("<!DOCTYPE html><p>A Text</p>", markupever.HtmlOptions(drop_doctype=False))
     dom.serialize()
     # <!DOCTYPE html><html><head></head><body><p>A Text</p></body></html>
     ```

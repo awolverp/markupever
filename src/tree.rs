@@ -48,10 +48,10 @@ impl PyTreeDom {
     ) {
         let child = lock.get(id).unwrap();
 
-        if let Some(elem) = child.value().element() {
-            if let Some(prefix) = elem.name.prefix.clone() {
-                lock.namespaces_mut().remove(&prefix);
-            }
+        if let Some(elem) = child.value().element()
+            && let Some(prefix) = elem.name.prefix.clone()
+        {
+            lock.namespaces_mut().remove(&prefix);
         }
     }
 }
