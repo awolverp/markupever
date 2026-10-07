@@ -121,7 +121,7 @@ class Select:
         self.__raw = iter(_rustlib.Select(value._raw, expr))
 
         self.__limit = limit or -1
-        self.__offset = offset - 1
+        self.__offset = offset
 
     def __iter__(self) -> typing.Iterator["dom.Element"]:
         return self
