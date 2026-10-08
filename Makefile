@@ -6,6 +6,7 @@ help:
 	@echo -e "\tbuild-prod      build source (release mode)"
 	@echo -e "\ttest-rs         clippy and test rust code"
 	@echo -e "\ttest-py         build and test python code"
+	@echo -e "\ttest-types      build and type check python code"
 	@echo -e "\tformat          format rust and python code"
 	@echo -e "\tclean           clean all the unneeded files"
 
@@ -29,6 +30,12 @@ test-py: build-dev
 	-ruff check .
 	ruff clean
 	coverage html
+
+.PHONY: test-types
+test-types: build-dev
+	mypy
+	pyright
+	python -m mypy.stubtest markupever._rustlib
 
 .PHONY: format
 format:

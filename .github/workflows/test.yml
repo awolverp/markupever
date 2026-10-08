@@ -68,6 +68,41 @@ jobs:
       - name: "Run pytest"
         run: uv run --no-sync pytest -v
 
+  typecheck:
+    name: type check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: "Install uv"
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: false
+
+      - name: "Install dependencies"
+        run: uv sync --locked --python 3.13 --no-default-groups --group ci --group typecheck --no-install-project
+
+      - name: "Run maturin"
+        run: uv run --no-sync maturin develop --locked
+
+      - name: "Run mypy"
+        run: uv run --no-sync mypy
+
+      - name: "Run pyright"
+        run: uv run --no-sync pyright
+
+      - name: "Check the stub against the compiled module"
+        run: uv run --no-sync python -m mypy.stubtest markupever._rustlib
+
   test-os:
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}-latest

@@ -32,6 +32,7 @@ dynamic = ["description", "license", "readme", "version"]
 dev = [
   { include-group = "ci" },
   { include-group = "lint" },
+  { include-group = "typecheck" },
 ]
 ci = [
   { include-group = "maturin" },
@@ -43,6 +44,7 @@ test = [
     "coverage>=7.16.2",
     "pytest>=9.1.1",
 ]
+typecheck = ["mypy>=2.4.0", "pyright[nodejs]>=1.1.414"]
 
 [build-system]
 requires = ["maturin>=1.7,<2.0"]
@@ -52,3 +54,12 @@ build-backend = "maturin"
 features = ["pyo3/extension-module"]
 module-name = "markupever._rustlib"
 python-source = "python"
+
+[tool.mypy]
+files = ["python/markupever"]
+python_version = "3.10"
+strict = true
+
+[tool.pyright]
+include = ["python/markupever"]
+pythonVersion = "3.10"
