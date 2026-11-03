@@ -125,6 +125,21 @@ def test_scripting_enabled_noscript_fragment(scripting_enabled):
         assert dom.select_one("strong").text() == "123 & more"
 
 
+@pytest.mark.parametrize("scripting_enabled", [True, False])
+def test_scripting_enabled_noscript_in_head(scripting_enabled):
+    html = '<head><noscript><link rel="stylesheet" href="/style.css"></noscript></head>'
+    dom = markupever.parse(html, markupever.HtmlOptions(scripting_enabled=scripting_enabled))
+    assert (dom.select_one("head noscript link") is not None) is (not scripting_enabled)
+
+
+def test_scripting_enabled_default():
+    options = markupever.HtmlOptions(
+        None, False, True, False, False, False, markupever.QUIRKS_MODE_OFF, None
+    )
+    assert options.scripting_enabled
+    assert "scripting_enabled=true" in repr(options)
+
+
 def test_fragment_context():
     options = markupever.HtmlOptions(fragment_context="tbody")
     assert not options.full_document
