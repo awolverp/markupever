@@ -52,6 +52,7 @@ class HtmlOptions:
         drop_doctype: bool = ...,
         quirks_mode: int = ...,
         fragment_context: QualName | str | None = ...,
+        scripting_enabled: bool = ...,
     ) -> HtmlOptions:
         """
         Creates a new `HtmlOptions`
@@ -67,6 +68,7 @@ class HtmlOptions:
         - `fragment_context`: Parse a fragment as if it were the contents of this context element, e.g. `"td"` or
           `QualName("path", "svg")`. A name without a namespace is an HTML element. Default: None (fragments are
           parsed in a `body` context).
+        - `scripting_enabled`: Parse `<noscript>` as HTML when False. Default: True.
         """
 
     @property
@@ -85,6 +87,8 @@ class HtmlOptions:
     def drop_doctype(self) -> bool: ...
     @property
     def quirks_mode(self) -> int: ...
+    @property
+    def scripting_enabled(self) -> bool: ...
 
 @typing.final
 class XmlOptions:

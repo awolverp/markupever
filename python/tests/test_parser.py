@@ -95,6 +95,51 @@ def test_parse_file_function(tmp_path):
     markupever.parse_file(file, markupever.HtmlOptions())
 
 
+@pytest.mark.parametrize("kwargs", [{}, {"full_document": False}, {"fragment_context": "div"}])
+def test_scripting_enabled_noscript(kwargs):
+    html = "<body><noscript><p>Code <strong>1234</strong> &amp; more</p></noscript></body>"
+    default = markupever.parse(html, markupever.HtmlOptions(**kwargs))
+    assert default.select_one("noscript strong") is None
+
+    enabled = markupever.HtmlOptions(scripting_enabled=True, **kwargs)
+    assert enabled.scripting_enabled
+    assert markupever.parse(html, enabled).serialize() == default.serialize()
+
+    disabled = markupever.HtmlOptions(scripting_enabled=False, **kwargs)
+    assert not disabled.scripting_enabled
+    dom = markupever.parse(html, disabled)
+    assert dom.select_one("noscript p").text() == "Code 1234 & more"
+    assert dom.select_one("noscript strong").text() == "1234"
+
+
+@pytest.mark.parametrize("scripting_enabled", [True, False])
+def test_scripting_enabled_noscript_fragment(scripting_enabled):
+    options = markupever.HtmlOptions(
+        fragment_context="noscript", scripting_enabled=scripting_enabled
+    )
+    dom = markupever.parse("<strong>123 &amp; more</strong>", options)
+    if scripting_enabled:
+        assert dom.select_one("strong") is None
+        assert dom.root().text() == "<strong>123 &amp; more</strong>"
+    else:
+        assert dom.select_one("strong").text() == "123 & more"
+
+
+@pytest.mark.parametrize("scripting_enabled", [True, False])
+def test_scripting_enabled_noscript_in_head(scripting_enabled):
+    html = '<head><noscript><link rel="stylesheet" href="/style.css"></noscript></head>'
+    dom = markupever.parse(html, markupever.HtmlOptions(scripting_enabled=scripting_enabled))
+    assert (dom.select_one("head noscript link") is not None) is (not scripting_enabled)
+
+
+def test_scripting_enabled_default():
+    options = markupever.HtmlOptions(
+        None, False, True, False, False, False, markupever.QUIRKS_MODE_OFF, None
+    )
+    assert options.scripting_enabled
+    assert "scripting_enabled=true" in repr(options)
+
+
 def test_fragment_context():
     options = markupever.HtmlOptions(fragment_context="tbody")
     assert not options.full_document

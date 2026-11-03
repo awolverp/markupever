@@ -393,6 +393,8 @@ Let's see what parameters we have:
 
 * **`iframe_srcdoc`** - Is this an `iframe srcdoc` document? default: False.
 
+* **`scripting_enabled`** - Parse `<noscript>` as HTML when False. default: True.
+
 * **`drop_doctype`** - Should we drop the DOCTYPE (if any) from the tree? default: False.
 
 === "True"
