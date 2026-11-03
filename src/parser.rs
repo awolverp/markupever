@@ -12,6 +12,7 @@ pub struct PyHtmlOptions {
     full_document: bool,
     fragment_context: Option<treedom::markup5ever::QualName>,
     quirks_mode: treedom::markup5ever::interface::QuirksMode,
+    scripting_enabled: bool,
 }
 
 #[pyo3::pymethods]
@@ -29,8 +30,9 @@ impl PyHtmlOptions {
     /// - `fragment_context`: Parse a fragment as if it were the contents of this context element, e.g. `"td"` or
     ///   `QualName("path", "svg")`. A name without a namespace is an HTML element. Default: None (fragments are
     ///   parsed in a `body` context).
+    /// - `scripting_enabled`: Parse `<noscript>` as HTML when false. Default: true.
     #[new]
-    #[pyo3(signature=(full_document=None, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, quirks_mode=crate::tools::QUIRKS_MODE_OFF, fragment_context=None))]
+    #[pyo3(signature=(full_document=None, exact_errors=false, discard_bom=true, profile=false, iframe_srcdoc=false, drop_doctype=false, quirks_mode=crate::tools::QUIRKS_MODE_OFF, fragment_context=None, scripting_enabled=true))]
     #[allow(clippy::too_many_arguments)]
     fn new(
         full_document: Option<bool>,
@@ -41,6 +43,7 @@ impl PyHtmlOptions {
         drop_doctype: bool,
         quirks_mode: u8,
         fragment_context: Option<crate::tools::PyQualNameOrStr>,
+        scripting_enabled: bool,
     ) -> pyo3::PyResult<Self> {
         let quirks_mode =
             crate::tools::convert_u8_to_quirks_mode(quirks_mode).ok_or_else(|| {
@@ -77,6 +80,7 @@ impl PyHtmlOptions {
             full_document,
             fragment_context,
             quirks_mode,
+            scripting_enabled,
         })
     }
 
@@ -122,9 +126,14 @@ impl PyHtmlOptions {
             .map(|name| crate::qualname::PyQualName { name })
     }
 
+    #[getter]
+    fn scripting_enabled(&self) -> bool {
+        self.scripting_enabled
+    }
+
     fn __repr__(&self) -> String {
         format!(
-            "markupever._rustlib.HtmlOptions(full_document={}, exact_errors={}, discard_bom={}, profile={}, iframe_srcdoc={}, drop_doctype={}, quirks_mode={}, fragment_context={})",
+            "markupever._rustlib.HtmlOptions(full_document={}, exact_errors={}, discard_bom={}, profile={}, iframe_srcdoc={}, drop_doctype={}, quirks_mode={}, fragment_context={}, scripting_enabled={})",
             self.full_document,
             self.exact_errors,
             self.discard_bom,
@@ -135,6 +144,7 @@ impl PyHtmlOptions {
             self.fragment_context
                 .as_ref()
                 .map_or_else(|| "None".to_owned(), crate::qualname::repr_qualname),
+            self.scripting_enabled,
         )
     }
 }
@@ -307,7 +317,7 @@ impl PyParser {
                         iframe_srcdoc: options.iframe_srcdoc,
                         drop_doctype: options.drop_doctype,
                         quirks_mode: options.quirks_mode,
-                        ..Default::default()
+                        scripting_enabled: options.scripting_enabled,
                     };
 
                     ParserState::as_html(match &options.fragment_context {
