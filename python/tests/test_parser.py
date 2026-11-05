@@ -1,3 +1,5 @@
+import sys
+
 import markupever
 import pytest
 
@@ -93,6 +95,38 @@ def test_parse_file_function(tmp_path):
     )
 
     markupever.parse_file(file, markupever.HtmlOptions())
+
+
+@pytest.mark.parametrize(
+    "content, options",
+    [
+        ("<p>text</p>" * 100_000, markupever.HtmlOptions()),
+        ("<root>" + "<a>text</a>" * 100_000 + "</root>", markupever.XmlOptions()),
+    ],
+    ids=["html", "xml"],
+)
+@pytest.mark.skipif(not getattr(sys, "_is_gil_enabled", lambda: True)(), reason="no GIL")
+def test_parse_releases_gil(content, options):
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+
+    def parse():
+        start = time.perf_counter()
+        markupever.parse(content, options)
+        return time.perf_counter() - start
+
+    longest_pause = 0.0
+    with ThreadPoolExecutor(1) as executor:
+        last = time.perf_counter()
+        future = executor.submit(parse)
+        while not future.done():
+            now = time.perf_counter()
+            longest_pause = max(longest_pause, now - last)
+            last = now
+        longest_pause = max(longest_pause, time.perf_counter() - last)
+
+    # This thread keeps running while the other one parses.
+    assert longest_pause < future.result() / 2
 
 
 @pytest.mark.parametrize("kwargs", [{}, {"full_document": False}, {"fragment_context": "div"}])
