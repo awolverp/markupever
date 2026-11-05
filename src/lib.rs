@@ -49,7 +49,7 @@ mod _rustlib {
     use crate::select::PySelect;
 
     #[pymodule_export]
-    use crate::parser::serialize;
+    use crate::parser::{parse, serialize};
 
     #[pymodule_export]
     use crate::_is_node_impl;
