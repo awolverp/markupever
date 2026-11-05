@@ -20,7 +20,10 @@ env:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    # The manylinux2014 i686 container can't resolve vault.centos.org on ubuntu-26.04.
+    #
+    # https://github.com/PyO3/maturin-action/issues/484
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         platform:
