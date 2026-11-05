@@ -1,33 +1,34 @@
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/75ca729c-1eb0-405e-be03-f8a7cea5cba2" alt="MarkupEver">
-</p>
-<p align="center">
-    <em>The fast, most optimal, and correct HTML & XML parsing library</em>
-</p>
-<p align="center">
-    <a href="https://awolverp.github.io/markupever" target="_blank"><b>Documentation</b></a> | <a href="https://github.com/awolverp/cachebox/releases"><b>Releases</b></a> | <a href="https://awolverp.github.io/markupever/#performance" target="_blank"><b>Benchmarks</b></a>
-</p>
+<div align="center">
 
-![text](https://img.shields.io/badge/coverage-100-08000)
-![image](https://img.shields.io/pypi/v/markupever.svg)
-![image](https://img.shields.io/pypi/l/markupever.svg)
-![image](https://img.shields.io/pypi/pyversions/markupever.svg)
-![python-test](https://github.com/awolverp/markupever/actions/workflows/test.yml/badge.svg)
-![download](https://img.shields.io/pypi/dm/markupever?style=flat-square&color=%23314bb5)
+<img src="https://github.com/user-attachments/assets/75ca729c-1eb0-405e-be03-f8a7cea5cba2" alt="MarkupEver">
 
-------
+_MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing library written in Rust._
 
-MarkupEver is a modern, fast (high-performance), XML & HTML languages parsing library written in Rust.
+[![badge](https://shieldcn.dev/badge/Documentation-ff6e42.svg?logo=materialformkdocs)](https://awolverp.github.io/markupever/) [![badge](https://shieldcn.dev/badge/Benchmarks-ff6e42.svg?logo=ri%3ATbBrandSpeedtest)](https://awolverp.github.io/markupever/#performance)
+
+[![PyPi](https://shieldcn.dev/pypi/markupever.svg?variant=branded&font=geist-mono&size=xs)](https://pypi.org/project/markupever)
+[![Monthly Downloads](https://shieldcn.dev/pypi/dm/markupever.svg?variant=branded&font=geist-mono&size=xs)](https://pypi.org/project/markupever)
+[![Python Version](https://shieldcn.dev/pypi/python/markupever.svg?variant=branded&font=geist-mono&size=xs)](https://pypi.org/project/markupever)
+
+<a href="https://github.com/awolverp/markupever/actions?query=branch%3Amain"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/github/ci/awolverp/markupever.svg?variant=outline&font=geist-mono&size=xs&animate=pulse&mode=dark"><img alt="CI" src="https://shieldcn.dev/github/ci/awolverp/markupever.svg?variant=outline&font=geist-mono&size=xs&animate=pulse&mode=light"></picture></a>
+<a href="https://github.com/awolverp/markupever/commits/main"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/github/last-commit/awolverp/markupever.svg?variant=outline&font=geist-mono&size=xs&mode=dark"><img alt="Last Commit" src="https://shieldcn.dev/github/last-commit/awolverp/markupever.svg?variant=outline&font=geist-mono&size=xs&mode=light"></picture></a>
+<a href="https://github.com/awolverp/markupever/blob/main/LICENSE"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/github/awolverp/markupever/license.svg?variant=outline&font=geist-mono&size=xs&mode=dark"><img alt="License" src="https://shieldcn.dev/github/awolverp/markupever/license.svg?variant=outline&font=geist-mono&size=xs&mode=light"></picture></a>
+
+</div>
+
+---
 
 **KEY FEATURES:**
-* 🚀 **Fast**: Very high performance and fast (thanks to **[html5ever](https://github.com/servo/html5ever)** and **[selectors](https://github.com/servo/stylo/tree/main/selectors)**).
-* 🔥 **Easy**: Designed to be easy to use and learn. <abbr title="also known as auto-complete, autocompletion, IntelliSense">Completion</abbr> everywhere.
-* ✨ **Low-Memory**: Written in Rust. Uses low memory. Don't worry about memory leaks. Uses Rust memory allocator.
-* 🧶 **Thread-safe**: Completely thread-safe. 
-* 🎯 **Quering**: Use your **CSS** knowledge for selecting elements from a HTML or XML document.
-* ⚡ **Streaming**: Incremental/streaming parsing support.
+
+- 🚀 **Fast**: Very high performance and fast (thanks to **[html5ever](https://github.com/servo/html5ever)** and **[selectors](https://github.com/servo/stylo/tree/main/selectors)**).
+- 🔥 **Easy**: Designed to be easy to use and learn. <abbr title="also known as auto-complete, autocompletion, IntelliSense">Completion</abbr> everywhere.
+- ✨ **Low-Memory**: Written in Rust. Uses low memory. Don't worry about memory leaks. Uses Rust memory allocator.
+- 🧶 **Thread-safe**: Completely thread-safe.
+- 🎯 **Quering**: Use your **CSS** knowledge for selecting elements from a HTML or XML document.
+- ⚡ **Streaming**: Incremental/streaming parsing support.
 
 ## Installation
+
 You can install MarkupEver by using **pip**:
 
 <small>It's recommended to use virtual environments.</small>
@@ -39,6 +40,7 @@ $ pip3 install markupever
 ## Example
 
 ### Parse
+
 Parsing a HTML content and selecting elements:
 
 ```python
@@ -53,6 +55,7 @@ for element in dom.select("div.section > p:child-nth(1)"):
 ```
 
 ### Create DOM
+
 Creating a DOM from zero:
 
 ```python
