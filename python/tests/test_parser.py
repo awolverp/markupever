@@ -129,6 +129,57 @@ def test_parse_releases_gil(content, options):
     assert longest_pause < future.result() / 2
 
 
+@pytest.mark.parametrize(
+    "options",
+    [
+        markupever.HtmlOptions(),
+        markupever.HtmlOptions(full_document=False, drop_doctype=True),
+        markupever.HtmlOptions(fragment_context="tbody"),
+        markupever.HtmlOptions(scripting_enabled=False),
+        markupever.XmlOptions(),
+    ],
+)
+@pytest.mark.parametrize(
+    "content",
+    [
+        (
+            "\ufeff<!DOCTYPE html><title>Café</title><noscript><b>1234</b></noscript>"
+            "<table><tr><td>a &amp; b<!-- c --></table><svg><template>x</template></svg>"
+        ),
+        b"<p>\xff invalid UTF-8</p>",
+    ],
+)
+def test_parse_matches_parser(options, content):
+    parser = markupever.Parser(options)
+    parser.process(content)
+    expected = parser.finish().into_dom().serialize()
+
+    assert markupever.parse(content, options).serialize() == expected
+
+
+def test_parse_invalid_arguments():
+    with pytest.raises(TypeError):
+        markupever.parse(1)
+
+    with pytest.raises(TypeError):
+        markupever.parse("", object())
+
+    with pytest.raises(ValueError):
+        markupever.parse("", "invalid")
+
+
+def test_parse_in_threads():
+    from concurrent.futures import ThreadPoolExecutor
+
+    content = "<ul>" + "<li>item &amp; more</li>" * 1_000 + "</ul>"
+    expected = markupever.parse(content).serialize()
+
+    with ThreadPoolExecutor(8) as executor:
+        results = list(executor.map(lambda _: markupever.parse(content).serialize(), range(64)))
+
+    assert results == [expected] * 64
+
+
 @pytest.mark.parametrize("kwargs", [{}, {"full_document": False}, {"fragment_context": "div"}])
 def test_scripting_enabled_noscript(kwargs):
     html = "<body><noscript><p>Code <strong>1234</strong> &amp; more</p></noscript></body>"
