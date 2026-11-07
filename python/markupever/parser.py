@@ -4,6 +4,19 @@ from . import _rustlib
 from .dom import TreeDom
 
 
+def _options(
+    options: typing.Literal["html", "xml"] | _rustlib.HtmlOptions | _rustlib.XmlOptions,
+) -> _rustlib.HtmlOptions | _rustlib.XmlOptions:
+    if isinstance(options, str):
+        if options == "html":
+            return _rustlib.HtmlOptions()
+        if options == "xml":
+            return _rustlib.XmlOptions()
+        raise ValueError(f"invalid parser options: {options!r}")
+
+    return options
+
+
 class Parser:
     __slots__ = ("__raw", "__state")
 
@@ -22,15 +35,7 @@ class Parser:
         for `options`, If your input is a HTML document, pass a `HtmlOptions`;
         If your input is a XML document, pass `XmlOptions`.
         """
-        if isinstance(options, str):
-            if options == "html":
-                options = _rustlib.HtmlOptions()
-            elif options == "xml":
-                options = _rustlib.XmlOptions()
-            else:
-                raise ValueError(f"invalid parser options: {options!r}")
-
-        self.__raw = _rustlib.Parser(options)
+        self.__raw = _rustlib.Parser(_options(options))
 
         # 0 - processing
         # 1 - finished
@@ -124,6 +129,8 @@ def parse(
     """
     Parses HTML or XML content and returns the parsed document tree.
 
+    Releases the GIL while parsing.
+
     Args:
         content: The HTML or XML content to parse, either as a string or bytes.
         options: Parsing options that specify whether to parse as HTML or XML.
@@ -131,9 +138,7 @@ def parse(
     Returns:
         A TreeDom object representing the parsed document tree.
     """
-    parser = Parser(options)
-    parser.process(content)
-    return parser.finish().into_dom()
+    return TreeDom(raw=_rustlib.parse(content, _options(options)))
 
 
 def parse_file(

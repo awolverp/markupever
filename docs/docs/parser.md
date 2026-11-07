@@ -45,6 +45,10 @@ We can use `.parse()` and `.parse_file()` functions to parse documents.
     
     the `.parse_file()` function gets a `BinaryIO`, a `TextIO` or a file path and parses it chunk by chunk; but `.parse()` function gets all document content at once. By this way, using `.parse_file()` is very better than `.parse()`.
 
+!!! info "Threads"
+
+    `.parse()` releases the GIL while parsing; `.parse_file()` and `Parser` do not.
+
 Let's use them:
 
 === ".parse() function"

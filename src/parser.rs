@@ -2,7 +2,13 @@
 ///
 /// # Note
 /// this type is immutable.
-#[pyo3::pyclass(name = "HtmlOptions", module = "markupever._rustlib", frozen)]
+#[pyo3::pyclass(
+    name = "HtmlOptions",
+    module = "markupever._rustlib",
+    frozen,
+    from_py_object
+)]
+#[derive(Clone)]
 pub struct PyHtmlOptions {
     exact_errors: bool,
     discard_bom: bool,
@@ -149,7 +155,13 @@ impl PyHtmlOptions {
     }
 }
 
-#[pyo3::pyclass(name = "XmlOptions", module = "markupever._rustlib", frozen)]
+#[pyo3::pyclass(
+    name = "XmlOptions",
+    module = "markupever._rustlib",
+    frozen,
+    from_py_object
+)]
+#[derive(Clone)]
 pub struct PyXmlOptions {
     exact_errors: bool,
     discard_bom: bool,
@@ -224,6 +236,45 @@ enum ParserState {
 }
 
 impl ParserState {
+    fn new(options: PyParserOptions) -> Self {
+        match options {
+            PyParserOptions::Html(options) => {
+                let tokenizer = treedom::html5ever::tokenizer::TokenizerOpts {
+                    exact_errors: options.exact_errors,
+                    discard_bom: options.discard_bom,
+                    profile: options.profile,
+                    ..Default::default()
+                };
+                let tree_builder = treedom::html5ever::tree_builder::TreeBuilderOpts {
+                    exact_errors: options.exact_errors,
+                    iframe_srcdoc: options.iframe_srcdoc,
+                    drop_doctype: options.drop_doctype,
+                    quirks_mode: options.quirks_mode,
+                    scripting_enabled: options.scripting_enabled,
+                };
+
+                Self::as_html(match options.fragment_context {
+                    Some(context) => {
+                        treedom::ParserSink::parse_html_fragment(context, tokenizer, tree_builder)
+                    }
+                    None => treedom::ParserSink::parse_html(
+                        options.full_document,
+                        tokenizer,
+                        tree_builder,
+                    ),
+                })
+            }
+            PyParserOptions::Xml(options) => Self::as_xml(treedom::ParserSink::parse_xml(
+                treedom::xml5ever::tokenizer::XmlTokenizerOpts {
+                    exact_errors: options.exact_errors,
+                    discard_bom: options.discard_bom,
+                    profile: options.profile,
+                    ..Default::default()
+                },
+            )),
+        }
+    }
+
     fn as_html(val: treedom::html5ever::driver::Parser<treedom::ParserSink>) -> Self {
         Self::OnHtml(Box::new(treedom::tendril::stream::Utf8LossyDecoder::new(
             val,
@@ -275,7 +326,7 @@ impl std::fmt::Debug for ParserState {
 }
 
 #[derive(pyo3::FromPyObject)]
-enum Input {
+pub(crate) enum Input {
     Bytes(pyo3::pybacked::PyBackedBytes),
     Str(pyo3::pybacked::PyBackedStr),
 }
@@ -290,9 +341,9 @@ pub struct PyParser {
 }
 
 #[derive(pyo3::FromPyObject)]
-enum PyParserOptions<'p> {
-    Html(pyo3::PyRef<'p, PyHtmlOptions>),
-    Xml(pyo3::PyRef<'p, PyXmlOptions>),
+pub(crate) enum PyParserOptions {
+    Html(PyHtmlOptions),
+    Xml(PyXmlOptions),
 }
 
 #[pyo3::pymethods]
@@ -303,51 +354,8 @@ impl PyParser {
     ///              If your input is a XML document, pass PyXmlOptions.
     #[new]
     fn new(options: PyParserOptions) -> pyo3::PyResult<Self> {
-        let state = {
-            match options {
-                PyParserOptions::Html(options) => {
-                    let tokenizer = treedom::html5ever::tokenizer::TokenizerOpts {
-                        exact_errors: options.exact_errors,
-                        discard_bom: options.discard_bom,
-                        profile: options.profile,
-                        ..Default::default()
-                    };
-                    let tree_builder = treedom::html5ever::tree_builder::TreeBuilderOpts {
-                        exact_errors: options.exact_errors,
-                        iframe_srcdoc: options.iframe_srcdoc,
-                        drop_doctype: options.drop_doctype,
-                        quirks_mode: options.quirks_mode,
-                        scripting_enabled: options.scripting_enabled,
-                    };
-
-                    ParserState::as_html(match &options.fragment_context {
-                        Some(context) => treedom::ParserSink::parse_html_fragment(
-                            context.clone(),
-                            tokenizer,
-                            tree_builder,
-                        ),
-                        None => treedom::ParserSink::parse_html(
-                            options.full_document,
-                            tokenizer,
-                            tree_builder,
-                        ),
-                    })
-                }
-                PyParserOptions::Xml(options) => {
-                    ParserState::as_xml(treedom::ParserSink::parse_xml(
-                        treedom::xml5ever::tokenizer::XmlTokenizerOpts {
-                            exact_errors: options.exact_errors,
-                            discard_bom: options.discard_bom,
-                            profile: options.profile,
-                            ..Default::default()
-                        },
-                    ))
-                }
-            }
-        };
-
         Ok(Self {
-            state: parking_lot::Mutex::new(state),
+            state: parking_lot::Mutex::new(ParserState::new(options)),
         })
     }
 
@@ -459,6 +467,28 @@ impl PyParser {
 
         format!("<Parser - {:?}>", *state)
     }
+}
+
+/// Parses `content` without holding the GIL.
+#[pyo3::pyfunction]
+pub(crate) fn parse(
+    py: pyo3::Python<'_>,
+    content: Input,
+    options: PyParserOptions,
+) -> pyo3::PyResult<super::tree::PyTreeDom> {
+    let content = match &content {
+        Input::Bytes(b) => b,
+        Input::Str(s) => s.as_bytes(),
+    };
+
+    // html5ever's parser is not `Send`, so it is created and dropped inside `detach`.
+    let dom = py.detach(|| {
+        let mut state = ParserState::new(options);
+        state.process(content)?;
+        pyo3::PyResult::Ok(state.finish().into_dom())
+    })?;
+
+    Ok(super::tree::PyTreeDom::from_treedom(dom))
 }
 
 #[pyo3::pyfunction]

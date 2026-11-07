@@ -1,3 +1,5 @@
+import sys
+
 import markupever
 import pytest
 
@@ -93,6 +95,89 @@ def test_parse_file_function(tmp_path):
     )
 
     markupever.parse_file(file, markupever.HtmlOptions())
+
+
+@pytest.mark.parametrize(
+    "content, options",
+    [
+        ("<p>text</p>" * 100_000, markupever.HtmlOptions()),
+        ("<root>" + "<a>text</a>" * 100_000 + "</root>", markupever.XmlOptions()),
+    ],
+    ids=["html", "xml"],
+)
+@pytest.mark.skipif(not getattr(sys, "_is_gil_enabled", lambda: True)(), reason="no GIL")
+def test_parse_releases_gil(content, options):
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+
+    def parse():
+        start = time.perf_counter()
+        markupever.parse(content, options)
+        return time.perf_counter() - start
+
+    longest_pause = 0.0
+    with ThreadPoolExecutor(1) as executor:
+        last = time.perf_counter()
+        future = executor.submit(parse)
+        while not future.done():
+            now = time.perf_counter()
+            longest_pause = max(longest_pause, now - last)
+            last = now
+        longest_pause = max(longest_pause, time.perf_counter() - last)
+
+    # This thread keeps running while the other one parses.
+    assert longest_pause < future.result() / 2
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        markupever.HtmlOptions(),
+        markupever.HtmlOptions(full_document=False, drop_doctype=True),
+        markupever.HtmlOptions(fragment_context="tbody"),
+        markupever.HtmlOptions(scripting_enabled=False),
+        markupever.XmlOptions(),
+    ],
+)
+@pytest.mark.parametrize(
+    "content",
+    [
+        (
+            "\ufeff<!DOCTYPE html><title>Café</title><noscript><b>1234</b></noscript>"
+            "<table><tr><td>a &amp; b<!-- c --></table><svg><template>x</template></svg>"
+        ),
+        b"<p>\xff invalid UTF-8</p>",
+    ],
+)
+def test_parse_matches_parser(options, content):
+    parser = markupever.Parser(options)
+    parser.process(content)
+    expected = parser.finish().into_dom().serialize()
+
+    assert markupever.parse(content, options).serialize() == expected
+
+
+def test_parse_invalid_arguments():
+    with pytest.raises(TypeError):
+        markupever.parse(1)
+
+    with pytest.raises(TypeError):
+        markupever.parse("", object())
+
+    with pytest.raises(ValueError):
+        markupever.parse("", "invalid")
+
+
+def test_parse_in_threads():
+    from concurrent.futures import ThreadPoolExecutor
+
+    content = "<ul>" + "<li>item &amp; more</li>" * 1_000 + "</ul>"
+    expected = markupever.parse(content).serialize()
+
+    with ThreadPoolExecutor(8) as executor:
+        results = list(executor.map(lambda _: markupever.parse(content).serialize(), range(64)))
+
+    assert results == [expected] * 64
 
 
 @pytest.mark.parametrize("kwargs", [{}, {"full_document": False}, {"fragment_context": "div"}])
