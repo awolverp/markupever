@@ -73,7 +73,7 @@ impl ExpressionGroup {
     pub fn matches<'a>(
         &self,
         node: CssNodeRef<'a>,
-        scope: Option<CssNodeRef<'a>>,
+        scope: Option<selectors::OpaqueElement>,
         caches: &mut selectors::context::SelectorCaches,
     ) -> bool {
         let mut ctx = selectors::matching::MatchingContext::new(
@@ -85,7 +85,7 @@ impl ExpressionGroup {
             selectors::matching::MatchingForInvalidation::No,
         );
 
-        ctx.scope_element = scope.map(|x| selectors::Element::opaque(&x));
+        ctx.scope_element = scope;
         self.0
             .slice()
             .iter()

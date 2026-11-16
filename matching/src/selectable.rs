@@ -26,6 +26,14 @@ fn opaque_from_node_id(id: treedom::NodeId) -> selectors::OpaqueElement {
     )
 }
 
+/// A scope id that is not an ego-tree node. Used to ask whether a selector
+/// matches an element only because that element is `:scope`.
+pub fn foreign_scope() -> selectors::OpaqueElement {
+    selectors::OpaqueElement::from_non_null_ptr(
+        std::ptr::NonNull::new(usize::MAX as *mut ()).unwrap(),
+    )
+}
+
 impl<'a> CssNodeRef<'a> {
     pub fn new(node: treedom::NodeRef<'a>) -> Option<Self> {
         if node.value().is_element() {
@@ -43,6 +51,10 @@ impl<'a> CssNodeRef<'a> {
 
     pub fn into_node(self) -> treedom::NodeRef<'a> {
         self.0
+    }
+
+    pub fn opaque_id(&self) -> selectors::OpaqueElement {
+        selectors::Element::opaque(self)
     }
 }
 

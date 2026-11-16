@@ -16,6 +16,16 @@ def test_scope_on_a_document_is_the_root_element():
     assert [e.name.local for e in doc.select(":scope")] == ["html"]
 
 
+def test_select_on_an_element_does_not_return_that_element():
+    outer = list(
+        markupever.parse("<div class='box'><div class='box'></div></div>").select("div.box")
+    )[0]
+
+    assert [element.class_list for element in outer.select("div")] == [["box"]]
+    assert [element.class_list for element in outer.select(":scope")] == [["box"]]
+    assert [element.class_list for element in outer.select(":scope.box")] == [["box"]]
+
+
 def test_scope_child_is_relative_to_the_element_select_was_called_on():
     doc = markupever.parse("<!DOCTYPE html><html><body><p>x</p></body></html>")
     body = list(doc.select("body"))[0]
