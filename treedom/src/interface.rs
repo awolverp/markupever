@@ -138,6 +138,10 @@ pub struct ElementAttributes {
     class: OnceCell<Vec<markup5ever::LocalName>>,
 }
 
+fn unnamespaced(name: &AttributeKey, local: &str) -> bool {
+    name.ns.is_empty() && &*name.local == local
+}
+
 impl ElementAttributes {
     pub fn new(list: Vec<(AttributeKey, AtomicTendril)>) -> Self {
         Self {
@@ -157,10 +161,11 @@ impl ElementAttributes {
     pub fn id(&self) -> Option<&str> {
         self.id
             .get_or_init(|| {
-                self.list
-                    .iter()
-                    .find(|(name, _)| name == "id")
-                    .map(|(_, value)| value.clone())
+                let plain = self.list.iter().find(|(name, _)| unnamespaced(name, "id"));
+                let xml_id = self.list.iter().find(|(name, _)| {
+                    &*name.ns == "http://www.w3.org/XML/1998/namespace" && &*name.local == "id"
+                });
+                plain.or(xml_id).map(|(_, value)| value.clone())
             })
             .as_deref()
     }
@@ -168,19 +173,15 @@ impl ElementAttributes {
     #[inline]
     pub fn class(&self) -> &[markup5ever::LocalName] {
         let classes = self.class.get_or_init(|| {
-            let mut classes = self
-                .list
+            self.list
                 .iter()
-                .filter(|(name, _)| &*name.local == "class")
+                .filter(|(name, _)| unnamespaced(name, "class"))
                 .flat_map(|(_, value)| {
                     value
                         .split_ascii_whitespace()
                         .map(markup5ever::LocalName::from)
                 })
-                .collect::<Vec<_>>();
-            classes.sort_unstable();
-            classes.dedup();
-            classes
+                .collect()
         });
 
         classes.as_slice()

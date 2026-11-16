@@ -351,7 +351,9 @@ class BaseNode(typing.Generic[_R_co]):
                 continue
 
             if strip:
-                yield descendant.content.strip()
+                text = descendant.content.strip()
+                if text:
+                    yield text
             else:
                 yield descendant.content
 
@@ -750,16 +752,21 @@ class AttrsList:
         """
         self.__raw.dedup()  # pragma: no cover
 
+    def _normalize_index(self, index: int) -> int:
+        length = len(self.__raw)
+        if index < 0:
+            index += length
+        if index < 0 or index >= length:
+            raise IndexError("attrs index out of range")
+        return index
+
     def pop(self, index: int = -1) -> tuple[_rustlib.QualName, str]:
         """
         Remove and return item at index (default last).
 
         Raises `IndexError` if list is empty or index is out of range.
         """
-        if index < 0:
-            index = len(self.__raw) + index
-
-        return self.__raw.remove(index)
+        return self.__raw.remove(self._normalize_index(index))
 
     def remove(
         self,
@@ -846,9 +853,12 @@ class AttrsList:
         Raises `KeyError` if the specified key is not found in the list.
         """
         if not isinstance(index, int):
-            _, index = self._find_by_key(index)
+            key = index
+            _, index = self._find_by_key(key)
             if index == -1:
-                raise KeyError(index)
+                raise KeyError(key)
+        else:
+            index = self._normalize_index(index)
 
         self.__raw.remove(index)
 
@@ -893,7 +903,7 @@ class AttrsList:
         if isinstance(val, str):
             raise TypeError("an attribute index must be assigned a (key, value) tuple, not a str")
 
-        self.__raw.update_item(index, val[0], val[1])
+        self.__raw.update_item(self._normalize_index(index), val[0], val[1])
 
     @typing.overload
     def __getitem__(self, index: str | _rustlib.QualName) -> str: ...
@@ -912,7 +922,7 @@ class AttrsList:
             _, val = self.__raw.get_by_index(index_i)
             return val
 
-        return self.__raw.get_by_index(index)
+        return self.__raw.get_by_index(self._normalize_index(index))
 
     def __repr__(self) -> str:
         return repr(self.__raw)

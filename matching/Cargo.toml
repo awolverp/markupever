@@ -10,7 +10,6 @@ license.workspace = true
 
 [dependencies]
 cssparser = { version = "0.36.0" }
-foldhash = { version = "0.2.0" }
 hashbrown = {
   version = "0.17",
   default-features = false,

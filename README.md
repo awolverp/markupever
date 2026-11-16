@@ -50,7 +50,7 @@ dom = markupever.parse_file("file.html", "html")
 # Or parse a HTML content directly:
 # dom = markupever.parse("... content ...", "html")
 
-for element in dom.select("div.section > p:child-nth(1)"):
+for element in dom.select("div.section > p:nth-child(1)"):
     print(element.text())
 ```
 

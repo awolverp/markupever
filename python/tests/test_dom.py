@@ -5,6 +5,61 @@ import pytest
 from markupever import _rustlib
 
 
+def test_attrs_missing_key_and_negative_index():
+    element = next(markupever.parse("<div></div>").select("div"))
+
+    with pytest.raises(KeyError) as missing:
+        del element.attrs["missing"]
+    assert missing.value.args == ("missing",)
+
+    with pytest.raises(IndexError):
+        _ = element.attrs[-1]
+
+    with pytest.raises(IndexError):
+        element.attrs.pop()
+
+    element.attrs["id"] = "a"
+    assert element.attrs[-1][1] == "a"
+
+
+def test_inequality_with_an_unrelated_object_is_true():
+    element = next(markupever.parse("<div></div>").select("div"))
+    raw = markupever.dom.TreeDom()._raw
+
+    assert element != "div"
+    assert not element == "div"  # noqa: SIM201
+    assert raw != 1
+    assert not raw == 1  # noqa: SIM201
+
+    qualname = markupever._rustlib.QualName("div", "html")
+    assert qualname == "div"
+    assert hash(qualname) == hash("div")
+    assert {qualname: 1}["div"] == 1
+
+
+def test_strings_strip_skips_whitespace_only_nodes():
+    document = markupever.dom.TreeDom()
+    div = document.root().create_element("div")
+    div.create_text("  ")
+    div.create_text(" a ")
+
+    assert list(div.strings(strip=True)) == ["a"]
+    assert div.text(separator="|", strip=True) == "a"
+
+
+def test_document_root_cannot_be_moved_under_an_orphan():
+    document = markupever.dom.TreeDom()
+    root = document.root()
+    root.create_element("body").create_text("hi")
+    orphan = markupever._rustlib.Element(document._raw, "orphan", [], False, False)
+
+    with pytest.raises(RuntimeError, match="document root"):
+        document._raw.append(orphan, root._raw)
+
+    assert root.parent is None
+    assert root.serialize() == "<body>hi</body>"
+
+
 def test_treedom():
     dom = markupever.dom.TreeDom()
 
@@ -164,7 +219,7 @@ def test_connect_node():
 
     assert (
         root.serialize(0)
-        == '<!DOCTYPE HTML PUBLIC "public" SYSTEM "system"><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body class="bg-dark"><p class="font-sans"><!--contenttestme-->\ncontent 1\ncontent 2</p></body></html>'
+        == '<!DOCTYPE HTML PUBLIC "public" "system"><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body class="bg-dark"><p class="font-sans"><!--contenttestme-->\ncontent 1\ncontent 2</p></body></html>'
     )
 
     with pytest.raises(ValueError):

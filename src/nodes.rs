@@ -264,7 +264,7 @@ impl PyDocument {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 Ok(self_.get().0 != other.0)
@@ -309,6 +309,9 @@ impl PyDoctype {
         );
 
         let mut dom = treedom.dom.lock();
+        if val.name.eq_ignore_ascii_case("html") {
+            dom.set_html_document(true);
+        }
         let node = dom.orphan(val.into());
 
         Ok(Self(NodeGuard::from_nodemut(treedom.dom.clone(), node)))
@@ -324,6 +327,9 @@ impl PyDoctype {
     #[setter]
     fn set_name(&self, name: String) {
         let mut tree = self.0.tree.lock();
+        if name.eq_ignore_ascii_case("html") {
+            tree.set_html_document(true);
+        }
         let mut node = tree.get_mut(self.0.id).unwrap();
         node.value().doctype_mut().unwrap().name = name.into();
     }
@@ -411,7 +417,7 @@ impl PyDoctype {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 Ok(self_.get().0 != other.0)
@@ -528,7 +534,7 @@ impl PyComment {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 Ok(self_.get().0 != other.0)
@@ -642,7 +648,7 @@ impl PyText {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 Ok(self_.get().0 != other.0)
@@ -969,6 +975,36 @@ impl PyAttrsList {
     }
 }
 
+fn element_name(
+    dom: &::treedom::IDTreeDOM,
+    name: crate::tools::PyQualNameOrStr,
+) -> treedom::markup5ever::QualName {
+    match name {
+        crate::tools::PyQualNameOrStr::Str(value) if dom.html_document() => {
+            // HTML tag names are ASCII-lowercase, matching what the HTML parser stores.
+            let local = value.to_ascii_lowercase();
+            treedom::markup5ever::QualName::new(
+                None,
+                treedom::markup5ever::namespace_url!("http://www.w3.org/1999/xhtml"),
+                local.as_str().into(),
+            )
+        }
+        other => other.into_qualname(),
+    }
+}
+
+fn record_html_namespace(dom: &mut ::treedom::IDTreeDOM, name: &treedom::markup5ever::QualName) {
+    let xhtml = treedom::markup5ever::namespace_url!("http://www.w3.org/1999/xhtml");
+    if name.ns != xhtml {
+        return;
+    }
+
+    let prefix = treedom::markup5ever::Prefix::from("");
+    if !dom.namespaces().contains_prefix(&prefix) {
+        dom.namespaces_mut().insert(prefix, xhtml);
+    }
+}
+
 /// An element node
 #[pyo3::pyclass(name = "Element", module = "markupever._rustlib", frozen)]
 pub struct PyElement(pub(super) NodeGuard);
@@ -983,7 +1019,11 @@ impl PyElement {
         template: bool,
         mathml_annotation_xml_integration_point: bool,
     ) -> Self {
-        let name = name.into_qualname();
+        let mut dom = treedom.dom.lock();
+        let name = element_name(&dom, name);
+        if dom.html_document() {
+            record_html_namespace(&mut dom, &name);
+        }
 
         let mut attributes = Vec::with_capacity(attrs.len());
 
@@ -999,7 +1039,6 @@ impl PyElement {
             mathml_annotation_xml_integration_point,
         );
 
-        let mut dom = treedom.dom.lock();
         let node = dom.orphan(val.into());
 
         Self(NodeGuard::from_nodemut(treedom.dom.clone(), node))
@@ -1018,9 +1057,25 @@ impl PyElement {
     #[setter]
     fn set_name(&self, name: crate::tools::PyQualNameOrStr) {
         let mut tree = self.0.tree.lock();
+        let old = tree
+            .get(self.0.id)
+            .unwrap()
+            .value()
+            .element()
+            .unwrap()
+            .name
+            .clone();
+        let name = element_name(&tree, name);
+        if let Some(prefix) = old.prefix.clone() {
+            tree.namespaces_mut().remove_binding(&prefix, &old.ns);
+        }
+        if let Some(prefix) = name.prefix.clone() {
+            tree.namespaces_mut().insert(prefix, name.ns.clone());
+        }
+        if tree.html_document() {
+            record_html_namespace(&mut tree, &name);
+        }
         let mut node = tree.get_mut(self.0.id).unwrap();
-
-        let name = name.into_qualname();
 
         node.value().element_mut().unwrap().name = name;
     }
@@ -1165,7 +1220,7 @@ impl PyElement {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 Ok(self_.get().0 != other.0)
@@ -1308,7 +1363,7 @@ impl PyProcessingInstruction {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 Ok(self_.get().0 != other.0)

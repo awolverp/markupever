@@ -51,7 +51,8 @@ impl PyTreeDom {
         if let Some(elem) = child.value().element()
             && let Some(prefix) = elem.name.prefix.clone()
         {
-            lock.namespaces_mut().remove(&prefix);
+            let namespace = elem.name.ns.clone();
+            lock.namespaces_mut().remove_binding(&prefix, &namespace);
         }
     }
 }
@@ -81,6 +82,15 @@ fn check_insert_into(
             ));
         }
         node = ancestor;
+    }
+    Ok(())
+}
+
+fn ensure_can_move(tree: &::treedom::IDTreeDOM, id: ::treedom::NodeId) -> pyo3::PyResult<()> {
+    if id == tree.root().id() {
+        return Err(pyo3::exceptions::PyRuntimeError::new_err(
+            "Cannot give the document root a parent",
+        ));
     }
     Ok(())
 }
@@ -125,11 +135,12 @@ impl PyTreeDom {
             std::collections::HashMap<pyo3::pybacked::PyBackedStr, pyo3::pybacked::PyBackedStr>,
         >,
     ) -> Self {
-        let ns = namespaces
-            .into_iter()
-            .flatten()
-            .map(|(key, val)| ((*key).into(), (*val).into()))
-            .collect();
+        let mut ns = ::treedom::NamespaceMap::new();
+        if let Some(namespaces) = namespaces {
+            for (key, val) in namespaces {
+                ns.insert((*key).into(), (*val).into());
+            }
+        }
 
         let dom = if capacity == 0 {
             ::treedom::IDTreeDOM::new(::treedom::interface::DocumentInterface, ns)
@@ -151,6 +162,7 @@ impl PyTreeDom {
         let dom = self.dom.lock();
         dom.namespaces()
             .iter()
+            .into_iter()
             .map(|(key, val)| (key.to_string(), val.to_string()))
             .collect()
     }
@@ -192,6 +204,7 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        ensure_can_move(&tree, child.id)?;
         check_insert_into(&tree, parent.id, child.id)?;
 
         let mut parent = tree.get_mut(parent.id).unwrap();
@@ -230,6 +243,7 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        ensure_can_move(&tree, child.id)?;
         check_insert_into(&tree, parent.id, child.id)?;
 
         let mut parent = tree.get_mut(parent.id).unwrap();
@@ -268,6 +282,7 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        ensure_can_move(&tree, new_sibling.id)?;
         check_insert_beside(&tree, sibling.id, new_sibling.id)?;
 
         let mut sibling = tree.get_mut(sibling.id).unwrap();
@@ -306,6 +321,7 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        ensure_can_move(&tree, new_sibling.id)?;
         check_insert_beside(&tree, sibling.id, new_sibling.id)?;
 
         let mut sibling = tree.get_mut(sibling.id).unwrap();
@@ -359,6 +375,7 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        ensure_can_move(&tree, child.id)?;
         // Moving a node's children into the node itself or one of its descendants would make a
         // node its own ancestor.
         check_insert_into(&tree, parent.id, child.id)?;
@@ -391,6 +408,7 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        ensure_can_move(&tree, child.id)?;
         // Moving a node's children into the node itself or one of its descendants would make a
         // node its own ancestor.
         check_insert_into(&tree, parent.id, child.id)?;
@@ -432,7 +450,7 @@ impl PyTreeDom {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 if Arc::ptr_eq(&self_.get().dom, &other.dom) {

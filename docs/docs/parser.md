@@ -219,6 +219,8 @@ which actually does the parsing. In this part we want to learn the `Parser` clas
 
 The `Parser` class is an HTML/XML parser, ready to receive Unicode input. It is very easy to use and allows you to stream input using the `.process()` method. This way, you don't have to worry about the memory usage of large inputs.
 
+`str` is already Unicode. `bytes` are decoded as UTF-8. A `<meta charset>` or an XML encoding declaration does not switch the decoder. Invalid bytes become U+FFFD, and `Parser.errors()` records `"invalid byte sequence"`. `parse()` still returns the tree.
+
 As we said about *options* parameter in `.parse()` and `.parse_file()`,
 if your input is an HTML document, pass a `HtmlOptions()`; if your input is an XML document, pass `XmlOptions()`
 
@@ -365,7 +367,7 @@ Let's see what parameters we have:
     # ["Unexpected token"]
     ```
 
-* **`discard_bom`** - Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? default: False.
+* **`discard_bom`** - Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? default: True.
 
 * **`profile`** - Keep a record of how long we spent in each state? Printed when `finish()` is called. default: False.
 
@@ -454,7 +456,7 @@ Let's see what parameters we have:
     # ["Unexpected token"]
     ```
 
-* **`discard_bom`** - Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? default: False.
+* **`discard_bom`** - Discard a `U+FEFF BYTE ORDER MARK` if we see one at the beginning of the stream? default: True.
 
 * **`profile`** - Keep a record of how long we spent in each state? Printed when `finish()` is called. default: False.
 

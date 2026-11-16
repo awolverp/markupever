@@ -9,11 +9,12 @@ pub struct ParserSink {
     tree: RefCell<ego_tree::Tree<interface::Interface>>,
     errors: RefCell<Vec<std::borrow::Cow<'static, str>>>,
     quirks_mode: Cell<markup5ever::interface::QuirksMode>,
-    namespaces: RefCell<HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
+    namespaces: RefCell<super::dom::NamespaceMap>,
     lineno: Cell<u64>,
     // The context element if this sink is parsing a fragment, whose nodes html5ever puts in an
     // <html> root element
     fragment_context: Option<markup5ever::QualName>,
+    html_document: bool,
     // Attribute names of the elements passed to add_attrs_if_missing (only <html> and <body>),
     // so that repeated calls don't each scan the element's attributes
     attr_names: RefCell<HashMap<ego_tree::NodeId, HashSet<markup5ever::QualName>>>,
@@ -34,9 +35,10 @@ impl ParserSink {
             ))),
             errors: RefCell::new(Vec::new()),
             quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
-            namespaces: RefCell::new(HashMap::new()),
+            namespaces: RefCell::new(super::dom::NamespaceMap::new()),
             lineno: Cell::new(1),
             fragment_context: None,
+            html_document: false,
             attr_names: RefCell::new(HashMap::new()),
         }
     }
@@ -62,18 +64,24 @@ impl ParserSink {
     pub fn into_dom(self) -> IDTreeDOM {
         let mut tree = self.tree.into_inner();
 
-        // The fragment parsing algorithm returns the children of the <html> root element
-        if self.fragment_context.is_some()
-            && let Some(html) = tree.root().first_child().map(|x| x.id())
-        {
-            tree.root_mut().reparent_from_id_append(html);
-            tree.get_mut(html).unwrap().detach();
+        // The fragment parsing algorithm returns the children of the <html> root element.
+        // html5ever also leaves the context element and that <html> in the arena.
+        // ego-tree detach does not free the slot, so rebuild from the nodes that
+        // are still reachable. Otherwise len() and iteration expose those orphans.
+        if self.fragment_context.is_some() {
+            if let Some(html) = tree.root().first_child().map(|node| node.id()) {
+                tree.root_mut().reparent_from_id_append(html);
+                tree.get_mut(html).unwrap().detach();
+            }
+            tree = retain_reachable(tree);
         }
 
         IDTreeDOM {
             tree,
             namespaces: self.namespaces.into_inner(),
             fragment_context: self.fragment_context,
+            quirks_mode: self.quirks_mode.get(),
+            html_document: self.html_document,
         }
     }
 
@@ -84,12 +92,16 @@ impl ParserSink {
         tokenizer: html5ever::tokenizer::TokenizerOpts,
         tree_builder: html5ever::tree_builder::TreeBuilderOpts,
     ) -> html5ever::driver::Parser<Self> {
+        let quirks_mode = tree_builder.quirks_mode;
         if full_document {
             let opts = html5ever::driver::ParseOpts {
                 tokenizer,
                 tree_builder,
             };
-            html5ever::driver::parse_document(Self::new(), opts)
+            let mut sink = Self::new();
+            sink.html_document = true;
+            sink.quirks_mode.set(quirks_mode);
+            html5ever::driver::parse_document(sink, opts)
         } else {
             Self::parse_html_fragment(
                 html5ever::QualName::new(
@@ -114,6 +126,7 @@ impl ParserSink {
         tokenizer: html5ever::tokenizer::TokenizerOpts,
         tree_builder: html5ever::tree_builder::TreeBuilderOpts,
     ) -> html5ever::driver::Parser<Self> {
+        let quirks_mode = tree_builder.quirks_mode;
         let scripting_enabled = tree_builder.scripting_enabled;
         let opts = html5ever::driver::ParseOpts {
             tokenizer,
@@ -121,6 +134,8 @@ impl ParserSink {
         };
         let sink = Self {
             fragment_context: Some(context.clone()),
+            html_document: true,
+            quirks_mode: Cell::new(quirks_mode),
             ..Self::new()
         };
 
@@ -410,6 +425,65 @@ impl markup5ever::interface::TreeSink for ParserSink {
             .reparent_from_id_append(*node);
     }
 
+    // html5ever calls this when an `<option>` is popped. The HTML parser clones
+    // that option's children into the `<select>`'s `<selectedcontent>`.
+    fn maybe_clone_an_option_into_selectedcontent(&self, option: &Self::Handle) {
+        let prepared = {
+            let tree = self.tree.borrow();
+            let Some(option_node) = tree.get(*option) else {
+                return;
+            };
+            let Some(option_element) = option_node.value().element() else {
+                return;
+            };
+            let selected = option_element
+                .attrs
+                .iter()
+                .any(|(name, _)| name.ns.is_empty() && &*name.local == "selected");
+
+            let mut ancestor = option_node.parent();
+            let mut select_id = None;
+            while let Some(node) = ancestor {
+                if node
+                    .value()
+                    .element()
+                    .is_some_and(|element| html_element_named(element, "select"))
+                {
+                    select_id = Some(node.id());
+                    break;
+                }
+                ancestor = node.parent();
+            }
+            let Some(select_id) = select_id else {
+                return;
+            };
+            let Some(content_id) = find_selectedcontent(tree.get(select_id).unwrap()) else {
+                return;
+            };
+            let already_filled = tree.get(content_id).unwrap().first_child().is_some();
+            // The first option is selected when none carries `selected`. A later
+            // `selected` option replaces that clone. Other options stay out.
+            if !selected && already_filled {
+                return;
+            }
+
+            let mut copies = Vec::new();
+            let mut child = option_node.first_child();
+            while let Some(node) = child {
+                copies.push(clone_node_tree(node));
+                child = node.next_sibling();
+            }
+            (content_id, copies)
+        };
+
+        let (content_id, copies) = prepared;
+        let mut tree = self.tree.borrow_mut();
+        clear_children(&mut tree, content_id);
+        for copy in copies {
+            tree.get_mut(content_id).unwrap().append_subtree(copy);
+        }
+    }
+
     // Returns true if the adjusted current node is an HTML integration point and the token is a start tag.
     fn is_mathml_annotation_xml_integration_point(&self, target: &Self::Handle) -> bool {
         let tree = self.tree.borrow();
@@ -420,6 +494,75 @@ impl markup5ever::interface::TreeSink for ParserSink {
         } else {
             unreachable!("target is not a element");
         }
+    }
+}
+
+/// Copy the nodes reachable from `tree`'s root into a new tree.
+fn retain_reachable(
+    tree: ego_tree::Tree<interface::Interface>,
+) -> ego_tree::Tree<interface::Interface> {
+    let mut compact = ego_tree::Tree::new(tree.root().value().clone());
+    copy_children(tree.root(), &mut compact.root_mut());
+    compact
+}
+
+fn html_element_named(element: &interface::ElementInterface, local: &str) -> bool {
+    &*element.name.ns == "http://www.w3.org/1999/xhtml" && &*element.name.local == local
+}
+
+fn find_selectedcontent(
+    select: ego_tree::NodeRef<'_, interface::Interface>,
+) -> Option<ego_tree::NodeId> {
+    let mut child = select.first_child();
+    while let Some(node) = child {
+        if let Some(element) = node.value().element() {
+            if html_element_named(element, "selectedcontent") {
+                return Some(node.id());
+            }
+            if !html_element_named(element, "select")
+                && let Some(found) = find_selectedcontent(node)
+            {
+                return Some(found);
+            }
+        }
+        child = node.next_sibling();
+    }
+    None
+}
+
+fn clear_children(tree: &mut ego_tree::Tree<interface::Interface>, id: ego_tree::NodeId) {
+    loop {
+        let child_id = {
+            let Some(node) = tree.get(id) else {
+                return;
+            };
+            let Some(child) = node.first_child() else {
+                return;
+            };
+            child.id()
+        };
+        tree.get_mut(child_id).unwrap().detach();
+    }
+}
+
+fn clone_node_tree(
+    node: ego_tree::NodeRef<'_, interface::Interface>,
+) -> ego_tree::Tree<interface::Interface> {
+    let mut copy = ego_tree::Tree::new(node.value().clone());
+    copy_children(node, &mut copy.root_mut());
+    copy
+}
+
+fn copy_children(
+    src: ego_tree::NodeRef<'_, interface::Interface>,
+    dst: &mut ego_tree::NodeMut<'_, interface::Interface>,
+) {
+    let mut child = src.first_child();
+    while let Some(node) = child {
+        let next = node.next_sibling();
+        let mut appended = dst.append(node.value().clone());
+        copy_children(node, &mut appended);
+        child = next;
     }
 }
 

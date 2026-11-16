@@ -1,4 +1,4 @@
-use std::hash::Hasher;
+use pyo3::types::PyAnyMethods;
 
 #[inline(always)]
 pub(super) fn repr_qualname(q: &treedom::markup5ever::QualName) -> String {
@@ -201,10 +201,11 @@ impl PyQualName {
         }
     }
 
-    fn __hash__(&self) -> u64 {
-        let mut state = std::hash::DefaultHasher::new();
-        std::hash::Hash::hash(&self.name, &mut state);
-        state.finish()
+    fn __hash__(&self, py: pyo3::Python<'_>) -> pyo3::PyResult<isize> {
+        // `__eq__` with `str` compares the local name, so the hash has to be
+        // Python's hash of that string. Otherwise `{qualname: 1}["div"]` misses.
+        let local = pyo3::types::PyString::new(py, &self.name.local);
+        local.hash()
     }
 
     fn __repr__(&self) -> String {
