@@ -164,7 +164,7 @@ def test_connect_node():
 
     assert (
         root.serialize(0)
-        == '<!DOCTYPE HTML PUBLIC "public" SYSTEM "system"><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body class="bg-dark"><p class="font-sans"><!--contenttestme-->\ncontent 1\ncontent 2</p></body></html>'
+        == '<!DOCTYPE HTML PUBLIC "public" "system"><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body class="bg-dark"><p class="font-sans"><!--contenttestme-->\ncontent 1\ncontent 2</p></body></html>'
     )
 
     with pytest.raises(ValueError):

@@ -231,19 +231,11 @@ impl<'a> Serializer<'a> {
                         serializer.write_comment(&comment.contents)?;
                     }
                     interface::Interface::Doctype(doctype) => {
-                        let mut docname = String::from(&doctype.name);
-                        if !doctype.public_id.is_empty() {
-                            docname.push_str(" PUBLIC \"");
-                            docname.push_str(&doctype.public_id);
-                            docname.push('"');
-                        }
-                        if !doctype.system_id.is_empty() {
-                            docname.push_str(" SYSTEM \"");
-                            docname.push_str(&doctype.system_id);
-                            docname.push('"');
-                        }
-
-                        serializer.write_doctype(&docname)?;
+                        serializer.write_doctype(&doctype_declaration(
+                            &doctype.name,
+                            &doctype.public_id,
+                            &doctype.system_id,
+                        ))?;
 
                         indentation.newline = indentation.indent > 0;
                         indentation.write_to(serializer)?;
@@ -276,6 +268,41 @@ impl<'a> Serializer<'a> {
 
         Ok(())
     }
+}
+
+/// HTML doctype serialization. A public id and a system id are
+/// `PUBLIC "pub" "sys"`, not `PUBLIC "pub" SYSTEM "sys"`.
+fn doctype_declaration(name: &str, public_id: &str, system_id: &str) -> String {
+    let mut declaration = escape_doctype(name);
+    if !public_id.is_empty() {
+        declaration.push_str(" PUBLIC \"");
+        declaration.push_str(&escape_doctype(public_id));
+        declaration.push('"');
+        if !system_id.is_empty() {
+            declaration.push_str(" \"");
+            declaration.push_str(&escape_doctype(system_id));
+            declaration.push('"');
+        }
+    } else if !system_id.is_empty() {
+        declaration.push_str(" SYSTEM \"");
+        declaration.push_str(&escape_doctype(system_id));
+        declaration.push('"');
+    }
+    declaration
+}
+
+fn escape_doctype(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len());
+    for ch in value.chars() {
+        match ch {
+            '&' => escaped.push_str("&amp;"),
+            '"' => escaped.push_str("&quot;"),
+            '<' => escaped.push_str("&lt;"),
+            '>' => escaped.push_str("&gt;"),
+            _ => escaped.push(ch),
+        }
+    }
+    escaped
 }
 
 fn skip_last<T>(mut iter: impl Iterator<Item = T>) -> impl Iterator<Item = T> {
