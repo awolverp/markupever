@@ -86,6 +86,15 @@ fn check_insert_into(
     Ok(())
 }
 
+fn ensure_can_move(tree: &::treedom::IDTreeDOM, id: ::treedom::NodeId) -> pyo3::PyResult<()> {
+    if id == tree.root().id() {
+        return Err(pyo3::exceptions::PyRuntimeError::new_err(
+            "Cannot give the document root a parent",
+        ));
+    }
+    Ok(())
+}
+
 /// Checks that `new_sibling` can be inserted as a sibling of `sibling`.
 fn check_insert_beside(
     tree: &::treedom::IDTreeDOM,
@@ -195,6 +204,7 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        ensure_can_move(&tree, child.id)?;
         check_insert_into(&tree, parent.id, child.id)?;
 
         let mut parent = tree.get_mut(parent.id).unwrap();
@@ -233,6 +243,7 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        ensure_can_move(&tree, child.id)?;
         check_insert_into(&tree, parent.id, child.id)?;
 
         let mut parent = tree.get_mut(parent.id).unwrap();
@@ -271,6 +282,7 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        ensure_can_move(&tree, new_sibling.id)?;
         check_insert_beside(&tree, sibling.id, new_sibling.id)?;
 
         let mut sibling = tree.get_mut(sibling.id).unwrap();
@@ -309,6 +321,7 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        ensure_can_move(&tree, new_sibling.id)?;
         check_insert_beside(&tree, sibling.id, new_sibling.id)?;
 
         let mut sibling = tree.get_mut(sibling.id).unwrap();
@@ -362,6 +375,7 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        ensure_can_move(&tree, child.id)?;
         // Moving a node's children into the node itself or one of its descendants would make a
         // node its own ancestor.
         check_insert_into(&tree, parent.id, child.id)?;
@@ -394,6 +408,7 @@ impl PyTreeDom {
         }
 
         let mut tree = self.dom.lock();
+        ensure_can_move(&tree, child.id)?;
         // Moving a node's children into the node itself or one of its descendants would make a
         // node its own ancestor.
         check_insert_into(&tree, parent.id, child.id)?;

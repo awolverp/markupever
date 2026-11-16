@@ -5,6 +5,19 @@ import pytest
 from markupever import _rustlib
 
 
+def test_document_root_cannot_be_moved_under_an_orphan():
+    document = markupever.dom.TreeDom()
+    root = document.root()
+    root.create_element("body").create_text("hi")
+    orphan = markupever._rustlib.Element(document._raw, "orphan", [], False, False)
+
+    with pytest.raises(RuntimeError, match="document root"):
+        document._raw.append(orphan, root._raw)
+
+    assert root.parent is None
+    assert root.serialize() == "<body>hi</body>"
+
+
 def test_treedom():
     dom = markupever.dom.TreeDom()
 
