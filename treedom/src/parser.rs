@@ -425,6 +425,65 @@ impl markup5ever::interface::TreeSink for ParserSink {
             .reparent_from_id_append(*node);
     }
 
+    // html5ever calls this when an `<option>` is popped. The HTML parser clones
+    // that option's children into the `<select>`'s `<selectedcontent>`.
+    fn maybe_clone_an_option_into_selectedcontent(&self, option: &Self::Handle) {
+        let prepared = {
+            let tree = self.tree.borrow();
+            let Some(option_node) = tree.get(*option) else {
+                return;
+            };
+            let Some(option_element) = option_node.value().element() else {
+                return;
+            };
+            let selected = option_element
+                .attrs
+                .iter()
+                .any(|(name, _)| name.ns.is_empty() && &*name.local == "selected");
+
+            let mut ancestor = option_node.parent();
+            let mut select_id = None;
+            while let Some(node) = ancestor {
+                if node
+                    .value()
+                    .element()
+                    .is_some_and(|element| html_element_named(element, "select"))
+                {
+                    select_id = Some(node.id());
+                    break;
+                }
+                ancestor = node.parent();
+            }
+            let Some(select_id) = select_id else {
+                return;
+            };
+            let Some(content_id) = find_selectedcontent(tree.get(select_id).unwrap()) else {
+                return;
+            };
+            let already_filled = tree.get(content_id).unwrap().first_child().is_some();
+            // The first option is selected when none carries `selected`. A later
+            // `selected` option replaces that clone. Other options stay out.
+            if !selected && already_filled {
+                return;
+            }
+
+            let mut copies = Vec::new();
+            let mut child = option_node.first_child();
+            while let Some(node) = child {
+                copies.push(clone_node_tree(node));
+                child = node.next_sibling();
+            }
+            (content_id, copies)
+        };
+
+        let (content_id, copies) = prepared;
+        let mut tree = self.tree.borrow_mut();
+        clear_children(&mut tree, content_id);
+        for copy in copies {
+            tree.get_mut(content_id).unwrap().append_subtree(copy);
+        }
+    }
+
     // Returns true if the adjusted current node is an HTML integration point and the token is a start tag.
     fn is_mathml_annotation_xml_integration_point(&self, target: &Self::Handle) -> bool {
         let tree = self.tree.borrow();
@@ -445,6 +504,53 @@ fn retain_reachable(
     let mut compact = ego_tree::Tree::new(tree.root().value().clone());
     copy_children(tree.root(), &mut compact.root_mut());
     compact
+}
+
+fn html_element_named(element: &interface::ElementInterface, local: &str) -> bool {
+    &*element.name.ns == "http://www.w3.org/1999/xhtml" && &*element.name.local == local
+}
+
+fn find_selectedcontent(
+    select: ego_tree::NodeRef<'_, interface::Interface>,
+) -> Option<ego_tree::NodeId> {
+    let mut child = select.first_child();
+    while let Some(node) = child {
+        if let Some(element) = node.value().element() {
+            if html_element_named(element, "selectedcontent") {
+                return Some(node.id());
+            }
+            if !html_element_named(element, "select")
+                && let Some(found) = find_selectedcontent(node)
+            {
+                return Some(found);
+            }
+        }
+        child = node.next_sibling();
+    }
+    None
+}
+
+fn clear_children(tree: &mut ego_tree::Tree<interface::Interface>, id: ego_tree::NodeId) {
+    loop {
+        let child_id = {
+            let Some(node) = tree.get(id) else {
+                return;
+            };
+            let Some(child) = node.first_child() else {
+                return;
+            };
+            child.id()
+        };
+        tree.get_mut(child_id).unwrap().detach();
+    }
+}
+
+fn clone_node_tree(
+    node: ego_tree::NodeRef<'_, interface::Interface>,
+) -> ego_tree::Tree<interface::Interface> {
+    let mut copy = ego_tree::Tree::new(node.value().clone());
+    copy_children(node, &mut copy.root_mut());
+    copy
 }
 
 fn copy_children(

@@ -300,6 +300,25 @@ def _reachable_count(dom: markupever.dom.TreeDom) -> int:
     return count
 
 
+def test_selectedcontent_clones_the_selected_option():
+    document = markupever.parse(
+        "<select><button><selectedcontent></selectedcontent></button><option>Hello</option></select>"
+    )
+    selected = document.select_one("selectedcontent")
+    option = document.select_one("option")
+
+    assert selected is not None
+    assert selected.text() == "Hello"
+    assert option.text() == "Hello"
+
+    replaced = markupever.parse(
+        "<select><button><selectedcontent></selectedcontent></button>"
+        "<option>A</option><option selected>B</option></select>"
+    )
+    assert replaced.select_one("selectedcontent").text() == "B"
+    assert [element.text() for element in replaced.select("option")] == ["A", "B"]
+
+
 def test_fragment_iteration_skips_parser_orphans():
     dom = markupever.parse(" <p>hi ", markupever.HtmlOptions(full_document=False))
     assert len(dom) == _reachable_count(dom)
