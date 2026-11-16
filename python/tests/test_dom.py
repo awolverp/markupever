@@ -37,6 +37,16 @@ def test_inequality_with_an_unrelated_object_is_true():
     assert {qualname: 1}["div"] == 1
 
 
+def test_strings_strip_skips_whitespace_only_nodes():
+    document = markupever.dom.TreeDom()
+    div = document.root().create_element("div")
+    div.create_text("  ")
+    div.create_text(" a ")
+
+    assert list(div.strings(strip=True)) == ["a"]
+    assert div.text(separator="|", strip=True) == "a"
+
+
 def test_document_root_cannot_be_moved_under_an_orphan():
     document = markupever.dom.TreeDom()
     root = document.root()

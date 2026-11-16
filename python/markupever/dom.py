@@ -351,7 +351,9 @@ class BaseNode(typing.Generic[_R_co]):
                 continue
 
             if strip:
-                yield descendant.content.strip()
+                text = descendant.content.strip()
+                if text:
+                    yield text
             else:
                 yield descendant.content
 
