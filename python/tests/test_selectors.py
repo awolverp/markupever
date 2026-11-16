@@ -51,6 +51,30 @@ def test_nth_of_type_ignores_prefix():
     assert [e.name.prefix for e in xml.select("item:nth-of-type(3)")] == ["a"]
 
 
+def test_id_selector_prefers_the_unnamespaced_attribute():
+    xml = markupever.parse('<div xml:id="a" id="b"/>', "xml")
+    element = list(xml.select("div"))[0]
+
+    assert element.id == "b"
+    assert [e.name.local for e in xml.select("#b")] == ["div"]
+    assert list(xml.select("#a")) == []
+    assert [e.name.local for e in xml.select("[id=b]")] == ["div"]
+
+
+def test_xml_id_is_the_fallback_when_there_is_no_id_attribute():
+    xml = markupever.parse('<div xml:id="a"/>', "xml")
+    element = list(xml.select("div"))[0]
+
+    assert element.id == "a"
+    assert [e.name.local for e in xml.select("#a")] == ["div"]
+
+
+def test_class_list_keeps_source_order_and_duplicates():
+    element = list(markupever.parse("<div class='b a b c'>").select("div"))[0]
+
+    assert element.class_list == ["b", "a", "b", "c"]
+
+
 def test_empty_ignores_zero_length_text():
     document = dom.TreeDom()
     root = document.root()
