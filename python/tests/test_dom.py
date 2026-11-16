@@ -5,6 +5,23 @@ import pytest
 from markupever import _rustlib
 
 
+def test_attrs_missing_key_and_negative_index():
+    element = next(markupever.parse("<div></div>").select("div"))
+
+    with pytest.raises(KeyError) as missing:
+        del element.attrs["missing"]
+    assert missing.value.args == ("missing",)
+
+    with pytest.raises(IndexError):
+        _ = element.attrs[-1]
+
+    with pytest.raises(IndexError):
+        element.attrs.pop()
+
+    element.attrs["id"] = "a"
+    assert element.attrs[-1][1] == "a"
+
+
 def test_inequality_with_an_unrelated_object_is_true():
     element = next(markupever.parse("<div></div>").select("div"))
     raw = markupever.dom.TreeDom()._raw
