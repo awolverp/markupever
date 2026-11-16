@@ -64,12 +64,16 @@ impl ParserSink {
     pub fn into_dom(self) -> IDTreeDOM {
         let mut tree = self.tree.into_inner();
 
-        // The fragment parsing algorithm returns the children of the <html> root element
-        if self.fragment_context.is_some()
-            && let Some(html) = tree.root().first_child().map(|x| x.id())
-        {
-            tree.root_mut().reparent_from_id_append(html);
-            tree.get_mut(html).unwrap().detach();
+        // The fragment parsing algorithm returns the children of the <html> root element.
+        // html5ever also leaves the context element and that <html> in the arena.
+        // ego-tree detach does not free the slot, so rebuild from the nodes that
+        // are still reachable. Otherwise len() and iteration expose those orphans.
+        if self.fragment_context.is_some() {
+            if let Some(html) = tree.root().first_child().map(|node| node.id()) {
+                tree.root_mut().reparent_from_id_append(html);
+                tree.get_mut(html).unwrap().detach();
+            }
+            tree = retain_reachable(tree);
         }
 
         IDTreeDOM {
@@ -431,6 +435,28 @@ impl markup5ever::interface::TreeSink for ParserSink {
         } else {
             unreachable!("target is not a element");
         }
+    }
+}
+
+/// Copy the nodes reachable from `tree`'s root into a new tree.
+fn retain_reachable(
+    tree: ego_tree::Tree<interface::Interface>,
+) -> ego_tree::Tree<interface::Interface> {
+    let mut compact = ego_tree::Tree::new(tree.root().value().clone());
+    copy_children(tree.root(), &mut compact.root_mut());
+    compact
+}
+
+fn copy_children(
+    src: ego_tree::NodeRef<'_, interface::Interface>,
+    dst: &mut ego_tree::NodeMut<'_, interface::Interface>,
+) {
+    let mut child = src.first_child();
+    while let Some(node) = child {
+        let next = node.next_sibling();
+        let mut appended = dst.append(node.value().clone());
+        copy_children(node, &mut appended);
+        child = next;
     }
 }
 

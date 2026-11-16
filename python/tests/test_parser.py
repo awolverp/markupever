@@ -288,3 +288,28 @@ def test_fragment_context_serialize():
     # Descendants of the fragment's nodes are serialized as usual.
     dom = markupever.parse("<p>a &lt; b</p>", markupever.HtmlOptions(fragment_context="div"))
     assert dom.serialize() == "<p>a &lt; b</p>"
+
+
+def _reachable_count(dom: markupever.dom.TreeDom) -> int:
+    count = 0
+    pending = [dom.root()]
+    while pending:
+        node = pending.pop()
+        count += 1
+        pending.extend(node.children())
+    return count
+
+
+def test_fragment_iteration_skips_parser_orphans():
+    dom = markupever.parse(" <p>hi ", markupever.HtmlOptions(full_document=False))
+    assert len(dom) == _reachable_count(dom)
+    assert len(dom) < 6
+
+    dom = markupever.parse(
+        "<tr><td>x",
+        markupever.HtmlOptions(fragment_context="tbody"),
+    )
+    assert len(dom) == _reachable_count(dom)
+    assert not any(
+        node.parent is None and not isinstance(node, markupever.dom.Document) for node in dom
+    )
