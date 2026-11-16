@@ -1,10 +1,30 @@
-use std::hash::{BuildHasher, Hash};
-
+use precomputed_hash::PrecomputedHash;
 use treedom::markup5ever::ns;
+
+use crate::_impl::CssTendril;
 
 /// A selectable [`treedom::ego_tree::NodeRef`]
 #[derive(Debug, Clone)]
 pub struct CssNodeRef<'a>(treedom::NodeRef<'a>);
+
+/// Identity of a node for `:has()`, `:scope`, and the nth cache.
+///
+/// `ego_tree::NodeId` is a newtype over `NonZeroUsize` (the arena index plus
+/// one). That bit pattern stays valid when the arena reallocates. The address
+/// of a `CssNodeRef` does not: `parent_element` builds a new wrapper.
+fn opaque_from_node_id(id: treedom::NodeId) -> selectors::OpaqueElement {
+    const _: () = assert!(
+        std::mem::size_of::<treedom::NodeId>() == std::mem::size_of::<std::num::NonZeroUsize>()
+    );
+    const _: () = assert!(
+        std::mem::align_of::<treedom::NodeId>() == std::mem::align_of::<std::num::NonZeroUsize>()
+    );
+
+    let nz: std::num::NonZeroUsize = unsafe { std::mem::transmute(id) };
+    selectors::OpaqueElement::from_non_null_ptr(
+        std::ptr::NonNull::new(nz.get() as *mut ()).unwrap(),
+    )
+}
 
 impl<'a> CssNodeRef<'a> {
     pub fn new(node: treedom::NodeRef<'a>) -> Option<Self> {
@@ -26,20 +46,11 @@ impl<'a> CssNodeRef<'a> {
     }
 }
 
-#[inline]
-fn bloom_hash<T: Hash + ?Sized>(value: &T) -> u32 {
-    let hasher = foldhash::fast::RandomState::default();
-    let h = hasher.hash_one(value);
-
-    // Same folding used in selectors' own tests.
-    (h as u32) ^ ((h >> 32) as u32)
-}
-
 impl selectors::Element for CssNodeRef<'_> {
     type Impl = crate::_impl::ParserImplementation;
 
     fn opaque(&self) -> selectors::OpaqueElement {
-        selectors::OpaqueElement::new(self)
+        opaque_from_node_id(self.0.id())
     }
 
     fn parent_element(&self) -> Option<Self> {
@@ -63,7 +74,9 @@ impl selectors::Element for CssNodeRef<'_> {
     }
 
     fn is_same_type(&self, other: &Self) -> bool {
-        self.0.value().element().unwrap().name == other.0.value().element().unwrap().name
+        let left = &self.0.value().element().unwrap().name;
+        let right = &other.0.value().element().unwrap().name;
+        left.ns == right.ns && left.local == right.local
     }
 
     fn imported_part(
@@ -181,14 +194,20 @@ impl selectors::Element for CssNodeRef<'_> {
     }
 
     fn is_empty(&self) -> bool {
-        !self.0.children().any(|x| {
-            let v = x.value();
-            v.is_element() || v.is_text()
+        !self.0.children().any(|child| {
+            let value = child.value();
+            if value.is_element() {
+                return true;
+            }
+            // Selectors Level 3 ignores zero-length text. Whitespace still counts.
+            value.text().is_some_and(|text| !text.contents.is_empty())
         })
     }
 
     fn is_root(&self) -> bool {
-        self.0.value().is_document()
+        self.0
+            .parent()
+            .is_some_and(|parent| parent.value().is_document())
     }
 
     fn apply_selector_flags(&self, _flags: selectors::matching::ElementSelectorFlags) {}
@@ -196,20 +215,17 @@ impl selectors::Element for CssNodeRef<'_> {
     fn add_element_unique_hashes(&self, filter: &mut selectors::bloom::BloomFilter) -> bool {
         let elem = self.0.value().element().unwrap();
 
-        // Namespace
-        filter.insert_hash(bloom_hash(&elem.name.ns));
+        // Same hashes the selector atoms store. A different function makes
+        // the bloom filter reject elements that do match.
+        filter.insert_hash(elem.name.ns.precomputed_hash());
+        filter.insert_hash(elem.name.local.precomputed_hash());
 
-        // Local name
-        filter.insert_hash(bloom_hash(&elem.name.local));
-
-        // id
         if let Some(id) = elem.attrs.id() {
-            filter.insert_hash(bloom_hash(id));
+            filter.insert_hash(CssTendril::from(id).precomputed_hash());
         }
 
-        // classes
         for class in elem.attrs.class().iter() {
-            filter.insert_hash(bloom_hash(class));
+            filter.insert_hash(CssTendril::from(class.as_ref()).precomputed_hash());
         }
 
         true

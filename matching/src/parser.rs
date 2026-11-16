@@ -215,4 +215,42 @@ mod tests {
             assert!(get_attr(&elem.attrs, "id").is_none());
         }
     }
+
+    fn local_names(dom: &treedom::IDTreeDOM, selector: &str) -> Vec<String> {
+        Select::new(dom.root().descendants(), selector, Some(dom.namespaces()))
+            .unwrap()
+            .map(|node| node.value().element().unwrap().name.local.to_string())
+            .collect()
+    }
+
+    #[test]
+    fn has_matches_an_ancestor_that_contains_the_subject() {
+        let dom = treedom::ParserSink::parse_html(true, Default::default(), Default::default())
+            .one("<div class='box'><span>a</span><p>b</p></div>")
+            .into_dom();
+
+        assert_eq!(local_names(&dom, "div:has(span)"), ["div"]);
+        assert_eq!(local_names(&dom, "div:has(> span)"), ["div"]);
+        assert!(local_names(&dom, "div:not(:has(span))").is_empty());
+    }
+
+    #[test]
+    fn root_matches_the_document_element() {
+        let dom = treedom::ParserSink::parse_html(true, Default::default(), Default::default())
+            .one("<!DOCTYPE html><html><body><p>x</p></body></html>")
+            .into_dom();
+
+        assert_eq!(local_names(&dom, ":root"), ["html"]);
+    }
+
+    #[test]
+    fn nth_of_type_ignores_prefix() {
+        let dom = treedom::ParserSink::parse_xml(Default::default())
+            .one(r#"<r xmlns:a="urn:ns" xmlns:b="urn:ns"><a:item/><b:item/><a:item/></r>"#)
+            .into_dom();
+
+        assert_eq!(local_names(&dom, "item:nth-of-type(1)"), ["item"]);
+        assert_eq!(local_names(&dom, "item:nth-of-type(2)"), ["item"]);
+        assert_eq!(local_names(&dom, "item:nth-of-type(3)"), ["item"]);
+    }
 }
