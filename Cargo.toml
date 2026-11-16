@@ -8,17 +8,6 @@ homepage.workspace = true
 repository.workspace = true
 license.workspace = true
 
-[workspace]
-members = ["matching", "treedom"]
-
-[workspace.package]
-version = "0.5.0"
-edition = "2024"
-readme = "README.md"
-homepage = "https://github.com/awolverp/markupever"
-repository = "https://github.com/awolverp/markupever.git"
-license = "MIT"
-
 [lib]
 crate-type = ["cdylib"]
 name = "markupever"
@@ -35,7 +24,7 @@ hashbrown = {
 matching = { path = "matching" }
 parking_lot = { version = "0.12" }
 pyo3 = {
-  version = "0.29.3",
+  version = "0.30.1",
   default-features = false,
   features = [
     "extension-module",
@@ -47,6 +36,17 @@ treedom = { path = "treedom" }
 [lints.clippy]
 dbg_macro = "warn"
 print_stdout = "warn"
+
+[workspace]
+members = ["matching", "treedom"]
+
+[workspace.package]
+version = "0.5.1"
+edition = "2024"
+readme = "README.md"
+homepage = "https://github.com/awolverp/markupever"
+repository = "https://github.com/awolverp/markupever.git"
+license = "MIT"
 
 [profile.release]
 debug = false

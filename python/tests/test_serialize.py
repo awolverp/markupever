@@ -32,7 +32,7 @@ def test_hand_built_tree_without_an_html_doctype_serializes_as_xml():
 
 
 def test_pretty_print_keeps_a_newline_before_the_outer_close_tag():
-    outer = list(markupever.parse("<div id=o><div id=i></div></div>").select("#o"))[0]
+    outer = next(markupever.parse("<div id=o><div id=i></div></div>").select("#o"))
 
     assert outer.serialize(indent=2) == '<div id="o">\n  <div id="i"></div>\n</div>'
 
@@ -52,7 +52,9 @@ def test_doctype_with_public_and_system_ids_omits_the_system_keyword():
 
 
 def test_system_only_doctype_keeps_the_system_keyword():
-    serialized = markupever.parse('<!DOCTYPE html SYSTEM "sys.dtd"><p>').root().serialize()
+    serialized = (
+        markupever.parse('<!DOCTYPE html SYSTEM "sys.dtd"><p>').root().serialize()
+    )
 
     assert serialized.startswith('<!DOCTYPE html SYSTEM "sys.dtd">')
 

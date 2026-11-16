@@ -17,9 +17,7 @@ def test_scope_on_a_document_is_the_root_element():
 
 
 def test_select_on_an_element_does_not_return_that_element():
-    outer = list(
-        markupever.parse("<div class='box'><div class='box'></div></div>").select("div.box")
-    )[0]
+    outer = next(iter(markupever.parse("<div class='box'><div class='box'></div></div>").select("div.box")))
 
     assert [element.class_list for element in outer.select("div")] == [["box"]]
     assert [element.class_list for element in outer.select(":scope")] == [["box"]]
@@ -28,7 +26,7 @@ def test_select_on_an_element_does_not_return_that_element():
 
 def test_scope_child_is_relative_to_the_element_select_was_called_on():
     doc = markupever.parse("<!DOCTYPE html><html><body><p>x</p></body></html>")
-    body = list(doc.select("body"))[0]
+    body = next(iter(doc.select("body")))
 
     assert [e.name.local for e in body.select(":scope > p")] == ["p"]
     assert [e.name.local for e in body.select(":scope")] == ["body"]
@@ -53,7 +51,7 @@ def test_nth_of_type_ignores_prefix():
 
 def test_id_selector_prefers_the_unnamespaced_attribute():
     xml = markupever.parse('<div xml:id="a" id="b"/>', "xml")
-    element = list(xml.select("div"))[0]
+    element = next(iter(xml.select("div")))
 
     assert element.id == "b"
     assert [e.name.local for e in xml.select("#b")] == ["div"]
@@ -63,14 +61,14 @@ def test_id_selector_prefers_the_unnamespaced_attribute():
 
 def test_xml_id_is_the_fallback_when_there_is_no_id_attribute():
     xml = markupever.parse('<div xml:id="a"/>', "xml")
-    element = list(xml.select("div"))[0]
+    element = next(iter(xml.select("div")))
 
     assert element.id == "a"
     assert [e.name.local for e in xml.select("#a")] == ["div"]
 
 
 def test_class_list_keeps_source_order_and_duplicates():
-    element = list(markupever.parse("<div class='b a b c'>").select("div"))[0]
+    element = next(iter(markupever.parse("<div class='b a b c'>").select("div")))
 
     assert element.class_list == ["b", "a", "b", "c"]
 
@@ -92,7 +90,7 @@ def test_rebound_prefix_matches_every_namespace_it_is_bound_to():
 
 def test_detaching_one_prefixed_element_keeps_the_prefix():
     xml = markupever.parse('<root xmlns:a="urn:a"><a:x/><a:y/></root>', "xml")
-    list(xml.select("a|x"))[0].detach()
+    next(iter(xml.select("a|x"))).detach()
 
     assert "a" in xml.namespaces()
     assert [element.name.local for element in xml.select("a|y")] == ["y"]
@@ -159,7 +157,7 @@ def test_empty_ignores_zero_length_text():
 
     assert [e.name.local for e in document.select("div:empty")] == ["div"]
     assert [e.name.local for e in document.select("p:empty")] == ["p"]
-    assert list(document.select("div:empty"))[0] is not None
+    assert next(iter(document.select("div:empty"))) is not None
 
     whitespace = markupever.parse("<div> </div><p></p>")
     names = [e.name.local for e in whitespace.select("div:empty")]

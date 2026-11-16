@@ -152,8 +152,7 @@ impl selectors::Element for CssNodeRef<'_> {
     ) -> bool {
         let element_ns = &self.0.value().element().unwrap().name.ns;
         if let Some(choices) = namespace_sentinel_uris(ns) {
-            let element_ns: &str = element_ns;
-            return choices.iter().any(|choice| element_ns == *choice);
+            return choices.contains(&element_ns.as_str());
         }
         element_ns == ns
     }
