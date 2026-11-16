@@ -212,13 +212,16 @@ impl<'a> Serializer<'a> {
         S: markup5ever::serialize::Serializer,
     {
         let mut indentation = IndentToken::new(self.indent);
-        let mut last_element_name = markup5ever::LocalName::from("");
+        let mut last_opened: Option<ego_tree::NodeId> = None;
 
         for edge in iter {
             match edge {
                 ego_tree::iter::Edge::Close(x) => {
                     if let interface::Interface::Element(element) = x.value() {
-                        if last_element_name == element.name.local && indentation.ignore_end == 0 {
+                        // Suppress the break only for the element that just
+                        // opened, so an empty tag stays on one line. A
+                        // same-named descendant must not eat the outer close.
+                        if last_opened == Some(x.id()) && indentation.ignore_end == 0 {
                             indentation.ignore_end();
                         }
 
@@ -242,7 +245,7 @@ impl<'a> Serializer<'a> {
                         indentation.newline = false;
                     }
                     interface::Interface::Element(element) => {
-                        last_element_name = element.name.local.clone();
+                        last_opened = Some(x.id());
 
                         indentation.start(serializer)?;
                         serializer.start_elem(
