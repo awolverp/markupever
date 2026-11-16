@@ -5,6 +5,21 @@ import pytest
 from markupever import _rustlib
 
 
+def test_inequality_with_an_unrelated_object_is_true():
+    element = next(markupever.parse("<div></div>").select("div"))
+    raw = markupever.dom.TreeDom()._raw
+
+    assert element != "div"
+    assert not element == "div"  # noqa: SIM201
+    assert raw != 1
+    assert not raw == 1  # noqa: SIM201
+
+    qualname = markupever._rustlib.QualName("div", "html")
+    assert qualname == "div"
+    assert hash(qualname) == hash("div")
+    assert {qualname: 1}["div"] == 1
+
+
 def test_document_root_cannot_be_moved_under_an_orphan():
     document = markupever.dom.TreeDom()
     root = document.root()

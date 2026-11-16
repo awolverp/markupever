@@ -264,7 +264,7 @@ impl PyDocument {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 Ok(self_.get().0 != other.0)
@@ -417,7 +417,7 @@ impl PyDoctype {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 Ok(self_.get().0 != other.0)
@@ -534,7 +534,7 @@ impl PyComment {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 Ok(self_.get().0 != other.0)
@@ -648,7 +648,7 @@ impl PyText {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 Ok(self_.get().0 != other.0)
@@ -1220,7 +1220,7 @@ impl PyElement {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 Ok(self_.get().0 != other.0)
@@ -1363,7 +1363,7 @@ impl PyProcessingInstruction {
             pyo3::basic::CompareOp::Ne => {
                 let other = match other.extract::<pyo3::PyRef<'_, Self>>(self_.py()) {
                     Ok(o) => o,
-                    Err(_) => return Ok(false),
+                    Err(_) => return Ok(true),
                 };
 
                 Ok(self_.get().0 != other.0)
