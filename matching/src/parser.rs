@@ -74,13 +74,14 @@ impl ExpressionGroup {
         &self,
         node: CssNodeRef<'a>,
         scope: Option<selectors::OpaqueElement>,
+        quirks: treedom::markup5ever::interface::QuirksMode,
         caches: &mut selectors::context::SelectorCaches,
     ) -> bool {
         let mut ctx = selectors::matching::MatchingContext::new(
             selectors::matching::MatchingMode::Normal,
             None,
             caches,
-            selectors::matching::QuirksMode::NoQuirks,
+            selectors_quirks(quirks),
             selectors::matching::NeedsSelectorFlags::No,
             selectors::matching::MatchingForInvalidation::No,
         );
@@ -93,10 +94,28 @@ impl ExpressionGroup {
     }
 }
 
+fn selectors_quirks(
+    mode: treedom::markup5ever::interface::QuirksMode,
+) -> selectors::matching::QuirksMode {
+    match mode {
+        treedom::markup5ever::interface::QuirksMode::Quirks => {
+            selectors::matching::QuirksMode::Quirks
+        }
+        treedom::markup5ever::interface::QuirksMode::LimitedQuirks => {
+            selectors::matching::QuirksMode::LimitedQuirks
+        }
+        treedom::markup5ever::interface::QuirksMode::NoQuirks => {
+            selectors::matching::QuirksMode::NoQuirks
+        }
+    }
+}
+
 pub struct Select<'a> {
     inner: treedom::iter::Descendants<'a, treedom::interface::Interface>,
     expr: ExpressionGroup,
     caches: selectors::context::SelectorCaches,
+    quirks: treedom::markup5ever::interface::QuirksMode,
+    html_document: bool,
 }
 
 impl<'a> Select<'a> {
@@ -104,6 +123,8 @@ impl<'a> Select<'a> {
         desc: treedom::iter::Descendants<'a, treedom::interface::Interface>,
         expr: &'b str,
         namespaces: Option<&'b treedom::NamespaceMap>,
+        quirks: treedom::markup5ever::interface::QuirksMode,
+        html_document: bool,
     ) -> Result<Self, cssparser::ParseError<'b, CssParserKindError<'b>>> {
         let expr = ExpressionGroup::new(expr, namespaces)?;
 
@@ -111,6 +132,8 @@ impl<'a> Select<'a> {
             inner: desc,
             expr,
             caches: Default::default(),
+            quirks,
+            html_document,
         })
     }
 }
@@ -122,8 +145,10 @@ impl<'a> Iterator for Select<'a> {
         let mut result: Option<Self::Item> = None;
 
         for node in &mut self.inner {
-            if let Some(css_node) = CssNodeRef::new(node)
-                && self.expr.matches(css_node, None, &mut self.caches)
+            if let Some(css_node) = CssNodeRef::new(node, self.html_document)
+                && self
+                    .expr
+                    .matches(css_node, None, self.quirks, &mut self.caches)
             {
                 result = Some(node);
                 break;
@@ -194,7 +219,15 @@ mod tests {
         let tree = treedom::ParserSink::parse_html(true, Default::default(), Default::default());
         let dom = tree.one(HTML).into_dom();
 
-        for res in Select::new(dom.root().descendants(), "div.title", None).unwrap() {
+        for res in Select::new(
+            dom.root().descendants(),
+            "div.title",
+            None,
+            dom.quirks_mode(),
+            dom.html_document(),
+        )
+        .unwrap()
+        {
             let elem = res.value().element().unwrap();
             assert_eq!(&*elem.name.local, "div");
             assert_eq!(
@@ -203,13 +236,29 @@ mod tests {
             )
         }
 
-        for res in Select::new(dom.root().descendants(), "nav.navbar p", None).unwrap() {
+        for res in Select::new(
+            dom.root().descendants(),
+            "nav.navbar p",
+            None,
+            dom.quirks_mode(),
+            dom.html_document(),
+        )
+        .unwrap()
+        {
             let elem = res.value().element().unwrap();
             assert_eq!(&*elem.name.local, "p");
             get_attr(&elem.attrs, "id").unwrap();
         }
 
-        for res in Select::new(dom.root().descendants(), "nav.nav2 p", None).unwrap() {
+        for res in Select::new(
+            dom.root().descendants(),
+            "nav.nav2 p",
+            None,
+            dom.quirks_mode(),
+            dom.html_document(),
+        )
+        .unwrap()
+        {
             let elem = res.value().element().unwrap();
             assert_eq!(&*elem.name.local, "p");
             assert!(get_attr(&elem.attrs, "id").is_none());
@@ -217,10 +266,16 @@ mod tests {
     }
 
     fn local_names(dom: &treedom::IDTreeDOM, selector: &str) -> Vec<String> {
-        Select::new(dom.root().descendants(), selector, Some(dom.namespaces()))
-            .unwrap()
-            .map(|node| node.value().element().unwrap().name.local.to_string())
-            .collect()
+        Select::new(
+            dom.root().descendants(),
+            selector,
+            Some(dom.namespaces()),
+            dom.quirks_mode(),
+            dom.html_document(),
+        )
+        .unwrap()
+        .map(|node| node.value().element().unwrap().name.local.to_string())
+        .collect()
     }
 
     #[test]

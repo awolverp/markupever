@@ -36,14 +36,18 @@ impl PySelectInner {
         };
 
         let tree = guard.tree.lock();
+        let html_document = tree.html_document();
+        let quirks = tree.quirks_mode();
         let scope = ::matching::CssNodeRef::new(
             tree.get(scope_id).expect("scope node is still in the tree"),
+            html_document,
         )
         .map(|node| node.opaque_id());
 
         let here = self.expr.matches(
-            ::matching::CssNodeRef::new_unchecked(tree.get(guard.id).unwrap()),
+            ::matching::CssNodeRef::new_unchecked(tree.get(guard.id).unwrap(), html_document),
             scope,
+            quirks,
             &mut Default::default(),
         );
         if !here {
@@ -51,8 +55,9 @@ impl PySelectInner {
         }
 
         let elsewhere = self.expr.matches(
-            ::matching::CssNodeRef::new_unchecked(tree.get(guard.id).unwrap()),
+            ::matching::CssNodeRef::new_unchecked(tree.get(guard.id).unwrap(), html_document),
             Some(::matching::foreign_scope()),
+            quirks,
             &mut Default::default(),
         );
         !elsewhere
@@ -89,15 +94,21 @@ impl Iterator for PySelectInner {
             }
 
             let tree = guard.tree.lock();
+            let html_document = tree.html_document();
+            let quirks = tree.quirks_mode();
             let node = tree.get(guard.id).unwrap();
             let scope = self.scope_id.and_then(|id| {
-                ::matching::CssNodeRef::new(tree.get(id).expect("scope node is still in the tree"))
-                    .map(|scope| scope.opaque_id())
+                ::matching::CssNodeRef::new(
+                    tree.get(id).expect("scope node is still in the tree"),
+                    html_document,
+                )
+                .map(|scope| scope.opaque_id())
             });
 
             if self.expr.matches(
-                ::matching::CssNodeRef::new_unchecked(node),
+                ::matching::CssNodeRef::new_unchecked(node, html_document),
                 scope,
+                quirks,
                 &mut Default::default(),
             ) {
                 std::mem::drop(tree);

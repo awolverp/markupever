@@ -5,7 +5,7 @@ use crate::_impl::CssTendril;
 
 /// A selectable [`treedom::ego_tree::NodeRef`]
 #[derive(Debug, Clone)]
-pub struct CssNodeRef<'a>(treedom::NodeRef<'a>);
+pub struct CssNodeRef<'a>(treedom::NodeRef<'a>, bool);
 
 /// Identity of a node for `:has()`, `:scope`, and the nth cache.
 ///
@@ -35,9 +35,9 @@ pub fn foreign_scope() -> selectors::OpaqueElement {
 }
 
 impl<'a> CssNodeRef<'a> {
-    pub fn new(node: treedom::NodeRef<'a>) -> Option<Self> {
+    pub fn new(node: treedom::NodeRef<'a>, html_document: bool) -> Option<Self> {
         if node.value().is_element() {
-            Some(Self(node))
+            Some(Self(node, html_document))
         } else {
             None
         }
@@ -45,8 +45,12 @@ impl<'a> CssNodeRef<'a> {
 
     /// # Safety
     /// `node` value must be element
-    pub fn new_unchecked(node: treedom::NodeRef<'a>) -> Self {
-        Self(node)
+    pub fn new_unchecked(node: treedom::NodeRef<'a>, html_document: bool) -> Self {
+        Self(node, html_document)
+    }
+
+    fn wrap(&self, node: treedom::NodeRef<'a>) -> Option<Self> {
+        Self::new(node, self.1)
     }
 
     pub fn into_node(self) -> treedom::NodeRef<'a> {
@@ -66,7 +70,7 @@ impl selectors::Element for CssNodeRef<'_> {
     }
 
     fn parent_element(&self) -> Option<Self> {
-        self.0.ancestors().flat_map(CssNodeRef::new).next()
+        self.0.ancestors().find_map(|node| self.wrap(node))
     }
 
     fn parent_node_is_shadow_root(&self) -> bool {
@@ -99,19 +103,19 @@ impl selectors::Element for CssNodeRef<'_> {
     }
 
     fn prev_sibling_element(&self) -> Option<Self> {
-        self.0.prev_siblings().flat_map(Self::new).next()
+        self.0.prev_siblings().find_map(|node| self.wrap(node))
     }
 
     fn next_sibling_element(&self) -> Option<Self> {
-        self.0.next_siblings().flat_map(Self::new).next()
+        self.0.next_siblings().find_map(|node| self.wrap(node))
     }
 
     fn first_element_child(&self) -> Option<Self> {
-        self.0.children().flat_map(Self::new).next()
+        self.0.children().find_map(|node| self.wrap(node))
     }
 
     fn is_html_element_in_html_document(&self) -> bool {
-        self.0.value().element().unwrap().name.ns == ns!(html)
+        self.1 && self.0.value().element().unwrap().name.ns == ns!(html)
     }
 
     fn has_local_name(

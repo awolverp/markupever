@@ -10,6 +10,10 @@ pub struct IDTreeDOM {
     pub(super) tree: ego_tree::Tree<interface::Interface>,
     pub(super) namespaces: NamespaceMap,
     pub(super) fragment_context: Option<markup5ever::QualName>,
+    pub(super) quirks_mode: markup5ever::interface::QuirksMode,
+    /// True when this tree was parsed as HTML. Hand-built trees stay false
+    /// until a later step marks them.
+    pub(super) html_document: bool,
 }
 
 impl IDTreeDOM {
@@ -21,6 +25,8 @@ impl IDTreeDOM {
             tree: ego_tree::Tree::new(root.into()),
             namespaces,
             fragment_context: None,
+            quirks_mode: markup5ever::interface::QuirksMode::NoQuirks,
+            html_document: false,
         }
     }
 
@@ -33,6 +39,8 @@ impl IDTreeDOM {
             tree: ego_tree::Tree::with_capacity(root.into(), capacity),
             namespaces,
             fragment_context: None,
+            quirks_mode: markup5ever::interface::QuirksMode::NoQuirks,
+            html_document: false,
         }
     }
 
@@ -48,6 +56,18 @@ impl IDTreeDOM {
     /// Its root's children are the fragment's nodes.
     pub fn fragment_context(&self) -> Option<&markup5ever::QualName> {
         self.fragment_context.as_ref()
+    }
+
+    pub fn quirks_mode(&self) -> markup5ever::interface::QuirksMode {
+        self.quirks_mode
+    }
+
+    pub fn html_document(&self) -> bool {
+        self.html_document
+    }
+
+    pub fn set_html_document(&mut self, html_document: bool) {
+        self.html_document = html_document;
     }
 }
 
@@ -80,6 +100,8 @@ impl std::fmt::Debug for IDTreeDOM {
                 .field("tree", &self.tree)
                 .field("namespaces", &self.namespaces)
                 .field("fragment_context", &self.fragment_context)
+                .field("quirks_mode", &self.quirks_mode)
+                .field("html_document", &self.html_document)
                 .finish()?;
         }
 

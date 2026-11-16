@@ -75,6 +75,52 @@ def test_class_list_keeps_source_order_and_duplicates():
     assert element.class_list == ["b", "a", "b", "c"]
 
 
+def test_quirks_mode_class_and_id_selectors_are_case_insensitive():
+    parser = markupever.Parser(markupever.HtmlOptions())
+    parser.process("<div class='Foo' id='Bar'>x</div>")
+    parser.finish()
+
+    assert parser.quirks_mode == markupever.QUIRKS_MODE_FULL
+    document = parser.into_dom()
+    assert [element.class_list for element in document.select(".foo")] == [["Foo"]]
+    assert [element.id for element in document.select("#bar")] == ["Bar"]
+
+
+def test_fragment_reports_the_quirks_mode_it_was_given():
+    options = markupever.HtmlOptions(
+        quirks_mode=markupever.QUIRKS_MODE_FULL,
+        full_document=False,
+    )
+    parser = markupever.Parser(options)
+    parser.process("<p>x<table>")
+    parser.finish()
+
+    assert parser.quirks_mode == markupever.QUIRKS_MODE_FULL
+    serialized = parser.into_dom().root().serialize()
+    assert "<p>x<table></table></p>" in serialized
+
+
+def test_standards_mode_class_selectors_stay_case_sensitive():
+    parser = markupever.Parser(markupever.HtmlOptions())
+    parser.process("<!DOCTYPE html><div class='Foo'>")
+    parser.finish()
+
+    assert parser.quirks_mode == markupever.QUIRKS_MODE_OFF
+    document = parser.into_dom()
+    assert list(document.select(".foo")) == []
+    assert [element.class_list for element in document.select(".Foo")] == [["Foo"]]
+
+
+def test_xml_xhtml_names_stay_case_sensitive():
+    xhtml = markupever.parse(
+        '<html xmlns="http://www.w3.org/1999/xhtml"><SPAN>A</SPAN><span>B</span></html>',
+        "xml",
+    )
+
+    assert [element.name.local for element in xhtml.select("SPAN")] == ["SPAN"]
+    assert [element.name.local for element in xhtml.select("span")] == ["span"]
+
+
 def test_empty_ignores_zero_length_text():
     document = dom.TreeDom()
     root = document.root()

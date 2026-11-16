@@ -14,6 +14,7 @@ pub struct ParserSink {
     // The context element if this sink is parsing a fragment, whose nodes html5ever puts in an
     // <html> root element
     fragment_context: Option<markup5ever::QualName>,
+    html_document: bool,
     // Attribute names of the elements passed to add_attrs_if_missing (only <html> and <body>),
     // so that repeated calls don't each scan the element's attributes
     attr_names: RefCell<HashMap<ego_tree::NodeId, HashSet<markup5ever::QualName>>>,
@@ -37,6 +38,7 @@ impl ParserSink {
             namespaces: RefCell::new(HashMap::new()),
             lineno: Cell::new(1),
             fragment_context: None,
+            html_document: false,
             attr_names: RefCell::new(HashMap::new()),
         }
     }
@@ -74,6 +76,8 @@ impl ParserSink {
             tree,
             namespaces: self.namespaces.into_inner(),
             fragment_context: self.fragment_context,
+            quirks_mode: self.quirks_mode.get(),
+            html_document: self.html_document,
         }
     }
 
@@ -84,12 +88,16 @@ impl ParserSink {
         tokenizer: html5ever::tokenizer::TokenizerOpts,
         tree_builder: html5ever::tree_builder::TreeBuilderOpts,
     ) -> html5ever::driver::Parser<Self> {
+        let quirks_mode = tree_builder.quirks_mode;
         if full_document {
             let opts = html5ever::driver::ParseOpts {
                 tokenizer,
                 tree_builder,
             };
-            html5ever::driver::parse_document(Self::new(), opts)
+            let mut sink = Self::new();
+            sink.html_document = true;
+            sink.quirks_mode.set(quirks_mode);
+            html5ever::driver::parse_document(sink, opts)
         } else {
             Self::parse_html_fragment(
                 html5ever::QualName::new(
@@ -114,6 +122,7 @@ impl ParserSink {
         tokenizer: html5ever::tokenizer::TokenizerOpts,
         tree_builder: html5ever::tree_builder::TreeBuilderOpts,
     ) -> html5ever::driver::Parser<Self> {
+        let quirks_mode = tree_builder.quirks_mode;
         let scripting_enabled = tree_builder.scripting_enabled;
         let opts = html5ever::driver::ParseOpts {
             tokenizer,
@@ -121,6 +130,8 @@ impl ParserSink {
         };
         let sink = Self {
             fragment_context: Some(context.clone()),
+            html_document: true,
+            quirks_mode: Cell::new(quirks_mode),
             ..Self::new()
         };
 
