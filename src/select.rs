@@ -1,10 +1,16 @@
 struct PySelectInner {
     traverse: crate::iter::PyTraverse,
     expr: ::matching::ExpressionGroup,
+    /// Element `select` was called on. The document node has no scope, so
+    /// `:scope` falls through to `:root`.
+    scope_id: Option<::treedom::NodeId>,
 }
 
 impl PySelectInner {
     fn new(node: crate::nodes::NodeGuard, expr: String) -> pyo3::PyResult<Self> {
+        let scope_id =
+            matches!(node.type_, crate::nodes::NodeGuardType::Element).then_some(node.id);
+
         let tree = node.tree.lock();
         let expr = ::matching::ExpressionGroup::new(&expr, Some(tree.namespaces()))
             .map_err(|e| pyo3::PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
@@ -14,6 +20,7 @@ impl PySelectInner {
         Ok(Self {
             traverse: crate::iter::PyTraverse::from_nodeguard(node),
             expr,
+            scope_id,
         })
     }
 
@@ -41,10 +48,13 @@ impl Iterator for PySelectInner {
 
             let tree = guard.tree.lock();
             let node = tree.get(guard.id).unwrap();
+            let scope = self.scope_id.and_then(|id| {
+                ::matching::CssNodeRef::new(tree.get(id).expect("scope node is still in the tree"))
+            });
 
             if self.expr.matches(
                 ::matching::CssNodeRef::new_unchecked(node),
-                None,
+                scope,
                 &mut Default::default(),
             ) {
                 std::mem::drop(tree);

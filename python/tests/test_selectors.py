@@ -10,6 +10,20 @@ def test_has_matches_ancestor_and_not_has_does_not():
     assert list(doc.select("div:not(:has(span))")) == []
 
 
+def test_scope_on_a_document_is_the_root_element():
+    doc = markupever.parse("<!DOCTYPE html><html><body><p>x</p></body></html>")
+
+    assert [e.name.local for e in doc.select(":scope")] == ["html"]
+
+
+def test_scope_child_is_relative_to_the_element_select_was_called_on():
+    doc = markupever.parse("<!DOCTYPE html><html><body><p>x</p></body></html>")
+    body = list(doc.select("body"))[0]
+
+    assert [e.name.local for e in body.select(":scope > p")] == ["p"]
+    assert [e.name.local for e in body.select(":scope")] == ["body"]
+
+
 def test_root_matches_the_document_element():
     doc = markupever.parse("<!DOCTYPE html><html><body><p>x</p></body></html>")
 
