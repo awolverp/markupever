@@ -9,7 +9,7 @@ pub struct ParserSink {
     tree: RefCell<ego_tree::Tree<interface::Interface>>,
     errors: RefCell<Vec<std::borrow::Cow<'static, str>>>,
     quirks_mode: Cell<markup5ever::interface::QuirksMode>,
-    namespaces: RefCell<HashMap<markup5ever::Prefix, markup5ever::Namespace>>,
+    namespaces: RefCell<super::dom::NamespaceMap>,
     lineno: Cell<u64>,
     // The context element if this sink is parsing a fragment, whose nodes html5ever puts in an
     // <html> root element
@@ -35,7 +35,7 @@ impl ParserSink {
             ))),
             errors: RefCell::new(Vec::new()),
             quirks_mode: Cell::new(markup5ever::interface::QuirksMode::NoQuirks),
-            namespaces: RefCell::new(HashMap::new()),
+            namespaces: RefCell::new(super::dom::NamespaceMap::new()),
             lineno: Cell::new(1),
             fragment_context: None,
             html_document: false,

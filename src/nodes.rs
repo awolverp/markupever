@@ -1000,7 +1000,7 @@ fn record_html_namespace(dom: &mut ::treedom::IDTreeDOM, name: &treedom::markup5
     }
 
     let prefix = treedom::markup5ever::Prefix::from("");
-    if !dom.namespaces().contains_key(&prefix) {
+    if !dom.namespaces().contains_prefix(&prefix) {
         dom.namespaces_mut().insert(prefix, xhtml);
     }
 }
@@ -1057,7 +1057,21 @@ impl PyElement {
     #[setter]
     fn set_name(&self, name: crate::tools::PyQualNameOrStr) {
         let mut tree = self.0.tree.lock();
+        let old = tree
+            .get(self.0.id)
+            .unwrap()
+            .value()
+            .element()
+            .unwrap()
+            .name
+            .clone();
         let name = element_name(&tree, name);
+        if let Some(prefix) = old.prefix.clone() {
+            tree.namespaces_mut().remove_binding(&prefix, &old.ns);
+        }
+        if let Some(prefix) = name.prefix.clone() {
+            tree.namespaces_mut().insert(prefix, name.ns.clone());
+        }
         if tree.html_document() {
             record_html_namespace(&mut tree, &name);
         }

@@ -513,7 +513,7 @@ pub fn serialize(
                 if ns.is_empty() {
                     false
                 } else if let Some(x) = ns.get(&::treedom::markup5ever::Prefix::from("")) {
-                    x == &::treedom::markup5ever::namespace_url!("http://www.w3.org/1999/xhtml")
+                    *x == treedom::markup5ever::namespace_url!("http://www.w3.org/1999/xhtml")
                 } else {
                     false
                 }

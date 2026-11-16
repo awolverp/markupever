@@ -75,6 +75,35 @@ def test_class_list_keeps_source_order_and_duplicates():
     assert element.class_list == ["b", "a", "b", "c"]
 
 
+def test_rebound_prefix_matches_every_namespace_it_is_bound_to():
+    xml = markupever.parse(
+        '<a xmlns:p="urn:1"><b xmlns:p="urn:2"><p:t/></b><p:u/></a>',
+        "xml",
+    )
+
+    assert "p" in xml.namespaces()
+    assert [(element.name.local, element.name.ns) for element in xml.select("p|t")] == [
+        ("t", "urn:2")
+    ]
+    assert [(element.name.local, element.name.ns) for element in xml.select("p|u")] == [
+        ("u", "urn:1")
+    ]
+
+
+def test_detaching_one_prefixed_element_keeps_the_prefix():
+    xml = markupever.parse('<root xmlns:a="urn:a"><a:x/><a:y/></root>', "xml")
+    list(xml.select("a|x"))[0].detach()
+
+    assert "a" in xml.namespaces()
+    assert [element.name.local for element in xml.select("a|y")] == ["y"]
+
+
+def test_svg_prefix_matches_inline_svg():
+    document = markupever.parse("<svg><path d='M0 0'/></svg>")
+
+    assert [element.name.local for element in document.select("svg|path")] == ["path"]
+
+
 def test_quirks_mode_class_and_id_selectors_are_case_insensitive():
     parser = markupever.Parser(markupever.HtmlOptions())
     parser.process("<div class='Foo' id='Bar'>x</div>")

@@ -26,6 +26,27 @@ fn opaque_from_node_id(id: treedom::NodeId) -> selectors::OpaqueElement {
     )
 }
 
+const NAMESPACE_SENTINEL: &str = "\0markupever-namespaces\0";
+
+/// One selector namespace that means “any of these URIs”.
+/// The selectors crate can store only one namespace per prefix.
+pub(crate) fn namespace_sentinel(
+    uris: &[treedom::markup5ever::Namespace],
+) -> treedom::markup5ever::Namespace {
+    let mut raw = String::from("\0markupever-namespaces");
+    for uri in uris {
+        raw.push('\0');
+        raw.push_str(uri);
+    }
+    treedom::markup5ever::Namespace::from(raw)
+}
+
+pub(crate) fn namespace_sentinel_uris(ns: &treedom::markup5ever::Namespace) -> Option<Vec<&str>> {
+    let text: &str = ns;
+    text.strip_prefix(NAMESPACE_SENTINEL)
+        .map(|rest| rest.split('\0').collect())
+}
+
 /// A scope id that is not an ego-tree node. Used to ask whether a selector
 /// matches an element only because that element is `:scope`.
 pub fn foreign_scope() -> selectors::OpaqueElement {
@@ -129,7 +150,12 @@ impl selectors::Element for CssNodeRef<'_> {
         &self,
         ns: &<Self::Impl as selectors::SelectorImpl>::BorrowedNamespaceUrl,
     ) -> bool {
-        self.0.value().element().unwrap().name.ns == *ns
+        let element_ns = &self.0.value().element().unwrap().name.ns;
+        if let Some(choices) = namespace_sentinel_uris(ns) {
+            let element_ns: &str = element_ns;
+            return choices.iter().any(|choice| element_ns == *choice);
+        }
+        element_ns == ns
     }
 
     fn attr_matches(

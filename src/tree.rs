@@ -51,7 +51,8 @@ impl PyTreeDom {
         if let Some(elem) = child.value().element()
             && let Some(prefix) = elem.name.prefix.clone()
         {
-            lock.namespaces_mut().remove(&prefix);
+            let namespace = elem.name.ns.clone();
+            lock.namespaces_mut().remove_binding(&prefix, &namespace);
         }
     }
 }
@@ -125,11 +126,12 @@ impl PyTreeDom {
             std::collections::HashMap<pyo3::pybacked::PyBackedStr, pyo3::pybacked::PyBackedStr>,
         >,
     ) -> Self {
-        let ns = namespaces
-            .into_iter()
-            .flatten()
-            .map(|(key, val)| ((*key).into(), (*val).into()))
-            .collect();
+        let mut ns = ::treedom::NamespaceMap::new();
+        if let Some(namespaces) = namespaces {
+            for (key, val) in namespaces {
+                ns.insert((*key).into(), (*val).into());
+            }
+        }
 
         let dom = if capacity == 0 {
             ::treedom::IDTreeDOM::new(::treedom::interface::DocumentInterface, ns)
@@ -151,6 +153,7 @@ impl PyTreeDom {
         let dom = self.dom.lock();
         dom.namespaces()
             .iter()
+            .into_iter()
             .map(|(key, val)| (key.to_string(), val.to_string()))
             .collect()
     }

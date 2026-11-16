@@ -1,8 +1,90 @@
 use super::interface;
-use hashbrown::HashMap;
 use std::{fmt::Write, ops::Deref};
 
-pub type NamespaceMap = HashMap<markup5ever::Prefix, markup5ever::Namespace>;
+/// Prefix bindings that are still used, with a count.
+///
+/// One prefix can be bound to more than one namespace. [`NamespaceMap::iter`]
+/// yields the first binding for each prefix, which is what `TreeDom.namespaces()`
+/// exposes.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct NamespaceMap {
+    bindings: Vec<(markup5ever::Prefix, markup5ever::Namespace, usize)>,
+}
+
+impl NamespaceMap {
+    pub fn new() -> Self {
+        Self {
+            bindings: Vec::new(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.bindings.is_empty()
+    }
+
+    pub fn contains_prefix(&self, prefix: &markup5ever::Prefix) -> bool {
+        self.bindings.iter().any(|binding| &binding.0 == prefix)
+    }
+
+    /// The first namespace still bound to `prefix`.
+    pub fn get(&self, prefix: &markup5ever::Prefix) -> Option<&markup5ever::Namespace> {
+        self.bindings
+            .iter()
+            .find(|binding| &binding.0 == prefix)
+            .map(|binding| &binding.1)
+    }
+
+    pub fn uris(&self, prefix: &markup5ever::Prefix) -> Vec<markup5ever::Namespace> {
+        self.bindings
+            .iter()
+            .filter(|binding| &binding.0 == prefix)
+            .map(|binding| binding.1.clone())
+            .collect()
+    }
+
+    /// Record one more element using this binding.
+    pub fn insert(&mut self, prefix: markup5ever::Prefix, namespace: markup5ever::Namespace) {
+        if let Some(binding) = self
+            .bindings
+            .iter_mut()
+            .find(|binding| binding.0 == prefix && binding.1 == namespace)
+        {
+            binding.2 += 1;
+            return;
+        }
+        self.bindings.push((prefix, namespace, 1));
+    }
+
+    /// Forget one element using this binding.
+    pub fn remove_binding(
+        &mut self,
+        prefix: &markup5ever::Prefix,
+        namespace: &markup5ever::Namespace,
+    ) {
+        let Some(index) = self
+            .bindings
+            .iter()
+            .position(|binding| &binding.0 == prefix && &binding.1 == namespace)
+        else {
+            return;
+        };
+        self.bindings[index].2 -= 1;
+        if self.bindings[index].2 == 0 {
+            self.bindings.remove(index);
+        }
+    }
+
+    pub fn iter(&self) -> Vec<(&markup5ever::Prefix, &markup5ever::Namespace)> {
+        let mut unique = Vec::new();
+        for binding in &self.bindings {
+            if unique.iter().any(|(prefix, _)| *prefix == &binding.0) {
+                continue;
+            }
+            unique.push((&binding.0, &binding.1));
+        }
+        unique
+    }
+}
 
 /// A DOM based on [`ego_tree::Tree`]
 #[derive(PartialEq, Eq)]

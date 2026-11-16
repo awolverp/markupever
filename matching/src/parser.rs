@@ -38,16 +38,31 @@ impl<'i> selectors::parser::Parser<'i> for Parser<'i> {
         &self,
         prefix: &<Self::Impl as selectors::SelectorImpl>::NamespacePrefix,
     ) -> Option<<Self::Impl as selectors::SelectorImpl>::NamespaceUrl> {
-        if let Some(x) = self.0 {
-            if x.is_empty() {
-                return None;
+        if let Some(map) = self.0 {
+            let uris = map.uris(&prefix.0);
+            match uris.len() {
+                0 => {}
+                1 => return Some(uris[0].clone()),
+                _ => return Some(crate::selectable::namespace_sentinel(&uris)),
             }
-
-            x.get(&prefix.0).map(treedom::markup5ever::Namespace::from)
-        } else {
-            None
         }
+        well_known_namespace(&prefix.0)
     }
+}
+
+fn well_known_namespace(
+    prefix: &treedom::markup5ever::Prefix,
+) -> Option<treedom::markup5ever::Namespace> {
+    let prefix: &str = prefix;
+    let namespace = match prefix {
+        "xml" => treedom::markup5ever::namespace_url!("http://www.w3.org/XML/1998/namespace"),
+        "xmlns" => treedom::markup5ever::namespace_url!("http://www.w3.org/2000/xmlns/"),
+        "xlink" => treedom::markup5ever::namespace_url!("http://www.w3.org/1999/xlink"),
+        "svg" => treedom::markup5ever::namespace_url!("http://www.w3.org/2000/svg"),
+        "mathml" => treedom::markup5ever::namespace_url!("http://www.w3.org/1998/Math/MathML"),
+        _ => return None,
+    };
+    Some(namespace)
 }
 
 #[derive(Debug)]
