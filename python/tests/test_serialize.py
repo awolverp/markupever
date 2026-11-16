@@ -2,6 +2,35 @@ import markupever
 from markupever import dom
 
 
+def test_hand_built_html_document_serializes_as_html():
+    document = dom.TreeDom()
+    root = document.root()
+    root.create_doctype("html", "pub", "sys")
+    body = root.create_element("body")
+    body.create_element("br")
+    body.create_element("img", {"src": "a.png"})
+    script = body.create_element("script")
+    script.create_text("a < b")
+    root.create_element("P")
+
+    serialized = root.serialize()
+    assert '<!DOCTYPE html PUBLIC "pub" "sys">' in serialized
+    assert "<br>" in serialized
+    assert "</br>" not in serialized
+    assert '<img src="a.png">' in serialized
+    assert "</img>" not in serialized
+    assert "<script>a < b</script>" in serialized
+    assert [element.name.local for element in document.select("p")] == ["p"]
+    assert [element.name.local for element in document.select("P")] == ["p"]
+
+
+def test_hand_built_tree_without_an_html_doctype_serializes_as_xml():
+    document = dom.TreeDom()
+    document.root().create_element("br")
+
+    assert document.root().serialize() == "<br></br>"
+
+
 def test_pretty_print_keeps_a_newline_before_the_outer_close_tag():
     outer = list(markupever.parse("<div id=o><div id=i></div></div>").select("#o"))[0]
 
